@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operations Dashboard - LP CRM</title>
+  <!-- Basecoat CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/basecoat.cdn.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/all.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --card-bg: #111111;
+      --border-color: #1f1f1f;
+      --border-hover: #333333;
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #71717a;
+      --accent: #ffffff;
+      --accent-hover: #f4f4f5;
+      --shadow-small: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      background: var(--bg-primary);
+      background-image: 
+        radial-gradient(circle at 25% 25%, #1f1f1f 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, #1a1a1a 0%, transparent 50%);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh; line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .dashboard-header {
+      margin-bottom: 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .dashboard-title {
+      font-size: clamp(2rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #989595 0%, #45454a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .files-btn-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .files-btn {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-color: var(--border-color);
+    }
+    .files-btn:hover {
+      background: var(--border-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-1px);
+    }
+    .files-btn:active {
+      transform: translateY(0);
+    }
+    .stats-dropdown {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .stats-btn {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-color: var(--border-color);
+    }
+    .stats-btn:hover {
+      background: var(--border-hover);
+      border-color: var(--border-hover);
+    }
+    .stats-dropdown-content {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow-large);
+      z-index: 1000;
+      width: 350px;
+      padding: 1rem;
+      display: none;
+      backdrop-filter: blur(60px);
+      background: rgba(17, 17, 17, 0.95);
+      filter: none !important; /* Ensure dropdown is never blurred */
+    }
+    .stats-dropdown-content.active {
+      display: block;
+    }
+    .stats-section {
+      margin-bottom: 1.5rem;
+    }
+    .stats-section:last-child {
+      margin-bottom: 0;
+    }
+    .stats-section h4 {
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+    .stat-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+    .stat-item:hover {
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .stat-item .label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .stat-item .value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .table-container {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-large);
+    }
+    .table-scroll-vert {
+      max-height: 70vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      width: 100%;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .table-scroll-vert::-webkit-scrollbar {
+      display: none;
+    }
+    table.bc-table {
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border-radius: 0;
+      border: none;
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .bc-table th, .bc-table td {
+      background: transparent;
+      color: var(--text-primary);
+      border: none;
+      font-size: 1rem;
+      padding: 1.05rem 0.9rem;
+      vertical-align: middle;
+      transition: background 0.18s;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bc-table th {
+      background: var(--bg-secondary);
+      
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .bc-table-striped tbody tr:nth-child(odd) {
+      background: rgba(255,255,255,0.01);
+    }
+    .bc-table tbody tr {
+      border-bottom: 1px solid var(--border-color);
+      transition: background 0.18s, box-shadow 0.18s;
+    }
+    .bc-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    .bc-table tbody tr:hover {
+      background: rgba(255,255,255,0.03);
+      box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+    }
+    .editable-select {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.35rem 1.5rem 0.35rem 0.7rem;
+      font-size: 0.95rem;
+      appearance: none;
+      cursor: pointer;
+      transition: all 0.18s;
+      width: 100%;
+      max-width: 180px;
+    }
+    .editable-select:focus {
+      outline: 2px solid var(--accent);
+      border-color: var(--accent);
+      background: var(--card-bg);
+    }
+    .priority-high { color: #f87171; font-weight: 600; }
+    .priority-medium { color: #fbbf24; font-weight: 600; }
+    .priority-low { color: #60a5fa; font-weight: 600; }
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .status-enquiry { background: rgba(156, 163, 175, 0.2); color: #9ca3af; }
+    .status-interested { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
+    .status-registered { background: rgba(52, 211, 153, 0.2); color: #34d399; }
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      margin-right: 0.2rem;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+    .btn-primary:hover, .btn-primary:active {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+    .btn-primary:disabled {
+      background: var(--border-color);
+      color: var(--text-tertiary);
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-primary:disabled:hover {
+      background: var(--border-color);
+      transform: none;
+    }
+    .btn:disabled:hover {
+      background: var(--border-color);
+      transform: none;
+      box-shadow: none;
+    }
+    .toast-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .toast-notification.success {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%);
+    }
+    .toast-notification.error {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%);
+    }
+    .toast-notification.warning {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(245, 158, 11, 0.8) 100%);
+    }
+    .toast-notification.fade-out {
+      animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes slideIn {
+      from { 
+        transform: translateX(100%) scale(0.95); 
+        opacity: 0; 
+      }
+      to { 
+        transform: translateX(0) scale(1); 
+        opacity: 1; 
+      }
+    }
+    @keyframes slideOut {
+      from { 
+        transform: translateX(0) scale(1); 
+        opacity: 1; 
+      }
+      to { 
+        transform: translateX(100%) scale(0.95); 
+        opacity: 0; 
+      }
+    }
+    .assigned-name {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+    }
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+      transition: border 0.18s;
+      min-width: 300px;
+    }
+    .search-box:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+    .search-icon {
+      color: var(--text-secondary);
+      margin-right: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .search-input {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      flex: 1;
+      outline: none;
+    }
+    .search-input::placeholder {
+      color: var(--text-tertiary);
+    }
+    .clear-search {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: color 0.18s;
+    }
+    .clear-search:hover {
+      color: var(--text-primary);
+    }
+    .table-row {
+      transition: opacity 0.3s ease;
+    }
+    .table-row.hidden {
+      display: none;
+    }
+    .no-results {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+    @media (max-width: 1200px) {
+      .dashboard-container { padding:1rem }
+      .dashboard-header { flex-direction: column; align-items: flex-start }
+      .header-controls { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+      .bc-table th, .bc-table td { padding: 0.75rem 0.5rem; font-size: 0.9rem; }
+      .editable-select { font-size: 0.85rem; max-width: 150px; }
+      .search-box { min-width: 250px; }
+      .stats-dropdown-content { width: 300px; }
+    }
+    @media (max-width: 768px) {
+      .dashboard-container { padding:0.5rem }
+      .dashboard-header { gap: 0.6rem }
+      .form-container { padding: 1rem; }
+      .bc-table th, .bc-table td { padding: 0.5rem 0.3rem; font-size: 0.8rem; }
+      .table-scroll-vert { max-height: 60vh; }
+      .editable-select { font-size: 0.8rem; max-width: 120px; padding: 0.25rem 1.25rem 0.25rem 0.5rem; }
+      .search-box { min-width: 200px; padding: 0.4rem; }
+      .search-input { font-size: 0.8rem; }
+      .stats-dropdown-content { width: 280px; padding: 1rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+    /* Blur effect for background when dropdown is active */
+    .table-container.blurred {
+      filter: blur(10px);
+      transition: filter 0.3s ease;
+    }
+    .stats-dropdown-content {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow-large);
+      z-index: 1000;
+      width: 350px;
+      padding: 1.5rem;
+      display: none;
+      backdrop-filter: blur(60px);
+      background: rgba(17, 17, 17, 0.95);
+      filter: none !important; /* Ensure dropdown is never blurred */
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">OPERATIONS DASHBOARD</h1>
+      <div class="header-controls">
+        <div class="stats-dropdown">
+          <button class="stats-btn" id="statsBtn">
+            <i class="fas fa-chart-bar"></i>
+            <span>Stats</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="stats-dropdown-content" id="statsDropdown">
+            <div class="stats-section">
+              <h4>Programs</h4>
+              <div class="stats-grid" id="programStats">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+            <div class="stats-section">
+              <h4>Priorities</h4>
+              <div class="stats-grid" id="priorityStats">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+            <div class="stats-section">
+              <h4>Status</h4>
+              <div class="stats-grid" id="statusStats">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="files-btn-container">
+          <button class="files-btn" id="filesBtn" onclick="openGoogleDrive()">
+            <i class="fas fa-folder-open"></i>
+            <span>Drive Folder</span>
+          </button>
+        </div>
+        <div class="search-container">
+          <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" placeholder=" Search..." class="search-input">
+            <button id="clearSearch" class="clear-search" style="display: none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <div class="table-scroll-vert">
+        <table class="bc-table bc-table-striped">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+              <th>Priority</th>
+                    <th>Status</th>
+                    <th>Program</th>
+                    <th>Assigned To</th>
+              <th class="text-green-500">Processing<i class="fa-solid fa-circle-right" style="color: #34d399;margin-left: 10px;"></i></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads %}
+            <tr class="table-row" 
+                data-name="{{ lead.name|lower }}"
+                data-phone="{{ lead.phone|lower }}"
+                data-program="{{ lead.get_program_display|lower|default:'' }}"
+                data-status="{{ lead.get_status_display|lower }}"
+                data-priority="{{ lead.get_priority_display|lower }}"
+                data-assigned="{{ lead.assigned_to.get_full_name|lower|default:'unassigned' }}">
+                    <td>{{ lead.name }}</td>
+                    <td>{{ lead.phone }}</td>
+              
+              <!-- Priority Column -->
+              <td>
+                <select class="editable-select priority-select" 
+                        data-lead-id="{{ lead.id }}"
+                        data-field="priority">
+                  {% for value, label in priority_choices %}
+                    <option value="{{ value }}" 
+                            {% if lead.priority == value %}selected{% endif %}
+                            class="priority-{{ value|lower }}">
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </td>
+              
+              <!-- Status Column -->
+              <td>
+                <select class="editable-select status-select" 
+                        data-lead-id="{{ lead.id }}"
+                        data-field="status">
+                  {% for value, label in status_choices %}
+                    <option value="{{ value }}" 
+                            {% if lead.status == value %}selected{% endif %}
+                            class="status-{{ value|lower|cut:' ' }}">
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </td>
+              
+              <!-- Program Column -->
+              <td>
+                <select class="editable-select program-select" 
+                        data-lead-id="{{ lead.id }}"
+                        data-field="program">
+                  <option value="">-- Select --</option>
+                  {% for value, label in program_choices %}
+                    <option value="{{ value }}" 
+                            {% if lead.program == value %}selected{% endif %}>
+                      {{ label }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </td>
+              
+              <!-- Assigned To Column -->
+              <td>
+                <select class="editable-select assign-select" 
+                        data-lead-id="{{ lead.id }}"
+                        data-field="assigned_to">
+                  <option value="">Unassigned</option>
+                                {% for manager in admission_managers %}
+                    <option value="{{ manager.id }}" 
+                            {% if lead.assigned_to == manager %}selected{% endif %}>
+                      {{ manager.get_full_name }}
+                    </option>
+                                {% endfor %}
+                            </select>
+                    </td>
+              
+              <!-- Actions Column -->
+                    <td>
+                <button class="btn btn-primary forward-btn" 
+                                data-lead-id="{{ lead.id }}"
+                                {% if lead.status != 'REGISTERED' or lead.processing_status == 'FORWARDED' %}disabled{% endif %}>
+                  {% if lead.processing_status == 'FORWARDED' %}
+                    Forwarded
+                  {% elif lead.processing_status == 'REJECTED' %}
+                    <i class="fas fa-info-circle" style="margin-right: 5px;"></i>Re-Forward
+                  {% else %}
+                    Forward
+                  {% endif %}
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+      </div>
+    </div>
+</div>
+
+<script>
+    // Configure axios properly
+    axios.defaults.xsrfCookieName = 'csrftoken';
+    axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+    
+    // Stats dropdown functionality
+    const statsBtn = document.getElementById('statsBtn');
+    const statsDropdown = document.getElementById('statsDropdown');
+    const tableContainer = document.querySelector('.table-container');
+    
+    // Toggle stats dropdown
+    statsBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      statsDropdown.classList.toggle('active');
+      if (statsDropdown.classList.contains('active')) {
+        updateStats();
+        tableContainer.classList.add('blurred');
+      } else {
+        tableContainer.classList.remove('blurred');
+      }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!statsBtn.contains(e.target) && !statsDropdown.contains(e.target)) {
+        statsDropdown.classList.remove('active');
+        tableContainer.classList.remove('blurred');
+      }
+    });
+    
+    // Function to calculate and update stats
+    function updateStats() {
+      const visibleRows = Array.from(document.querySelectorAll('.table-row:not(.hidden)'));
+      
+      // Calculate program stats
+      const programCounts = {};
+      const priorityCounts = {};
+      const statusCounts = {};
+      
+      visibleRows.forEach(row => {
+        let program = row.dataset.program || 'Unassigned';
+        const priority = row.dataset.priority || 'Unknown';
+        const status = row.dataset.status || 'Unknown';
+        
+        // Shorten "Hotel Management" to "Hotel"
+        if (program === 'hotel management') {
+          program = 'hotel';
+        }
+        
+        // Skip "Not Interested" status
+        if (status === 'not interested') {
+          return;
+        }
+        
+        programCounts[program] = (programCounts[program] || 0) + 1;
+        priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+      
+      // Update program stats
+      const programStats = document.getElementById('programStats');
+      programStats.innerHTML = '';
+      Object.entries(programCounts).forEach(([program, count]) => {
+        const statItem = document.createElement('div');
+        statItem.className = 'stat-item';
+        statItem.innerHTML = `
+          <span class="label">${program}</span>
+          <span class="value">${count}</span>
+        `;
+        programStats.appendChild(statItem);
+      });
+      
+      // Update priority stats
+      const priorityStats = document.getElementById('priorityStats');
+      priorityStats.innerHTML = '';
+      Object.entries(priorityCounts).forEach(([priority, count]) => {
+        const statItem = document.createElement('div');
+        statItem.className = 'stat-item';
+        statItem.innerHTML = `
+          <span class="label">${priority}</span>
+          <span class="value">${count}</span>
+        `;
+        priorityStats.appendChild(statItem);
+      });
+      
+      // Update status stats
+      const statusStats = document.getElementById('statusStats');
+      statusStats.innerHTML = '';
+      Object.entries(statusCounts).forEach(([status, count]) => {
+        const statItem = document.createElement('div');
+        statItem.className = 'stat-item';
+        statItem.innerHTML = `
+          <span class="label">${status}</span>
+          <span class="value">${count}</span>
+        `;
+        statusStats.appendChild(statItem);
+      });
+    }
+    
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearch');
+    const tableRows = document.querySelectorAll('.table-row');
+    
+    function performSearch() {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      let visibleCount = 0;
+      
+      tableRows.forEach(row => {
+        const name = row.dataset.name;
+        const phone = row.dataset.phone;
+        const program = row.dataset.program;
+        const status = row.dataset.status;
+        const priority = row.dataset.priority;
+        const assigned = row.dataset.assigned;
+
+        if (name.includes(searchTerm) ||
+            phone.includes(searchTerm) ||
+            program.includes(searchTerm) ||
+            status.includes(searchTerm) ||
+            priority.includes(searchTerm) ||
+            assigned.includes(searchTerm)) {
+          row.classList.remove('hidden');
+          visibleCount++;
+        } else {
+          row.classList.add('hidden');
+        }
+      });
+      
+      // Show/hide clear button
+      clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
+      
+      // Show no results message if needed
+      let noResultsRow = document.querySelector('.no-results-row');
+      if (visibleCount === 0 && searchTerm) {
+        if (!noResultsRow) {
+          noResultsRow = document.createElement('tr');
+          noResultsRow.className = 'no-results-row';
+          noResultsRow.innerHTML = '<td colspan="7" class="no-results">No leads found matching your search</td>';
+          document.querySelector('tbody').appendChild(noResultsRow);
+        }
+      } else if (noResultsRow) {
+        noResultsRow.remove();
+      }
+      
+      // Update stats if dropdown is open
+      if (statsDropdown.classList.contains('active')) {
+        updateStats();
+      }
+    }
+    
+    // Search input event listener
+    searchInput.addEventListener('input', performSearch);
+    
+    // Clear search functionality
+    clearSearchBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      performSearch();
+      searchInput.focus();
+    });
+    
+    // Generic function to handle all field updates
+    function handleFieldUpdate(selectElement) {
+      const leadId = selectElement.dataset.leadId;
+      const field = selectElement.dataset.field;
+      const value = selectElement.value;
+      
+      axios.post('{% url "accounts:update_lead_field" %}', 
+        JSON.stringify({
+                lead_id: leadId,
+          field: field,
+          value: value
+            }),
+        {
+            headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        }
+      )
+      .then(response => {
+        console.log(`${field} updated successfully`);
+        
+        // Update the data attributes for search functionality
+        const row = selectElement.closest('tr');
+        updateRowSearchData(row, field, value);
+        
+        // Special handling for status changes
+        if (field === 'status') {
+          const forwardBtn = row.querySelector('.forward-btn');
+          if (forwardBtn) {
+            forwardBtn.disabled = value !== 'REGISTERED';
+          }
+        }
+        
+        // Refresh stats after field update
+        updateStats();
+      })
+      .catch(error => {
+        console.error(`Error updating ${field}:`, error.response?.data || error);
+        alert(`Failed to update ${field}. Please try again.`);
+        // Revert the select to its previous value
+        selectElement.value = selectElement.dataset.previousValue;
+      });
+    }
+    
+    // Function to update search data attributes when fields change
+    function updateRowSearchData(row, field, value) {
+      const fieldMappings = {
+        'priority': {
+          'HIGH': 'High',
+          'MEDIUM': 'Medium', 
+          'LOW': 'Low'
+        },
+        'status': {
+          'ENQUIRY': 'Enquiry',
+          'INTERESTED': 'Interested',
+          'NOT_INTERESTED': 'Not Interested',
+          'WALK_IN': 'Walk In',
+          'ON_HOLD': 'On Hold',
+          'REGISTERED': 'Registered'
+        },
+        'program': {
+          'GCC': 'GCC',
+          'HOTEL_MANAGEMENT': 'Hotel Management',
+          'NURSING': 'Nursing',
+          'BACHELORS': 'Bachelors',
+          'MASTERS': 'Masters',
+          'ESTEP': 'E-step',
+          'PVP': 'PVP'
+        },
+        'assigned_to': {}
+      };
+      
+      if (field === 'assigned_to') {
+        if (value === '') {
+          row.dataset.assigned = 'unassigned';
+        } else {
+          // Find the selected option text
+          const selectedOption = row.querySelector(`select[data-field="${field}"] option[value="${value}"]`);
+          if (selectedOption) {
+            row.dataset.assigned = selectedOption.textContent.toLowerCase();
+          }
+        }
+      } else if (fieldMappings[field]) {
+        const displayValue = fieldMappings[field][value] || value;
+        row.dataset[field] = displayValue.toLowerCase();
+      }
+      
+      // Re-run search if there's an active search term
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      if (searchTerm) {
+        performSearch();
+      }
+      
+      // Update stats if dropdown is open
+      if (statsDropdown.classList.contains('active')) {
+        updateStats();
+      }
+    }
+
+    // Set up event listeners for all editable selects
+    document.querySelectorAll('.editable-select').forEach(select => {
+      // Store initial value
+      select.dataset.previousValue = select.value;
+      
+      select.addEventListener('change', function() {
+        handleFieldUpdate(this);
+        // Update the stored value
+        this.dataset.previousValue = this.value;
+        });
+    });
+    
+    // Handle forwarding to processing
+    document.querySelectorAll('.forward-btn').forEach(button => {
+      button.addEventListener('click', function() {
+        if (this.disabled) return;
+        
+        const leadId = this.dataset.leadId;
+        const isRejected = this.innerHTML.includes('Re-Forward');
+        
+        axios.post('{% url "accounts:forward_to_processing" %}', 
+          JSON.stringify({
+                lead_id: leadId
+            }),
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          }
+        )
+        .then(response => {
+          console.log('Lead forwarded successfully');
+          // Update button state
+          this.textContent = 'Forwarded';
+          this.disabled = true;
+          this.classList.remove('btn-primary');
+          this.classList.add('btn-secondary');
+          
+          // Show success message
+          if (isRejected) {
+            showToast('Rejected lead re-forwarded successfully', 'success');
+          } else {
+            showToast('Lead forwarded successfully', 'success');
+          }
+        })
+        .catch(error => {
+          console.error('Error forwarding lead:', error.response?.data || error);
+          alert('Failed to forward lead. Please try again.');
+        });
+    });
+
+    // Store initial values for selects
+    document.querySelectorAll('select').forEach(select => {
+      select.dataset.previousValue = select.value;
+    });
+    
+    // Toast notification function
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-notification ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Function to open Google Drive
+    function openGoogleDrive() {
+      window.open('https://drive.google.com', '_blank');
+    }
+});
+</script>
+</body>
+</html>

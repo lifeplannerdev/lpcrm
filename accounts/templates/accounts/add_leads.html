@@ -1,0 +1,54 @@
+{% extends "accounts/base.html" %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Add New Lead</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Name*</label>
+            <input type="text" name="name" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Phone*</label>
+            <input type="tel" name="phone" required>
+        </div>
+        
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email">
+        </div>
+        
+        <div class="form-group">
+            <label>Priority</label>
+            <select name="priority">
+                <option value="HIGH">High</option>
+                <option value="MEDIUM" selected>Medium</option>
+                <option value="LOW">Low</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Source</label>
+            <select name="source" id="source-select">
+                <option value="WHATSAPP">WhatsApp</option>
+                <option value="INSTAGRAM">Instagram</option>
+                <option value="WEBSITE">Website</option>
+                <option value="WALK_IN">Walk-in</option>
+                <option value="OTHER">Other</option>
+            </select>
+            <input type="text" name="custom_source" id="custom-source" placeholder="Specify source" style="display:none;">
+        </div>
+        
+        <button type="submit" class="btn-primary">Save Lead</button>
+    </form>
+</div>
+
+<script>
+document.getElementById('source-select').addEventListener('change', function() {
+    const customSource = document.getElementById('custom-source');
+    customSource.style.display = this.value === 'OTHER' ? 'block' : 'none';
+});
+</script>
+{% endblock %}
