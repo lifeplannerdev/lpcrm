@@ -552,8 +552,10 @@ def reopen_lead(request):
 @login_required
 def all_leads(request):
     query = request.GET.get('q', '')
+    leads = Lead.objects.all().order_by('-created_at')
+    
     if query:
-        leads = Lead.objects.filter(
+        leads = leads.filter(
             Q(name__icontains=query) |
             Q(phone__icontains=query) |
             Q(email__icontains=query) |
@@ -561,23 +563,30 @@ def all_leads(request):
             Q(status__icontains=query) |
             Q(priority__icontains=query) |
             Q(source__icontains=query)
-        ).order_by('-created_at')
-    else:
-        leads = Lead.objects.all().order_by('-created_at')
+        )
 
     if request.method == 'POST':
         form = LeadForm(request.POST)
         if form.is_valid():
             form.save()
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'success'})
             return redirect('accounts:all_leads')
     else:
         form = LeadForm()
 
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Return just the table HTML for AJAX requests
+        table_html = render_to_string('accounts/_leads_table.html', {
+            'leads': leads
+        })
+        return JsonResponse({'table_html': table_html})
+    
     return render(request, 'accounts/all_leads.html', {
         'leads': leads,
         'form': form,
         'query': query,
-    }) 
+    })
 
 @login_required
 def delete_lead(request, lead_id):
