@@ -388,7 +388,7 @@
                                 <tr>
                                     <td>{{ lead.name }}</td>
                                     <td>{{ lead.phone }}</td>
-                                    <td>{{ lead.get_program_display|default:"-" }}</td>
+                                    <td>{{ lead.program|default:"-" }}</td>
                                     <td>
                 <span class="badge badge-{{ lead.priority|lower }}">
                                             {{ lead.get_priority_display }}

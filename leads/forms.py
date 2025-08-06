@@ -34,7 +34,10 @@ class LeadForm(forms.ModelForm):
             }),
             'priority': forms.Select(attrs={'class': 'form-control'}),
             'status': forms.Select(attrs={'class': 'form-control'}),
-            'program': forms.Select(attrs={'class': 'form-control'}),
+            'program': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter program name'
+            }),
             'source': forms.Select(attrs={'class': 'form-control'}),
             'custom_source': forms.TextInput(attrs={
                 'class': 'form-control',

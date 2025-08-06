@@ -27,15 +27,7 @@ class Lead(models.Model):
         ('REGISTERED', 'Registered')
     ]
     
-    PROGRAM_CHOICES = [
-        ('GCC', 'GCC'),
-        ('HOTEL_MANAGEMENT', 'Hotel Management'),
-        ('NURSING', 'Nursing'),
-        ('BACHELORS', 'Bachelors'),
-        ('MASTERS', 'Masters'),
-        ('ESTEP', 'E-step'),
-        ('PVP', 'PVP')
-    ]
+    # PROGRAM_CHOICES removed - now using CharField for free text input
 
     PROCESSING_STATUS_CHOICES = [
         ('PENDING', 'Pending'),
@@ -75,10 +67,10 @@ class Lead(models.Model):
         default='ENQUIRY'
     )
     program = models.CharField(
-        max_length=20, 
-        choices=PROGRAM_CHOICES, 
+        max_length=100, 
         blank=True, 
-        null=True
+        null=True,
+        help_text="Enter the program name"
     )
     location = models.CharField(max_length=100, blank=True)
     source = models.CharField(max_length=10, choices=SOURCE_CHOICES)
