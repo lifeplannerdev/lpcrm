@@ -20,4 +20,6 @@ urlpatterns = [
     path('update-document-status/', views.update_document_status, name='update_document_status'),
     path('update-processing-notes/', views.update_processing_notes, name='update_processing_notes'),
     path('reopen-lead/', views.reopen_lead, name='reopen_lead'),
+    path('all-leads/', views.all_leads, name='all_leads'),
+    path('delete-lead/<int:lead_id>/', views.delete_lead, name='delete_lead'),
 ]

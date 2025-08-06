@@ -578,17 +578,7 @@
               
               <!-- Program Column -->
               <td>
-                <select class="editable-select program-select" 
-                        data-lead-id="{{ lead.id }}"
-                        data-field="program">
-                  <option value="">-- Select --</option>
-                  {% for value, label in program_choices %}
-                    <option value="{{ value }}" 
-                            {% if lead.program == value %}selected{% endif %}>
-                      {{ label }}
-                    </option>
-                  {% endfor %}
-                </select>
+                <input type="text" class="program-input" data-lead-id="{{ lead.id }}" value="{{ lead.program|default:'' }}" placeholder="Enter program name" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
               </td>
               
               <!-- Assigned To Column -->
@@ -939,6 +929,22 @@
           console.error('Error forwarding lead:', error.response?.data || error);
           alert('Failed to forward lead. Please try again.');
         });
+    });
+
+    // Update program via AJAX (now for text input)
+    document.querySelectorAll('.program-input').forEach(input => {
+      input.dataset.originalValue = input.value;
+      input.addEventListener('change', function() {
+        const leadId = this.dataset.leadId;
+        const newProgram = this.value;
+        handleFieldUpdate(this); // This will use the generic handler
+        // Update the data attribute for search/stats
+        const row = this.closest('tr');
+        row.dataset.program = newProgram.toLowerCase();
+        if (statsDropdown.classList.contains('active')) {
+          updateStats();
+        }
+      });
     });
 
     // Store initial values for selects

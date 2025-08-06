@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -14,6 +14,7 @@ from django.views.generic import TemplateView
 from django.utils.decorators import method_decorator
 from django.utils import timezone
 from leads.models import ProcessingUpdate
+from django.db.models import Q
 
 
 
@@ -159,7 +160,6 @@ def operations_dashboard(request):
         'admission_managers': admission_managers,
         'priority_choices': Lead.PRIORITY_CHOICES,
         'status_choices': Lead.STATUS_CHOICES,
-        'program_choices': Lead.PROGRAM_CHOICES,
     }
     return render(request, 'accounts/operations.html', context)
 
@@ -235,11 +235,7 @@ def update_lead_field(request):
                 return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
                 
         elif field == 'program':
-            if value in dict(Lead.PROGRAM_CHOICES).keys() or value == '':
-                lead.program = value if value != '' else None
-            else:
-                return JsonResponse({'status': 'error', 'message': 'Invalid program'}, status=400)
-                
+            lead.program = value if value != '' else None
         elif field == 'assigned_to':
             if value == '':
                 # Unassign the lead
@@ -552,3 +548,39 @@ def reopen_lead(request):
         return JsonResponse({'status': 'error', 'message': 'Lead not found'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)    
+
+@login_required
+def all_leads(request):
+    query = request.GET.get('q', '')
+    if query:
+        leads = Lead.objects.filter(
+            Q(name__icontains=query) |
+            Q(phone__icontains=query) |
+            Q(email__icontains=query) |
+            Q(program__icontains=query) |
+            Q(status__icontains=query) |
+            Q(priority__icontains=query) |
+            Q(source__icontains=query)
+        ).order_by('-created_at')
+    else:
+        leads = Lead.objects.all().order_by('-created_at')
+
+    if request.method == 'POST':
+        form = LeadForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('accounts:all_leads')
+    else:
+        form = LeadForm()
+
+    return render(request, 'accounts/all_leads.html', {
+        'leads': leads,
+        'form': form,
+        'query': query,
+    }) 
+
+@login_required
+def delete_lead(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    lead.delete()
+    return redirect('accounts:all_leads') 

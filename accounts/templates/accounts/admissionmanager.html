@@ -472,16 +472,7 @@
                   </select>
                 </td>
                 <td>
-                  <select class="program-select" data-lead-id="{{ lead.id }}">
-                    <option value="">-- Select --</option>
-                    <option value="GCC" {% if lead.program == 'GCC' %}selected{% endif %}>GCC</option>
-                    <option value="HOTEL_MANAGEMENT" {% if lead.program == 'HOTEL_MANAGEMENT' %}selected{% endif %}>Hotel Management</option>
-                    <option value="NURSING" {% if lead.program == 'NURSING' %}selected{% endif %}>Nursing</option>
-                    <option value="BACHELORS" {% if lead.program == 'BACHELORS' %}selected{% endif %}>Bachelors</option>
-                    <option value="MASTERS" {% if lead.program == 'MASTERS' %}selected{% endif %}>Masters</option>
-                    <option value="ESTEP" {% if lead.program == 'ESTEP' %}selected{% endif %}>E-step</option>
-                    <option value="PVP" {% if lead.program == 'PVP' %}selected{% endif %}>PVP</option>
-                  </select>
+                  <input type="text" class="program-input" data-lead-id="{{ lead.id }}" value="{{ lead.program|default:'' }}" placeholder="Enter program name" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
                 </td>
                 <td>
                   <select class="priority-select" data-lead-id="{{ lead.id }}">
@@ -516,16 +507,7 @@
                   </select>
                 </td>
                 <td>
-                  <select class="program-select" data-lead-id="{{ lead.id }}">
-                    <option value="">-- Select --</option>
-                    <option value="GCC" {% if lead.program == 'GCC' %}selected{% endif %}>GCC</option>
-                    <option value="HOTEL_MANAGEMENT" {% if lead.program == 'HOTEL_MANAGEMENT' %}selected{% endif %}>Hotel Management</option>
-                    <option value="NURSING" {% if lead.program == 'NURSING' %}selected{% endif %}>Nursing</option>
-                    <option value="BACHELORS" {% if lead.program == 'BACHELORS' %}selected{% endif %}>Bachelors</option>
-                    <option value="MASTERS" {% if lead.program == 'MASTERS' %}selected{% endif %}>Masters</option>
-                    <option value="ESTEP" {% if lead.program == 'ESTEP' %}selected{% endif %}>E-step</option>
-                    <option value="PVP" {% if lead.program == 'PVP' %}selected{% endif %}>PVP</option>
-                  </select>
+                  <input type="text" class="program-input" data-lead-id="{{ lead.id }}" value="{{ lead.program|default:'' }}" placeholder="Enter program name" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
                 </td>
                 <td>
                   <select class="priority-select" data-lead-id="{{ lead.id }}">
@@ -560,16 +542,7 @@
                   </select>
                 </td>
                 <td>
-                  <select class="program-select" data-lead-id="{{ lead.id }}">
-                    <option value="">-- Select --</option>
-                    <option value="GCC" {% if lead.program == 'GCC' %}selected{% endif %}>GCC</option>
-                    <option value="HOTEL_MANAGEMENT" {% if lead.program == 'HOTEL_MANAGEMENT' %}selected{% endif %}>Hotel Management</option>
-                    <option value="NURSING" {% if lead.program == 'NURSING' %}selected{% endif %}>Nursing</option>
-                    <option value="BACHELORS" {% if lead.program == 'BACHELORS' %}selected{% endif %}>Bachelors</option>
-                    <option value="MASTERS" {% if lead.program == 'MASTERS' %}selected{% endif %}>Masters</option>
-                    <option value="ESTEP" {% if lead.program == 'ESTEP' %}selected{% endif %}>E-step</option>
-                    <option value="PVP" {% if lead.program == 'PVP' %}selected{% endif %}>PVP</option>
-                  </select>
+                  <input type="text" class="program-input" data-lead-id="{{ lead.id }}" value="{{ lead.program|default:'' }}" placeholder="Enter program name" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
                 </td>
                 <td>
                   <select class="priority-select" data-lead-id="{{ lead.id }}">
@@ -805,24 +778,20 @@
           });
       });
       
-      // Update program via AJAX
-      document.querySelectorAll('.program-select').forEach(select => {
-          select.dataset.originalValue = select.value;
-          select.addEventListener('change', function() {
+      // Update program via AJAX (now for text input)
+      document.querySelectorAll('.program-input').forEach(input => {
+        input.dataset.originalValue = input.value;
+        input.addEventListener('change', function() {
               const leadId = this.dataset.leadId;
               const newProgram = this.value;
-              
               handleUpdate('update_program', leadId, newProgram, () => {
                   this.dataset.originalValue = newProgram;
-                  
-                  // Update stats if dropdown is open
+            const row = this.closest('tr');
+            row.dataset.program = newProgram.toLowerCase();
                   if (statsDropdown.classList.contains('active')) {
                     updateStats();
                   }
-              }).catch(error => {
-                  console.error('Error updating program:', error.response?.data || error);
-                  this.value = this.dataset.originalValue;
-              });
+          });
           });
       });
 

@@ -48,12 +48,9 @@ def update_program(request, lead_id):
         data = json.loads(request.body)
         lead = Lead.objects.get(id=lead_id, assigned_to=request.user)
         new_program = data.get('program')
-        
-        if new_program in dict(Lead.PROGRAM_CHOICES).keys() or new_program == '':
-            lead.program = new_program if new_program != '' else None
-            lead.save()
-            return JsonResponse({'status': 'success'})
-        return JsonResponse({'status': 'error', 'message': 'Invalid program'}, status=400)
+        lead.program = new_program if new_program != '' else None
+        lead.save()
+        return JsonResponse({'status': 'success'})
     except Lead.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Lead not found'}, status=404)
     except json.JSONDecodeError:
