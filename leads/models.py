@@ -15,6 +15,7 @@ class Lead(models.Model):
         ('INSTAGRAM', 'Instagram'),
         ('WEBSITE', 'Website'),
         ('WALK_IN', 'Walk-in'),
+        ('AUTOMATION', 'automation'),
         ('OTHER', 'Other')
     ]
     
