@@ -27,7 +27,7 @@ class Lead(models.Model):
         ('REGISTERED', 'Registered')
     ]
     
-    # PROGRAM_CHOICES removed - now using CharField for free text input
+    
 
     PROCESSING_STATUS_CHOICES = [
         ('PENDING', 'Pending'),

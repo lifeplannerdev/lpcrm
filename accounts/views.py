@@ -552,10 +552,8 @@ def reopen_lead(request):
 @login_required
 def all_leads(request):
     query = request.GET.get('q', '')
-    leads = Lead.objects.all().order_by('-created_at')
-    
     if query:
-        leads = leads.filter(
+        leads = Lead.objects.filter(
             Q(name__icontains=query) |
             Q(phone__icontains=query) |
             Q(email__icontains=query) |
@@ -563,33 +561,81 @@ def all_leads(request):
             Q(status__icontains=query) |
             Q(priority__icontains=query) |
             Q(source__icontains=query)
-        )
+        ).order_by('-created_at')
+    else:
+        leads = Lead.objects.all().order_by('-created_at')
 
     if request.method == 'POST':
         form = LeadForm(request.POST)
         if form.is_valid():
             form.save()
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'status': 'success'})
             return redirect('accounts:all_leads')
     else:
         form = LeadForm()
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # Return just the table HTML for AJAX requests
-        table_html = render_to_string('accounts/_leads_table.html', {
-            'leads': leads
-        })
-        return JsonResponse({'table_html': table_html})
-    
     return render(request, 'accounts/all_leads.html', {
         'leads': leads,
         'form': form,
         'query': query,
-    })
+    }) 
 
 @login_required
 def delete_lead(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
     lead.delete()
     return redirect('accounts:all_leads') 
+
+@login_required
+@require_POST
+def update_lead_field(request):
+    """Update any lead field"""
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        field = data.get('field')
+        value = data.get('value')
+        
+        if not lead_id or not field:
+            return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
+            
+        lead = Lead.objects.get(id=lead_id)
+        
+        # Validate and update fields
+        if field == 'name':
+            if len(value) < 3:
+                return JsonResponse({'status': 'error', 'message': 'Name must be at least 3 characters'}, status=400)
+            lead.name = value
+            
+        elif field == 'phone':
+            if len(value) < 10:
+                return JsonResponse({'status': 'error', 'message': 'Phone must be at least 10 digits'}, status=400)
+            lead.phone = value
+            
+        elif field == 'priority':
+            if value not in dict(Lead.PRIORITY_CHOICES).keys():
+                return JsonResponse({'status': 'error', 'message': 'Invalid priority value'}, status=400)
+            lead.priority = value
+            
+        elif field == 'status':
+            if value not in dict(Lead.STATUS_CHOICES).keys():
+                return JsonResponse({'status': 'error', 'message': 'Invalid status value'}, status=400)
+            lead.status = value
+            
+        elif field == 'program':
+            lead.program = value if value != '' else None
+            
+        elif field == 'source':
+            if value not in dict(Lead.SOURCE_CHOICES).keys():
+                return JsonResponse({'status': 'error', 'message': 'Invalid source value'}, status=400)
+            lead.source = value
+            
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid field'}, status=400)
+            
+        lead.save()
+        return JsonResponse({'status': 'success'})
+        
+    except Lead.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Lead not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
