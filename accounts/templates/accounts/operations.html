@@ -102,6 +102,21 @@
       align-items: center;
       gap: 0.5rem;
     }
+    .add-leads-btn{
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-color: var(--border-color);
+    }
     .stats-btn {
       background: var(--bg-secondary);
       color: var(--text-primary);
@@ -468,6 +483,7 @@
       background: rgba(17, 17, 17, 0.95);
       filter: none !important; /* Ensure dropdown is never blurred */
     }
+    
   </style>
 </head>
 <body>
@@ -476,6 +492,10 @@
       <h1 class="dashboard-title">OPERATIONS DASHBOARD</h1>
       <div class="header-controls">
         <div class="stats-dropdown">
+          <button class="add-leads-btn" ><a href="{% url 'accounts:all_leads' %}"  style="margin-left: 0.5rem;">
+            <i class="fas fa-table"></i>
+            <span>View Leads</span>
+          </a></button>
           <button class="stats-btn" id="statsBtn">
             <i class="fas fa-chart-bar"></i>
             <span>Stats</span>
