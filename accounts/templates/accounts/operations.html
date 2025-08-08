@@ -547,6 +547,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Phone</th>
+                    <th>Source</th>
               <th>Priority</th>
                     <th>Status</th>
                     <th>Program</th>
@@ -559,12 +560,14 @@
             <tr class="table-row" 
                 data-name="{{ lead.name|lower }}"
                 data-phone="{{ lead.phone|lower }}"
+                data-source="{{ lead.source|lower }}"
                 data-program="{{ lead.get_program_display|lower|default:'' }}"
                 data-status="{{ lead.get_status_display|lower }}"
                 data-priority="{{ lead.get_priority_display|lower }}"
                 data-assigned="{{ lead.assigned_to.get_full_name|lower|default:'unassigned' }}">
                     <td>{{ lead.name }}</td>
                     <td>{{ lead.phone }}</td>
+                    <td>{{ lead.source }}</td>
               
               <!-- Priority Column -->
               <td>
