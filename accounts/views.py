@@ -629,6 +629,24 @@ def update_lead_field(request):
                 return JsonResponse({'status': 'error', 'message': 'Invalid source value'}, status=400)
             lead.source = value
             
+        elif field == 'assigned_to':
+            # Handle assignment to admission manager
+            if value == '' or value is None:
+                # Unassign the lead
+                lead.assigned_to = None
+                lead.assigned_date = None
+            else:
+                # Assign to specific manager
+                try:
+                    manager = User.objects.get(id=value, role='ADM_MANAGER', is_active=True)
+                    lead.assigned_to = manager
+                    # Set assignment date if not already set
+                    if not lead.assigned_date:
+                        from django.utils import timezone
+                        lead.assigned_date = timezone.now()
+                except User.DoesNotExist:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid admission manager'}, status=400)
+            
         else:
             return JsonResponse({'status': 'error', 'message': 'Invalid field'}, status=400)
             
