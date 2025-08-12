@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.landing_page, name='landing'),  # Handles GET requests
     path('quick-login/', views.quick_login, name='quick_login'),  # Handles POST
     path('dashboard/', views.admission_dashboard, name='admission_dashboard'),
+    path('executive-dashboard/', views.admission_executive_dashboard, name='admission_executive_dashboard'),
     path('media/', views.media_dashboard, name='media_dashboard'),
     path('operations/', views.operations_dashboard, name='operations_dashboard'),
     path('assign-lead/', views.assign_lead, name='assign_lead'),
@@ -22,4 +23,6 @@ urlpatterns = [
     path('reopen-lead/', views.reopen_lead, name='reopen_lead'),
     path('all-leads/', views.all_leads, name='all_leads'),
     path('delete-lead/<int:lead_id>/', views.delete_lead, name='delete_lead'),
+    path('leads/assign-to-executive/', views.assign_lead_to_executive, name='assign_to_executive'),
+    
 ]

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admission Dashboard - LP CRM</title>
+  <title>Admission Executive Dashboard - LP CRM</title>
   <!-- Basecoat CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/basecoat.cdn.min.css">
   <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/all.min.js" defer></script>
@@ -321,7 +321,6 @@
     .bc-table th:nth-child(6), .bc-table td:nth-child(6) { width: 12%; } /* Status */
     .bc-table th:nth-child(7), .bc-table td:nth-child(7) { width: 12%; } /* Program */
     .bc-table th:nth-child(8), .bc-table td:nth-child(8) { width: 9%; } /* Priority */
-    .bc-table th:nth-child(9), .bc-table td:nth-child(9) { width: 12%; } /* Assigned Executive */
     
     .priority-select, .status-select, .program-select {
       background: var(--bg-secondary);
@@ -403,31 +402,12 @@
       .stats-dropdown-content { width: 280px; padding: 1rem; }
       .stats-grid { grid-template-columns: 1fr; }
     }
-
-    .assign-select {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0.35rem 1.5rem 0.35rem 0.7rem;
-  font-size: 1rem;
-  appearance: none;
-  cursor: pointer;
-  transition: border 0.18s, background 0.18s;
-  width: 100%;
-}
-
-.assign-select:focus {
-  outline: 2px solid var(--accent);
-  border-color: var(--accent);
-  background: var(--card-bg);
-}
   </style>
 </head>
 <body>
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <h1 class="dashboard-title">ADMISSION DASHBOARD</h1>
+      <h1 class="dashboard-title">ADMISSION EXECUTIVE DASHBOARD</h1>
       <div class="header-controls">
         <div class="stats-dropdown">
           <button class="add-leads-btn" ><a href="{% url 'accounts:all_leads' %}"  style="margin-left: 0.5rem;">
@@ -485,7 +465,6 @@
               <th>Status</th>
               <th>Program</th>
               <th>Priority</th>
-              <th>Assigned</th>
             </tr>
           </thead>
           <tbody id="leads-table-body">
@@ -521,17 +500,6 @@
                     <option value="LOW" {% if lead.priority == 'LOW' %}selected{% endif %}>Low 🐢</option>
                   </select>
                 </td>
-                <td>
-  <select class="assign-select" data-lead-id="{{ lead.id }}">
-    <option value="">Unassigned</option>
-    {% for executive in admission_executives %}
-      <option value="{{ executive.id }}" 
-              {% if lead.assigned_to == executive %}selected{% endif %}>
-        {{ executive.get_full_name }} (Executive)
-      </option>
-    {% endfor %}
-  </select>
-</td>
               </tr>
             {% endfor %}
             
@@ -567,17 +535,6 @@
                     <option value="LOW" {% if lead.priority == 'LOW' %}selected{% endif %}>Low 🐢</option>
                   </select>
                 </td>
-                <td>
-  <select class="assign-select" data-lead-id="{{ lead.id }}">
-    <option value="">Unassigned</option>
-    {% for executive in admission_executives %}
-      <option value="{{ executive.id }}" 
-              {% if lead.assigned_to == executive %}selected{% endif %}>
-        {{ executive.get_full_name }} (Executive)
-      </option>
-    {% endfor %}
-  </select>
-</td>
               </tr>
             {% endfor %}
             
@@ -613,89 +570,13 @@
                     <option value="LOW" {% if lead.priority == 'LOW' %}selected{% endif %}>Low 🐢</option>
                   </select>
                 </td>
-                <td>
-  <select class="assign-select" data-lead-id="{{ lead.id }}">
-    <option value="">Unassigned</option>
-    {% for executive in admission_executives %}
-      <option value="{{ executive.id }}" 
-              {% if lead.assigned_to == executive %}selected{% endif %}>
-        {{ executive.get_full_name }} (Executive)
-      </option>
-    {% endfor %}
-  </select>
-</td>
               </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
     </div>
-<script>
-  // Handle assignment to executives
-document.querySelectorAll('.assign-select').forEach(select => {
-  select.addEventListener('change', function() {
-    const leadId = this.dataset.leadId;
-    const executiveId = this.value;
-    
-    axios.post('{% url "accounts:assign_to_executive" %}', 
-      JSON.stringify({
-        lead_id: leadId,
-        executive_id: executiveId
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRFToken': getCookie('csrftoken') // Add CSRF token
-        }
-      }
-    )
-    .then(response => {
-      console.log('Lead assigned successfully');
-      // Update the row's data attribute for search
-      const row = this.closest('tr');
-      if (executiveId) {
-        const selectedOption = this.options[this.selectedIndex];
-        row.dataset.assigned = selectedOption.text.toLowerCase();
-      } else {
-        row.dataset.assigned = 'unassigned';
-      }
-      
-      // Optional: Remove row if unassigned
-      if (!executiveId) {
-        row.remove();
-      }
-    })
-    .catch(error => {
-      console.error('Error assigning lead:', error.response?.data || error);
-      // Show more detailed error message
-      const errorMsg = error.response?.data?.message || 'Failed to assign lead. Please try again.';
-      alert(errorMsg);
-      // Revert the select to its previous value
-      this.value = this.dataset.previousValue;
-    });
-  });
-  
-  // Store initial value
-  select.dataset.previousValue = select.value;
-});
 
-// Helper function to get CSRF token
-function getCookie(name) {
-  let cookieValue = null;
-  if (document.cookie && document.cookie !== '') {
-    const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
-        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-        break;
-      }
-    }
-  }
-  return cookieValue;
-}
-</script>
     <script>
       // Configure axios properly
       axios.defaults.xsrfCookieName = 'csrftoken';

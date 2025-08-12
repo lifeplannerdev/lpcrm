@@ -108,7 +108,7 @@ class Lead(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        limit_choices_to={'role': 'ADM_MANAGER'},
+        limit_choices_to={'role__in': [ 'ADM_MANAGER', 'ADM_EXEC' ] },
         related_name='assigned_leads'
     )
     assigned_date = models.DateTimeField(null=True, blank=True)

@@ -62,6 +62,8 @@ def quick_login(request):
             # Role-based redirection - UPDATED THIS SECTION
             if role == 'ADM_MANAGER':
                 return redirect('accounts:admission_dashboard')
+            elif role == 'ADM_EXEC':
+                return redirect('accounts:admission_executive_dashboard')
             elif role == 'MEDIA':
                 return redirect('accounts:media_dashboard') 
             elif role == 'OPS':
@@ -98,13 +100,108 @@ def is_admission_manager(user):
 def admission_dashboard(request):
     """Admission manager dashboard view"""
     leads = Lead.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
+    admission_executives = User.objects.filter(role='ADM_EXEC', is_active=True)
     
     context = {
         'high_priority_leads': leads.filter(priority='HIGH'),
         'medium_priority_leads': leads.filter(priority='MEDIUM'),
         'low_priority_leads': leads.filter(priority='LOW'),
+        'admission_executives':admission_executives,
     }
     return render(request, 'accounts/admissionmanager.html', context)
+
+
+def is_admission_executive(user):
+    """Check if user has admission executive role"""
+    return user.role == 'ADM_EXEC'
+
+@login_required
+@user_passes_test(is_admission_executive)
+def admission_executive_dashboard(request):
+    """Admission executive dashboard view"""
+    # Get leads assigned to this executive
+    leads = Lead.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
+    
+    # Split by priority
+    high_priority_leads = leads.filter(priority='HIGH')
+    medium_priority_leads = leads.filter(priority='MEDIUM')
+    low_priority_leads = leads.filter(priority='LOW')
+    
+    context = {
+        'high_priority_leads': high_priority_leads,
+        'medium_priority_leads': medium_priority_leads,
+        'low_priority_leads': low_priority_leads,
+    }
+    return render(request, 'accounts/admissionexecutive.html', context) 
+
+
+@login_required
+@require_POST
+def assign_lead_to_executive(request):
+    """Assign lead to admission executive"""
+    try:
+        data = json.loads(request.body)
+        lead_id = data.get('lead_id')
+        executive_id = data.get('executive_id')
+        
+        if not lead_id:
+            return JsonResponse({'status': 'error', 'message': 'Lead ID is required'}, status=400)
+            
+        lead = Lead.objects.get(id=lead_id)
+        user = request.user
+        
+        # Verify permissions
+        if not (user.role in ['ADM_MANAGER', 'OPS', 'ADMIN'] or 
+                lead.assigned_to == user):
+            return JsonResponse(
+                {'status': 'error', 'message': 'Permission denied'}, 
+                status=403
+            )
+        
+        if executive_id:
+            try:
+                executive = User.objects.get(
+                    id=executive_id, 
+                    role='ADM_EXEC', 
+                    is_active=True
+                )
+                lead.assigned_to = executive
+                lead.assigned_date = timezone.now()
+            except User.DoesNotExist:
+                return JsonResponse(
+                    {'status': 'error', 'message': 'Invalid executive'}, 
+                    status=400
+                )
+        else:
+            # Unassign the lead
+            lead.assigned_to = None
+            lead.assigned_date = None
+            
+        lead.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'assigned_to': {
+                'id': lead.assigned_to.id if lead.assigned_to else None,
+                'name': lead.assigned_to.get_full_name() if lead.assigned_to else 'Unassigned'
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse(
+            {'status': 'error', 'message': 'Invalid JSON data'}, 
+            status=400
+        )
+    except Lead.DoesNotExist:
+        return JsonResponse(
+            {'status': 'error', 'message': 'Lead not found'}, 
+            status=404
+        )
+    except Exception as e:
+        return JsonResponse(
+            {'status': 'error', 'message': str(e)}, 
+            status=500
+        )
 
 
 def is_media_member(user):
@@ -141,23 +238,23 @@ def is_operations(user):
     """Check if user is operations manager"""
     return user.role == 'OPS'
 
-@login_required
-@user_passes_test(is_operations)
 def operations_dashboard(request):
     """Operations manager dashboard view"""
-    # Get all unassigned leads, leads assigned to admission managers, and rejected leads
+    # Get all unassigned leads, leads assigned to admission managers/executives, and rejected leads
     leads = Lead.objects.filter(
         models.Q(assigned_to__isnull=True) | 
-        models.Q(assigned_to__role='ADM_MANAGER') |
+        models.Q(assigned_to__role__in=['ADM_MANAGER', 'ADM_EXEC']) |
         models.Q(processing_status='REJECTED')
     ).order_by('-created_at')
     
-    # Get all admission managers for the assignment dropdown
+    # Get all admission managers and executives for the assignment dropdown
     admission_managers = User.objects.filter(role='ADM_MANAGER', is_active=True)
+    admission_executives = User.objects.filter(role='ADM_EXEC', is_active=True)
     
     context = {
         'leads': leads,
         'admission_managers': admission_managers,
+        'admission_executives': admission_executives,
         'priority_choices': Lead.PRIORITY_CHOICES,
         'status_choices': Lead.STATUS_CHOICES,
     }
@@ -584,11 +681,10 @@ def delete_lead(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
     lead.delete()
     return redirect('accounts:all_leads') 
-
 @login_required
 @require_POST
 def update_lead_field(request):
-    """Update any lead field"""
+    """Update any lead field with enhanced assignment handling"""
     try:
         data = json.loads(request.body)
         lead_id = data.get('lead_id')
@@ -599,6 +695,7 @@ def update_lead_field(request):
             return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
             
         lead = Lead.objects.get(id=lead_id)
+        user = request.user
         
         # Validate and update fields
         if field == 'name':
@@ -621,6 +718,11 @@ def update_lead_field(request):
                 return JsonResponse({'status': 'error', 'message': 'Invalid status value'}, status=400)
             lead.status = value
             
+            # Update registration date if status changed to REGISTERED
+            if value == 'REGISTERED' and not lead.registration_date:
+                from django.utils import timezone
+                lead.registration_date = timezone.now()
+            
         elif field == 'program':
             lead.program = value if value != '' else None
             
@@ -630,28 +732,62 @@ def update_lead_field(request):
             lead.source = value
             
         elif field == 'assigned_to':
-            # Handle assignment to admission manager
+            # Handle assignment changes
             if value == '' or value is None:
                 # Unassign the lead
                 lead.assigned_to = None
                 lead.assigned_date = None
             else:
-                # Assign to specific manager
                 try:
-                    manager = User.objects.get(id=value, role='ADM_MANAGER', is_active=True)
-                    lead.assigned_to = manager
+                    # Check if assigning to manager or executive
+                    assignee = User.objects.get(id=value, is_active=True)
+                    
+                    # Validate assignment based on user role
+                    if assignee.role == 'ADM_MANAGER':
+                        # Only operations or admins can assign to managers
+                        if user.role not in ['OPS', 'ADMIN']:
+                            return JsonResponse(
+                                {'status': 'error', 'message': 'Only operations can assign to managers'}, 
+                                status=403
+                            )
+                    elif assignee.role == 'ADM_EXEC':
+                        # Only managers or operations can assign to executives
+                        if user.role not in ['ADM_MANAGER', 'OPS', 'ADMIN']:
+                            return JsonResponse(
+                                {'status': 'error', 'message': 'Only managers can assign to executives'}, 
+                                status=403
+                            )
+                    else:
+                        return JsonResponse(
+                            {'status': 'error', 'message': 'Can only assign to admission staff'}, 
+                            status=400
+                        )
+                    
+                    lead.assigned_to = assignee
                     # Set assignment date if not already set
                     if not lead.assigned_date:
                         from django.utils import timezone
                         lead.assigned_date = timezone.now()
+                        
                 except User.DoesNotExist:
-                    return JsonResponse({'status': 'error', 'message': 'Invalid admission manager'}, status=400)
+                    return JsonResponse({'status': 'error', 'message': 'Invalid user assignment'}, status=400)
             
         else:
             return JsonResponse({'status': 'error', 'message': 'Invalid field'}, status=400)
             
         lead.save()
-        return JsonResponse({'status': 'success'})
+        
+        # Return additional data if needed
+        response_data = {
+            'status': 'success',
+            'assigned_to': {
+                'id': lead.assigned_to.id if lead.assigned_to else None,
+                'name': lead.assigned_to.get_full_name() if lead.assigned_to else 'Unassigned',
+                'role': lead.assigned_to.role if lead.assigned_to else None
+            } if field == 'assigned_to' else None
+        }
+        
+        return JsonResponse(response_data)
         
     except Lead.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Lead not found'}, status=404)

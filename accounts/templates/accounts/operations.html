@@ -606,18 +606,32 @@
               
               <!-- Assigned To Column -->
               <td>
-                <select class="editable-select assign-select" 
-                        data-lead-id="{{ lead.id }}"
-                        data-field="assigned_to">
-                  <option value="">Unassigned</option>
-                                {% for manager in admission_managers %}
-                    <option value="{{ manager.id }}" 
-                            {% if lead.assigned_to == manager %}selected{% endif %}>
-                      {{ manager.get_full_name }}
-                    </option>
-                                {% endfor %}
-                            </select>
-                    </td>
+  <select class="editable-select assign-select" 
+          data-lead-id="{{ lead.id }}"
+          data-field="assigned_to">
+    <option value="">Unassigned</option>
+    
+    <!-- Admission Managers Group -->
+    <optgroup label="Admission Managers">
+      {% for manager in admission_managers %}
+        <option value="{{ manager.id }}" 
+                {% if lead.assigned_to == manager %}selected{% endif %}>
+          {{ manager.get_full_name }} (Manager)
+        </option>
+      {% endfor %}
+    </optgroup>
+    
+    <!-- Admission Executives Group -->
+    <optgroup label="Admission Executives">
+      {% for executive in admission_executives %}
+        <option value="{{ executive.id }}" 
+                {% if lead.assigned_to == executive %}selected{% endif %}>
+          {{ executive.get_full_name }} (Executive)
+        </option>
+      {% endfor %}
+    </optgroup>
+  </select>
+</td>
               
               <!-- Actions Column -->
                     <td>
