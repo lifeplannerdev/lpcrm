@@ -402,12 +402,29 @@
       .stats-dropdown-content { width: 280px; padding: 1rem; }
       .stats-grid { grid-template-columns: 1fr; }
     }
+
+    .remarks-input {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  width: 100%;
+  transition: border 0.2s;
+}
+
+.remarks-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
   </style>
 </head>
 <body>
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <h1 class="dashboard-title">ADMISSION EXECUTIVE DASHBOARD</h1>
+      <h1 class="dashboard-title">AE DASHBOARD</h1>
       <div class="header-controls">
         <div class="stats-dropdown">
           <button class="add-leads-btn" ><a href="{% url 'accounts:all_leads' %}"  style="margin-left: 0.5rem;">
@@ -460,7 +477,7 @@
               <th>Name</th>
               <th>Phone</th>
               <th>Email</th>
-              <th>Location</th>
+              <th>Remarks</th>
               <th>Source</th>
               <th>Status</th>
               <th>Program</th>
@@ -478,7 +495,19 @@
                 <td>{{ lead.name }}</td>
                 <td>{{ lead.phone }}</td>
                 <td>{{ lead.email|default:"-" }}</td>
-                <td>{{ lead.location|default:"-" }}</td>
+                <td>
+  <input type="text" class="remarks-input" 
+         data-lead-id="{{ lead.id }}" 
+         value="{{ lead.remarks|default:'' }}" 
+         placeholder="Add remarks"
+         style="width: 100%; 
+                background: var(--bg-secondary); 
+                color: var(--text-primary); 
+                border: 1px solid var(--border-color); 
+                border-radius: 8px; 
+                padding: 0.35rem 0.7rem; 
+                font-size: 1rem;" />
+</td>
                 <td>{{ lead.get_source_display }}</td>
                 <td>
                   <select class="status-select" data-lead-id="{{ lead.id }}">
@@ -513,7 +542,19 @@
                 <td>{{ lead.name }}</td>
                 <td>{{ lead.phone }}</td>
                 <td>{{ lead.email|default:"-" }}</td>
-                <td>{{ lead.location|default:"-" }}</td>
+                <td>
+  <input type="text" class="remarks-input" 
+         data-lead-id="{{ lead.id }}" 
+         value="{{ lead.remarks|default:'' }}" 
+         placeholder="Add remarks"
+         style="width: 100%; 
+                background: var(--bg-secondary); 
+                color: var(--text-primary); 
+                border: 1px solid var(--border-color); 
+                border-radius: 8px; 
+                padding: 0.35rem 0.7rem; 
+                font-size: 1rem;" />
+</td>
                 <td>{{ lead.get_source_display }}</td>
                 <td>
                   <select class="status-select" data-lead-id="{{ lead.id }}">
@@ -548,7 +589,19 @@
                 <td>{{ lead.name }}</td>
                 <td>{{ lead.phone }}</td>
                 <td>{{ lead.email|default:"-" }}</td>
-                <td>{{ lead.location|default:"-" }}</td>
+                <td>
+  <input type="text" class="remarks-input" 
+         data-lead-id="{{ lead.id }}" 
+         value="{{ lead.remarks|default:'' }}" 
+         placeholder="Add remarks"
+         style="width: 100%; 
+                background: var(--bg-secondary); 
+                color: var(--text-primary); 
+                border: 1px solid var(--border-color); 
+                border-radius: 8px; 
+                padding: 0.35rem 0.7rem; 
+                font-size: 1rem;" />
+</td>
                 <td>{{ lead.get_source_display }}</td>
                 <td>
                   <select class="status-select" data-lead-id="{{ lead.id }}">
@@ -576,7 +629,39 @@
         </table>
       </div>
     </div>
-
+<script>
+  // Handle remarks updates
+document.querySelectorAll('.remarks-input').forEach(input => {
+  input.dataset.originalValue = input.value;
+  input.addEventListener('change', function() {
+    const leadId = this.dataset.leadId;
+    const remarks = this.value;
+    
+    axios.post('{% url "accounts:update_lead_field" %}', 
+      JSON.stringify({
+        lead_id: leadId,
+        field: 'remarks',
+        value: remarks
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      }
+    )
+    .then(response => {
+      console.log('Remarks updated successfully');
+      this.dataset.originalValue = remarks;
+    })
+    .catch(error => {
+      console.error('Error updating remarks:', error.response?.data || error);
+      alert('Failed to update remarks. Please try again.');
+      this.value = this.dataset.originalValue;
+    });
+  });
+});
+</script>
     <script>
       // Configure axios properly
       axios.defaults.xsrfCookieName = 'csrftoken';

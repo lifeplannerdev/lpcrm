@@ -730,6 +730,9 @@ def update_lead_field(request):
             if value not in dict(Lead.SOURCE_CHOICES).keys():
                 return JsonResponse({'status': 'error', 'message': 'Invalid source value'}, status=400)
             lead.source = value
+
+        elif field == 'remarks':
+            lead.remarks = value if value != '' else None    
             
         elif field == 'assigned_to':
             # Handle assignment changes

@@ -73,6 +73,11 @@ class Lead(models.Model):
         null=True,
         help_text="Enter the program name"
     )
+    remarks = models.TextField(
+    blank=True,
+    null=True,
+    help_text="Additional notes or comments about the lead"
+    )
     location = models.CharField(max_length=100, blank=True)
     source = models.CharField(max_length=10, choices=SOURCE_CHOICES)
     custom_source = models.CharField(max_length=50, blank=True)
