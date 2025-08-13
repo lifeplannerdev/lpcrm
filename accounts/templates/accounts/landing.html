@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LP CRM</title>
+    <!-- Basecoat CSS + JS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/basecoat.cdn.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/all.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/toast.min.js" defer></script>
+
+
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --card-bg: #111111;
+            --border-color: #1f1f1f;
+            --border-hover: #333333;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-tertiary: #71717a;
+            --accent: #ffffff;
+            --accent-hover: #f4f4f5;
+            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --shadow-small: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: var(--bg-primary);
+            background-image: 
+                radial-gradient(circle at 25% 25%, #1f1f1f 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, #1a1a1a 0%, transparent 50%);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 4rem 2rem;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .header h1 {
+            font-size: clamp(2rem, 3vw, 3rem);
+            font-weight: bold;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+        
+        .header p {
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+        
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-large);
+        }
+        
+        .card:hover::before {
+            opacity: 1;
+        }
+        
+        .card:active {
+            transform: translateY(0);
+        }
+        
+        .card-content {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, rgba(0, 140, 255, 0.15) 0%, rgba(0, 34, 255, 0.15) 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            transition: transform 0.2s ease;
+        }
+        
+        .card:hover .card-icon {
+            transform: scale(1.05);
+        }
+        
+        .card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+        
+        .card p {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-weight: 400;
+        }
+        
+        /* Admin Badge Styles */
+        .admin-badge {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 100;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .admin-badge-content {
+            background: linear-gradient(135deg, rgba(0, 140, 255, 0.15) 0%, rgba(0, 34, 255, 0.15) 100%);
+            border: 1px solid rgba(38, 0, 255, 0.3);
+            border-radius: 50px;
+            padding: 0.75rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1);
+        }
+        
+        .admin-icon {
+            font-size: 1.25rem;
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
+            margin-right: 0.5rem;
+        }
+        
+        .admin-badge-content span {
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1.25rem;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(12px);
+            animation: fadeIn 0.2s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .modal-content {
+            background: var(--card-bg);
+            margin: 10vh auto;
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 440px;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-large);
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .modal-header h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+        
+        .modal-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: var(--text-tertiary);
+        }
+        
+        .btn {
+            padding: 0.875rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            color: var(--bg-primary);
+            box-shadow: var(--shadow-small);
+        }
+        
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            color: var(--text-primary);
+            border-color: var(--border-hover);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 2rem;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 2rem 1rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .modal-content {
+                margin: 5vh auto;
+                padding: 2rem;
+                width: 95%;
+            }
+            
+            .admin-badge {
+                top: 1rem;
+                right: 1rem;
+            }
+            
+            .admin-badge-content {
+                padding: 0.5rem 1rem;
+                font-size: 0.8rem;
+            }
+            
+            .admin-icon {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Loading state */
+        .btn.loading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        .btn.loading::after {
+            content: '';
+            width: 16px;
+            height: 16px;
+            margin-left: 8px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+       
+    </style>
+</head>
+<body>
+   
+
+    <div class="container">
+        <!-- Admin Badge -->
+        <div class="admin-badge" onclick="window.location='/admin';">
+            <div class="admin-badge-content">
+                <div class="admin-icon">
+                    <i class="fa-solid fa-user-tie"></i>
+                </div>
+                <span>Admins</span>
+            </div>
+        </div>
+        
+        <div class="header">
+            <h1>LIFE PLANNER CRM</h1>
+            <p>Select your role to access the system</p>
+        </div>
+        
+        <div class="grid">
+            <!-- Operations Card -->
+            <div class="card" onclick="openModal('OPS')">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fa-solid fa-gear" style="color: #ffffff;"></i>
+                    </div>
+                    <h3>Operations</h3>
+                    <p>System administration and support</p>
+                </div>
+            </div>
+
+            <!-- Admission Manager Card -->
+            <div class="card" onclick="openModal('ADM_MANAGER')">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fa-solid fa-people-arrows" style="color: #ffffff;"></i>
+                    </div>
+                    <h3>Admission Manager</h3>
+                    <p>Lead management and admissions</p>
+                    
+                </div>
+            </div>
+
+            <!-- Admission Executive Card -->
+            <div class="card" onclick="openModal('ADM_EXEC')">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fa-solid fa-people-group" style="color: #ffffff;"></i>
+                    </div>
+                    <h3>Admission Executive</h3>
+                    <p>Student enrollment and follow-up</p>
+                    <!-- <p style="color: red;">No Access</p> -->
+                </div>
+            </div>
+
+            <!-- Media Team Card -->
+            <div class="card" onclick="openModal('MEDIA')">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fa-solid fa-photo-film" style="color: #ffffff;"></i>
+                    </div>
+                    <h3>Media Team</h3>
+                    <p>Content creation and marketing</p>
+                </div>
+            </div>
+
+            <!-- Trainers Card -->
+            <div class="card" onclick="openModal('TRAINER')">
+                <div class="card-content">
+                    <div class="card-icon">
+                       <i class="fa-solid fa-graduation-cap" style="color: #ffffff;"></i>
+                    </div>
+                    <h3>Trainers</h3>
+                    <p>Session management and delivery</p>
+                </div>
+            </div>
+
+            <!-- Processing Executive Card -->
+            <div class="card" onclick="openModal('PROCESSING')">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fa-brands fa-cc-visa" style="color: #ffffff;"></i>
+                    </div>
+                    <h3>Processing Executive</h3>
+                    <p>Document verification and processing</p>
+                </div>
+            </div>
+        </div>
+    </div>
+   
+    <!-- Password Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalRoleTitle">Authentication Required</h3>
+                <div class="modal-subtitle">Enter your credentials to continue</div>
+            </div>
+            <form method="post" action="{% url 'accounts:quick_login' %}" id="loginForm">
+                {% csrf_token %}
+                <input type="hidden" name="role" id="modalRoleInput">
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        Sign In
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        
+
+        // Modal functions
+        function openModal(role) {
+
+            const roleNames = {
+                'OPS': 'Operations',
+                'ADM_MANAGER': 'Admission Manager',
+                'ADM_EXECUTIVE': 'Admission Executive',
+                'MEDIA': 'Media Team',
+                'TRAINER': 'Trainer',
+                'PROCESSING': 'Processing Executive'
+            };
+            
+            document.getElementById('modalRoleInput').value = role;
+            document.getElementById('modalRoleTitle').textContent = `Sign in as ${roleNames[role]}`;
+            document.getElementById('loginModal').style.display = 'block';
+            
+            // Focus on password input
+            setTimeout(() => {
+                document.getElementById('password').focus();
+            }, 300);
+        }
+        
+        function closeModal() {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('loginForm').reset();
+            document.getElementById('submitBtn').classList.remove('loading');
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('loginModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+        
+        // Handle form submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.classList.add('loading');
+            submitBtn.textContent = 'Signing in...';
+            
+            // Example: Show a loading toast
+            if (window.showToast) {
+                window.showToast('Authenticating...', 'info');
+            }
+        });
+        
+        // Handle escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+      
+        
+    </script>
+</body>
+</html>

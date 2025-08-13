@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student List - LP CRM</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --card-bg: #111111;
+      --border-color: #1f1f1f;
+      --border-hover: #333333;
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #71717a;
+      --accent: #ffffff;
+      --accent-hover: #f4f4f5;
+      --shadow-small: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      background: var(--bg-primary);
+      background-image: 
+        radial-gradient(circle at 25% 25%, #1f1f1f 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, #1a1a1a 0%, transparent 50%);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh; line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .dashboard-header {
+      margin-bottom: 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .dashboard-title {
+      font-size: clamp(2rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #989595 0%, #45454a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, #f4f4f5 100%);
+      color: var(--bg-primary);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .btn-primary:hover, .btn-primary:active {
+      background: linear-gradient(135deg, #f4f4f5 0%, var(--accent) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .btn-secondary:hover, .btn-secondary:active {
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+    }
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+      transition: border 0.18s;
+      min-width: 300px;
+    }
+    .search-box:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+    .search-icon {
+      color: var(--text-secondary);
+      margin-right: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .search-input {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      flex: 1;
+      outline: none;
+    }
+    .search-input::placeholder {
+      color: var(--text-tertiary);
+    }
+    .clear-search {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: color 0.18s;
+    }
+    .clear-search:hover {
+      color: var(--text-primary);
+    }
+    .table-container {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-large);
+      margin-top: 1rem;
+    }
+    .table-scroll-vert {
+      max-height: 70vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      width: 100%;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .table-scroll-vert::-webkit-scrollbar {
+      display: none;
+    }
+    table {
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border-radius: 0;
+      border: none;
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    th, td {
+      background: transparent;
+      color: var(--text-primary);
+      border: none;
+      font-size: 1rem;
+      padding: 1.05rem 0.9rem;
+      vertical-align: middle;
+      transition: background 0.18s;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+    th {
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border-color);
+      transition: background 0.18s, box-shadow 0.18s;
+    }
+    tbody tr:last-child {
+      border-bottom: none;
+    }
+    tbody tr:hover {
+      background: rgba(255,255,255,0.03);
+      box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+    }
+    .status-active {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .status-paused {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .status-completed {
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(52, 211, 153, 0.1) 100%);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .status-dropped {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .batch-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%);
+      color: #6366f1;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    .table-row {
+      transition: opacity 0.3s ease;
+    }
+    .table-row.hidden {
+      display: none;
+    }
+    .no-results {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+    .stats-section {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow-large);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+    .stat-item {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1rem;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+    .stat-item:hover {
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    @media (max-width: 1200px) {
+      .dashboard-container { padding: 1rem; }
+      .dashboard-header { flex-direction: column; align-items: flex-start; }
+      .header-controls { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+      th, td { padding: 0.75rem 0.5rem; font-size: 0.9rem; }
+      .search-box { min-width: 250px; }
+    }
+    @media (max-width: 768px) {
+      .dashboard-container { padding: 0.5rem; }
+      .dashboard-header { gap: 0.6rem; }
+      th, td { padding: 0.5rem 0.3rem; font-size: 0.8rem; }
+      .table-scroll-vert { max-height: 60vh; }
+      .search-box { min-width: 200px; padding: 0.4rem; }
+      .search-input { font-size: 0.8rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .btn { padding: 0.5rem 1rem; font-size: 0.75rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">STUDENT LIST</h1>
+      <div class="header-controls">
+        <a href="{% url 'trainers:dashboard' %}" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i>
+          <span>Back to Dashboard</span>
+        </a>
+        <div class="search-container">
+          <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" placeholder="Search students by name, batch, or status..." class="search-input">
+            <button id="clearSearch" class="clear-search" style="display: none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Section -->
+    <div class="stats-section">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value">{{ total_students }}</div>
+          <div class="stat-label">Total Students</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ active_students }}</div>
+          <div class="stat-label">Active Students</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ paused_students }}</div>
+          <div class="stat-label">Paused Students</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value">{{ completed_students }}</div>
+          <div class="stat-label">Completed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Students Table -->
+    <div class="table-container">
+      <div class="table-scroll-vert">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Batch</th>
+              <th>Status</th>
+              <th>Admission Date</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in students %}
+            <tr class="table-row" 
+                data-name="{{ student.name|lower }}"
+                data-batch="{{ student.get_batch_display|lower }}"
+                data-status="{{ student.get_status_display|lower }}">
+              <td>{{ student.name }}</td>
+              <td>
+                <span class="batch-badge">{{ student.get_batch_display }}</span>
+              </td>
+              <td>
+                <span class="status-badge status-{{ student.status|lower }}">
+                  {{ student.get_status_display }}
+                </span>
+              </td>
+              <td>{{ student.admission_date|date:"M d, Y" }}</td>
+              <td>
+                {% if student.notes %}
+                  {{ student.notes|truncatechars:50 }}
+                {% else %}
+                  <span style="color: var(--text-tertiary); font-style: italic;">No notes</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="no-results">No students found</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Search functionality
+    const searchInput = document.getElementById('searchInput');
+    const clearSearchBtn = document.getElementById('clearSearch');
+    const tableRows = document.querySelectorAll('.table-row');
+    
+    function performSearch() {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      let visibleCount = 0;
+      
+      tableRows.forEach(row => {
+        const name = row.dataset.name;
+        const batch = row.dataset.batch;
+        const status = row.dataset.status;
+
+        if (name.includes(searchTerm) ||
+            batch.includes(searchTerm) ||
+            status.includes(searchTerm)) {
+          row.classList.remove('hidden');
+          visibleCount++;
+        } else {
+          row.classList.add('hidden');
+        }
+      });
+      
+      // Show/hide clear button
+      clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
+      
+      // Show no results message if needed
+      let noResultsRow = document.querySelector('.no-results-row');
+      if (visibleCount === 0 && searchTerm) {
+        if (!noResultsRow) {
+          noResultsRow = document.createElement('tr');
+          noResultsRow.className = 'no-results-row';
+          noResultsRow.innerHTML = '<td colspan="5" class="no-results">No students found matching your search</td>';
+          document.querySelector('tbody').appendChild(noResultsRow);
+        }
+      } else if (noResultsRow) {
+        noResultsRow.remove();
+      }
+    }
+    
+    // Search input event listener
+    searchInput.addEventListener('input', performSearch);
+    
+    // Clear search functionality
+    clearSearchBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      performSearch();
+      searchInput.focus();
+    });
+  </script>
+</body>
+</html> 

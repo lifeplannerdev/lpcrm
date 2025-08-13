@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admission Dashboard - LP CRM</title>
+  <!-- Basecoat CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/basecoat.cdn.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/all.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --card-bg: #111111;
+      --border-color: #1f1f1f;
+      --border-hover: #333333;
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #71717a;
+      --accent: #ffffff;
+      --accent-hover: #f4f4f5;
+      --shadow-small: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      background: var(--bg-primary);
+      background-image: 
+        radial-gradient(circle at 25% 25%, #1f1f1f 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, #1a1a1a 0%, transparent 50%);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh; line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .dashboard-header {
+      margin-bottom: 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .dashboard-title {
+      font-size: clamp(2rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #989595 0%, #45454a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .dashboard-stats {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 0.25rem;
+    }
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .stats-dropdown {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .add-leads-btn{
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-color: var(--border-color);
+    }
+    .stats-btn {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-color: var(--border-color);
+    }
+    .stats-btn:hover {
+      background: var(--border-hover);
+      border-color: var(--border-hover);
+    }
+    .stats-dropdown-content {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow-large);
+      z-index: 1000;
+      width: 350px;
+      padding: 1rem;
+      display: none;
+      backdrop-filter: blur(60px);
+      background: rgba(17, 17, 17, 0.95);
+      filter: none !important;
+    }
+    .stats-dropdown-content.active {
+      display: block;
+    }
+    .stats-section {
+      margin-bottom: 1.5rem;
+    }
+    .stats-section:last-child {
+      margin-bottom: 0;
+    }
+    .stats-section h4 {
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+    .stat-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+    .stat-item:hover {
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .stat-item .label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .stat-item .value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+    }
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+      transition: border 0.18s;
+      min-width: 300px;
+    }
+    .search-box:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+    .search-icon {
+      color: var(--text-secondary);
+      margin-right: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .search-input {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      flex: 1;
+      outline: none;
+    }
+    .search-input::placeholder {
+      color: var(--text-tertiary);
+    }
+    .clear-search {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: color 0.18s;
+    }
+    .clear-search:hover {
+      color: var(--text-primary);
+    }
+    .table-row {
+      transition: opacity 0.3s ease;
+    }
+    .table-row.hidden {
+      display: none;
+    }
+    .no-results {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+    /* Blur effect for background when dropdown is active */
+    .table-container.blurred {
+      filter: blur(10px);
+      transition: filter 0.3s ease;
+    }
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      position: relative;
+    }
+    table.bc-table {
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border-radius: 14px;
+      border: none;
+      box-shadow: 0 4px 32px 0 rgba(0,0,0,0.18);
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .bc-table th, .bc-table td {
+      background: transparent;
+      color: var(--text-primary);
+      border: none;
+      font-size: 1rem;
+      padding: 1.05rem 0.9rem;
+      vertical-align: middle;
+      transition: background 0.18s;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bc-table th {
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .bc-table-striped tbody tr:nth-child(odd) {
+      background: rgba(255,255,255,0.01);
+    }
+    .bc-table tbody tr {
+      border-bottom: 1px solid var(--border-color);
+      transition: background 0.18s, box-shadow 0.18s;
+    }
+    .bc-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    .bc-table tbody tr:hover {
+      background: rgba(255,255,255,0.03);
+      box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+      cursor: pointer;
+    }
+    .bc-table td {
+      border-top: none;
+      border-bottom: none;
+    }
+    /* Column width definitions */
+    .bc-table th:nth-child(1), .bc-table td:nth-child(1) { width: 15%; } /* Name */
+    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 16%; } /* Phone */
+    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 18%; } /* Email */
+    .bc-table th:nth-child(4), .bc-table td:nth-child(4) { width: 12%; } /* Location */
+    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 10%; } /* Source */
+    .bc-table th:nth-child(6), .bc-table td:nth-child(6) { width: 12%; } /* Status */
+    .bc-table th:nth-child(7), .bc-table td:nth-child(7) { width: 12%; } /* Program */
+    .bc-table th:nth-child(8), .bc-table td:nth-child(8) { width: 9%; } /* Priority */
+    .bc-table th:nth-child(9), .bc-table td:nth-child(9) { width: 12%; } /* Assigned Executive */
+    
+    .priority-select, .status-select, .program-select {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.35rem 1.5rem 0.35rem 0.7rem;
+      font-size: 1rem;
+      appearance: none;
+      cursor: pointer;
+      transition: border 0.18s, background 0.18s;
+      width: 100%;
+    }
+    .priority-select:focus, .status-select:focus, .program-select:focus {
+      outline: 2px solid var(--accent);
+      border-color: var(--accent);
+      background: var(--card-bg);
+    }
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      margin-right: 0.2rem;
+    }
+    .btn-contact {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+    .btn-contact:hover, .btn-contact:active {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+    .btn-notes {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+    }
+    .btn-notes:hover, .btn-notes:active {
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .table-scroll-vert {
+      max-height: 70vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      width: 100%;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .table-scroll-vert::-webkit-scrollbar {
+      display: none;
+    }
+    @media (max-width: 1200px) {
+      .dashboard-container { padding:1rem }
+      .dashboard-header { flex-direction: column; align-items: flex-start }
+      .header-controls { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+      .dashboard-stats { gap:1rem }
+      .bc-table th, .bc-table td { padding: 0.75rem 0.5rem; font-size: 0.9rem; }
+      .search-box { min-width: 250px; }
+      .stats-dropdown-content { width: 300px; }
+    }
+    @media (max-width: 768px) {
+      .dashboard-container { padding:0.5rem }
+      .dashboard-header { gap: 0.6rem }
+      .bc-table th, .bc-table td { padding: 0.5rem 0.3rem; font-size: 0.8rem; }
+      .table-scroll-vert { max-height: 60vh; }
+      .search-box { min-width: 200px; padding: 0.4rem; }
+      .search-input { font-size: 0.8rem; }
+      .stats-dropdown-content { width: 280px; padding: 1rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+    }
+
+    .assign-select {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.35rem 1.5rem 0.35rem 0.7rem;
+  font-size: 1rem;
+  appearance: none;
+  cursor: pointer;
+  transition: border 0.18s, background 0.18s;
+  width: 100%;
+}
+
+.assign-select:focus {
+  outline: 2px solid var(--accent);
+  border-color: var(--accent);
+  background: var(--card-bg);
+}
+.remarks-input {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  width: 100%;
+  transition: border 0.2s;
+}
+
+.remarks-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">AM DASHBOARD</h1>
+      <div class="header-controls">
+        <div class="stats-dropdown">
+          <button class="add-leads-btn" ><a href="{% url 'accounts:all_leads' %}"  style="margin-left: 0.5rem;">
+            <i class="fas fa-table"></i>
+            <span>View Leads</span>
+          </a></button>
+          <button class="stats-btn" id="statsBtn">
+            <i class="fas fa-chart-bar"></i>
+            <span>Stats</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="stats-dropdown-content" id="statsDropdown">
+            <div class="stats-section">
+              <h4>Programs</h4>
+              <div class="stats-grid" id="programStats">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+            <div class="stats-section">
+              <h4>Priorities</h4>
+              <div class="stats-grid" id="priorityStats">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+            <div class="stats-section">
+              <h4>Status</h4>
+              <div class="stats-grid" id="statusStats">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="search-container">
+          <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" placeholder=" Search..." class="search-input">
+            <button id="clearSearch" class="clear-search" style="display: none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <div class="table-scroll-vert">
+        <table class="bc-table bc-table-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Email</th>
+              <th>Remarks</th>
+              <th>Source</th>
+              <th>Status</th>
+              <th>Program</th>
+              <th>Priority</th>
+              <th>Assign</th>
+            </tr>
+          </thead>
+          <tbody id="leads-table-body">
+            {% for lead in high_priority_leads %}
+              <tr class="table-row" data-priority="high" data-lead-id="{{ lead.id }}"
+                  data-name="{{ lead.name|lower }}"
+                  data-phone="{{ lead.phone|lower }}"
+                  data-program="{{ lead.get_program_display|lower|default:'' }}"
+                  data-status="{{ lead.get_status_display|lower }}"
+                  data-priority="{{ lead.get_priority_display|lower }}">
+                <td>{{ lead.name }}</td>
+                <td>{{ lead.phone }}</td>
+                <td>{{ lead.email|default:"-" }}</td>
+                <td>
+  <input type="text" class="remarks-input" 
+         data-lead-id="{{ lead.id }}" 
+         value="{{ lead.remarks|default:'' }}" 
+         placeholder="Add remarks"
+         style="width: 100%; 
+                background: var(--bg-secondary); 
+                color: var(--text-primary); 
+                border: 1px solid var(--border-color); 
+                border-radius: 8px; 
+                padding: 0.35rem 0.7rem; 
+                font-size: 1rem;" />
+</td>
+                <td>{{ lead.get_source_display }}</td>
+                <td>
+                  <select class="status-select" data-lead-id="{{ lead.id }}">
+                    <option value="ENQUIRY" {% if lead.status == 'ENQUIRY' %}selected{% endif %}>Enquiry</option>
+                    <option value="INTERESTED" {% if lead.status == 'INTERESTED' %}selected{% endif %}>Interested</option>
+                    <option value="NOT_INTERESTED" {% if lead.status == 'NOT_INTERESTED' %}selected{% endif %}>Not Interested</option>
+                    <option value="WALK_IN" {% if lead.status == 'WALK_IN' %}selected{% endif %}>Walk In</option>
+                    <option value="ON_HOLD" {% if lead.status == 'ON_HOLD' %}selected{% endif %}>On Hold</option>
+                    <option value="REGISTERED" {% if lead.status == 'REGISTERED' %}selected{% endif %}>Registered</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" class="program-input" data-lead-id="{{ lead.id }}" value="{{ lead.program|default:'' }}" placeholder="Enter program name" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
+                </td>
+                <td>
+                  <select class="priority-select" data-lead-id="{{ lead.id }}">
+                    <option value="HIGH" {% if lead.priority == 'HIGH' %}selected{% endif %}>High 🔥</option>
+                    <option value="MEDIUM" {% if lead.priority == 'MEDIUM' %}selected{% endif %}>Medium ⚠️</option>
+                    <option value="LOW" {% if lead.priority == 'LOW' %}selected{% endif %}>Low 🐢</option>
+                  </select>
+                </td>
+                <td>
+  <select class="assign-select" data-lead-id="{{ lead.id }}">
+    <option value="">Unassigned</option>
+    {% for executive in admission_executives %}
+      <option value="{{ executive.id }}" 
+              {% if lead.assigned_to == executive %}selected{% endif %}>
+        {{ executive.get_full_name }} (Executive)
+      </option>
+    {% endfor %}
+  </select>
+</td>
+              </tr>
+            {% endfor %}
+            
+            {% for lead in medium_priority_leads %}
+              <tr class="table-row" data-priority="medium" data-lead-id="{{ lead.id }}"
+                  data-name="{{ lead.name|lower }}"
+                  data-phone="{{ lead.phone|lower }}"
+                  data-program="{{ lead.get_program_display|lower|default:'' }}"
+                  data-status="{{ lead.get_status_display|lower }}"
+                  data-priority="{{ lead.get_priority_display|lower }}">
+                <td>{{ lead.name }}</td>
+                <td>{{ lead.phone }}</td>
+                <td>{{ lead.email|default:"-" }}</td>
+                <td>
+  <input type="text" class="remarks-input" 
+         data-lead-id="{{ lead.id }}" 
+         value="{{ lead.remarks|default:'' }}" 
+         placeholder="Add remarks"
+         style="width: 100%; 
+                background: var(--bg-secondary); 
+                color: var(--text-primary); 
+                border: 1px solid var(--border-color); 
+                border-radius: 8px; 
+                padding: 0.35rem 0.7rem; 
+                font-size: 1rem;" />
+</td>
+                <td>{{ lead.get_source_display }}</td>
+                <td>
+                  <select class="status-select" data-lead-id="{{ lead.id }}">
+                    <option value="ENQUIRY" {% if lead.status == 'ENQUIRY' %}selected{% endif %}>Enquiry</option>
+                    <option value="INTERESTED" {% if lead.status == 'INTERESTED' %}selected{% endif %}>Interested</option>
+                    <option value="NOT_INTERESTED" {% if lead.status == 'NOT_INTERESTED' %}selected{% endif %}>Not Interested</option>
+                    <option value="WALK_IN" {% if lead.status == 'WALK_IN' %}selected{% endif %}>Walk In</option>
+                    <option value="ON_HOLD" {% if lead.status == 'ON_HOLD' %}selected{% endif %}>On Hold</option>
+                    <option value="REGISTERED" {% if lead.status == 'REGISTERED' %}selected{% endif %}>Registered</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" class="program-input" data-lead-id="{{ lead.id }}" value="{{ lead.program|default:'' }}" placeholder="Enter program name" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
+                </td>
+                <td>
+                  <select class="priority-select" data-lead-id="{{ lead.id }}">
+                    <option value="HIGH" {% if lead.priority == 'HIGH' %}selected{% endif %}>High 🔥</option>
+                    <option value="MEDIUM" {% if lead.priority == 'MEDIUM' %}selected{% endif %}>Medium ⚠️</option>
+                    <option value="LOW" {% if lead.priority == 'LOW' %}selected{% endif %}>Low 🐢</option>
+                  </select>
+                </td>
+                <td>
+  <select class="assign-select" data-lead-id="{{ lead.id }}">
+    <option value="">Unassigned</option>
+    {% for executive in admission_executives %}
+      <option value="{{ executive.id }}" 
+              {% if lead.assigned_to == executive %}selected{% endif %}>
+        {{ executive.get_full_name }} (Executive)
+      </option>
+    {% endfor %}
+  </select>
+</td>
+              </tr>
+            {% endfor %}
+            
+            {% for lead in low_priority_leads %}
+              <tr class="table-row" data-priority="low" data-lead-id="{{ lead.id }}"
+                  data-name="{{ lead.name|lower }}"
+                  data-phone="{{ lead.phone|lower }}"
+                  data-program="{{ lead.get_program_display|lower|default:'' }}"
+                  data-status="{{ lead.get_status_display|lower }}"
+                  data-priority="{{ lead.get_priority_display|lower }}">
+                <td>{{ lead.name }}</td>
+                <td>{{ lead.phone }}</td>
+                <td>{{ lead.email|default:"-" }}</td>
+                <td>
+  <input type="text" class="remarks-input" 
+         data-lead-id="{{ lead.id }}" 
+         value="{{ lead.remarks|default:'' }}" 
+         placeholder="Add remarks"
+         style="width: 100%; 
+                background: var(--bg-secondary); 
+                color: var(--text-primary); 
+                border: 1px solid var(--border-color); 
+                border-radius: 8px; 
+                padding: 0.35rem 0.7rem; 
+                font-size: 1rem;" />
+</td>
+                <td>{{ lead.get_source_display }}</td>
+                <td>
+                  <select class="status-select" data-lead-id="{{ lead.id }}">
+                    <option value="ENQUIRY" {% if lead.status == 'ENQUIRY' %}selected{% endif %}>Enquiry</option>
+                    <option value="INTERESTED" {% if lead.status == 'INTERESTED' %}selected{% endif %}>Interested</option>
+                    <option value="NOT_INTERESTED" {% if lead.status == 'NOT_INTERESTED' %}selected{% endif %}>Not Interested</option>
+                    <option value="WALK_IN" {% if lead.status == 'WALK_IN' %}selected{% endif %}>Walk In</option>
+                    <option value="ON_HOLD" {% if lead.status == 'ON_HOLD' %}selected{% endif %}>On Hold</option>
+                    <option value="REGISTERED" {% if lead.status == 'REGISTERED' %}selected{% endif %}>Registered</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="text" class="program-input" data-lead-id="{{ lead.id }}" value="{{ lead.program|default:'' }}" placeholder="Enter program name" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
+                </td>
+                <td>
+                  <select class="priority-select" data-lead-id="{{ lead.id }}">
+                    <option value="HIGH" {% if lead.priority == 'HIGH' %}selected{% endif %}>High 🔥</option>
+                    <option value="MEDIUM" {% if lead.priority == 'MEDIUM' %}selected{% endif %}>Medium ⚠️</option>
+                    <option value="LOW" {% if lead.priority == 'LOW' %}selected{% endif %}>Low 🐢</option>
+                  </select>
+                </td>
+                <td>
+  <select class="assign-select" data-lead-id="{{ lead.id }}">
+    <option value="">Unassigned</option>
+    {% for executive in admission_executives %}
+      <option value="{{ executive.id }}" 
+              {% if lead.assigned_to == executive %}selected{% endif %}>
+        {{ executive.get_full_name }} (Executive)
+      </option>
+    {% endfor %}
+  </select>
+</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <script>
+      // Handle remarks updates
+document.querySelectorAll('.remarks-input').forEach(input => {
+  input.dataset.originalValue = input.value;
+  input.addEventListener('change', function() {
+    const leadId = this.dataset.leadId;
+    const remarks = this.value;
+    
+    axios.post('{% url "accounts:update_lead_field" %}', 
+      JSON.stringify({
+        lead_id: leadId,
+        field: 'remarks',
+        value: remarks
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      }
+    )
+    .then(response => {
+      console.log('Remarks updated successfully');
+      this.dataset.originalValue = remarks;
+    })
+    .catch(error => {
+      console.error('Error updating remarks:', error.response?.data || error);
+      alert('Failed to update remarks. Please try again.');
+      this.value = this.dataset.originalValue;
+    });
+  });
+});
+    </script>
+<script>
+  // Handle assignment to executives
+document.querySelectorAll('.assign-select').forEach(select => {
+  select.addEventListener('change', function() {
+    const leadId = this.dataset.leadId;
+    const executiveId = this.value;
+    
+    axios.post('{% url "accounts:assign_to_executive" %}', 
+      JSON.stringify({
+        lead_id: leadId,
+        executive_id: executiveId
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': getCookie('csrftoken') // Add CSRF token
+        }
+      }
+    )
+    .then(response => {
+      console.log('Lead assigned successfully');
+      // Update the row's data attribute for search
+      const row = this.closest('tr');
+      if (executiveId) {
+        const selectedOption = this.options[this.selectedIndex];
+        row.dataset.assigned = selectedOption.text.toLowerCase();
+      } else {
+        row.dataset.assigned = 'unassigned';
+      }
+      
+      // Optional: Remove row if unassigned
+      if (!executiveId) {
+        row.remove();
+      }
+    })
+    .catch(error => {
+      console.error('Error assigning lead:', error.response?.data || error);
+      // Show more detailed error message
+      const errorMsg = error.response?.data?.message || 'Failed to assign lead. Please try again.';
+      alert(errorMsg);
+      // Revert the select to its previous value
+      this.value = this.dataset.previousValue;
+    });
+  });
+  
+  // Store initial value
+  select.dataset.previousValue = select.value;
+});
+
+// Helper function to get CSRF token
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+</script>
+    <script>
+      // Configure axios properly
+      axios.defaults.xsrfCookieName = 'csrftoken';
+      axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+      
+      // Stats dropdown functionality
+      const statsBtn = document.getElementById('statsBtn');
+      const statsDropdown = document.getElementById('statsDropdown');
+      const tableContainer = document.querySelector('.table-container');
+      
+      // Toggle stats dropdown
+      statsBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        statsDropdown.classList.toggle('active');
+        if (statsDropdown.classList.contains('active')) {
+          updateStats();
+          tableContainer.classList.add('blurred');
+        } else {
+          tableContainer.classList.remove('blurred');
+        }
+      });
+      
+      // Close dropdown when clicking outside
+      document.addEventListener('click', function(e) {
+        if (!statsBtn.contains(e.target) && !statsDropdown.contains(e.target)) {
+          statsDropdown.classList.remove('active');
+          tableContainer.classList.remove('blurred');
+        }
+      });
+      
+      // Function to calculate and update stats
+      function updateStats() {
+        const visibleRows = Array.from(document.querySelectorAll('.table-row:not(.hidden)'));
+        
+        // Calculate program stats
+        const programCounts = {};
+        const priorityCounts = {};
+        const statusCounts = {};
+        
+        visibleRows.forEach(row => {
+          let program = row.dataset.program || 'Unassigned';
+          const priority = row.dataset.priority || 'Unknown';
+          const status = row.dataset.status || 'Unknown';
+          
+          // Shorten "Hotel Management" to "Hotel"
+          if (program === 'hotel management') {
+            program = 'hotel';
+          }
+          
+          // Skip "Not Interested" status
+          if (status === 'not interested') {
+            return;
+          }
+          
+          programCounts[program] = (programCounts[program] || 0) + 1;
+          priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
+        });
+        
+        // Update program stats
+        const programStats = document.getElementById('programStats');
+        programStats.innerHTML = '';
+        Object.entries(programCounts).forEach(([program, count]) => {
+          const statItem = document.createElement('div');
+          statItem.className = 'stat-item';
+          statItem.innerHTML = `
+            <span class="label">${program}</span>
+            <span class="value">${count}</span>
+          `;
+          programStats.appendChild(statItem);
+        });
+        
+        // Update priority stats
+        const priorityStats = document.getElementById('priorityStats');
+        priorityStats.innerHTML = '';
+        Object.entries(priorityCounts).forEach(([priority, count]) => {
+          const statItem = document.createElement('div');
+          statItem.className = 'stat-item';
+          statItem.innerHTML = `
+            <span class="label">${priority}</span>
+            <span class="value">${count}</span>
+          `;
+          priorityStats.appendChild(statItem);
+        });
+        
+        // Update status stats
+        const statusStats = document.getElementById('statusStats');
+        statusStats.innerHTML = '';
+        Object.entries(statusCounts).forEach(([status, count]) => {
+          const statItem = document.createElement('div');
+          statItem.className = 'stat-item';
+          statItem.innerHTML = `
+            <span class="label">${status}</span>
+            <span class="value">${count}</span>
+          `;
+          statusStats.appendChild(statItem);
+        });
+      }
+      
+      // Search functionality
+      const searchInput = document.getElementById('searchInput');
+      const clearSearchBtn = document.getElementById('clearSearch');
+      const tableRows = document.querySelectorAll('.table-row');
+      
+      function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+        
+        tableRows.forEach(row => {
+          const name = row.dataset.name;
+          const phone = row.dataset.phone;
+          const program = row.dataset.program;
+          const status = row.dataset.status;
+          const priority = row.dataset.priority;
+
+          if (name.includes(searchTerm) ||
+              phone.includes(searchTerm) ||
+              program.includes(searchTerm) ||
+              status.includes(searchTerm) ||
+              priority.includes(searchTerm)) {
+            row.classList.remove('hidden');
+            visibleCount++;
+          } else {
+            row.classList.add('hidden');
+          }
+        });
+        
+        // Show/hide clear button
+        clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
+        
+        // Show no results message if needed
+        let noResultsRow = document.querySelector('.no-results-row');
+        if (visibleCount === 0 && searchTerm) {
+          if (!noResultsRow) {
+            noResultsRow = document.createElement('tr');
+            noResultsRow.className = 'no-results-row';
+            noResultsRow.innerHTML = '<td colspan="8" class="no-results">No leads found matching your search</td>';
+            document.querySelector('tbody').appendChild(noResultsRow);
+          }
+        } else if (noResultsRow) {
+          noResultsRow.remove();
+        }
+        
+        // Update stats if dropdown is open
+        if (statsDropdown.classList.contains('active')) {
+          updateStats();
+        }
+      }
+      
+      // Search input event listener
+      searchInput.addEventListener('input', performSearch);
+      
+      // Clear search functionality
+      clearSearchBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        performSearch();
+        searchInput.focus();
+      });
+      
+      function handleUpdate(endpoint, leadId, newValue, successCallback = null) {
+          return axios.post(`/leads/${leadId}/${endpoint}/`, 
+              JSON.stringify({ [endpoint.split('_')[1]]: newValue }),
+              {
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-Requested-With': 'XMLHttpRequest'
+                  }
+              }
+          )
+          .then(response => {
+              if (successCallback) successCallback();
+              return response;
+          });
+      }
+      
+      // Update priority via AJAX
+      document.querySelectorAll('.priority-select').forEach(select => {
+          select.dataset.originalValue = select.value;
+          select.addEventListener('change', function() {
+              const leadId = this.dataset.leadId;
+              const newPriority = this.value;
+              
+              handleUpdate('update_priority', leadId, newPriority, () => {
+                  this.dataset.originalValue = newPriority;
+                  const row = this.closest('tr');
+                  row.dataset.priority = newPriority.toLowerCase();
+                  updatePriorityCounts();
+                  
+                  // Update stats if dropdown is open
+                  if (statsDropdown.classList.contains('active')) {
+                    updateStats();
+                  }
+              }).catch(error => {
+                  console.error('Error updating priority:', error.response?.data || error);
+                  this.value = this.dataset.originalValue;
+              });
+          });
+      });
+      
+      // Update status via AJAX
+      document.querySelectorAll('.status-select').forEach(select => {
+          select.dataset.originalValue = select.value;
+          select.addEventListener('change', function() {
+              const leadId = this.dataset.leadId;
+              const newStatus = this.value;
+              
+              handleUpdate('update_status', leadId, newStatus, () => {
+                  this.dataset.originalValue = newStatus;
+                  
+                  // Update stats if dropdown is open
+                  if (statsDropdown.classList.contains('active')) {
+                    updateStats();
+                  }
+              }).catch(error => {
+                  console.error('Error updating status:', error.response?.data || error);
+                  this.value = this.dataset.originalValue;
+              });
+          });
+      });
+      
+      // Update program via AJAX (now for text input)
+      document.querySelectorAll('.program-input').forEach(input => {
+        input.dataset.originalValue = input.value;
+        input.addEventListener('change', function() {
+              const leadId = this.dataset.leadId;
+              const newProgram = this.value;
+              handleUpdate('update_program', leadId, newProgram, () => {
+                  this.dataset.originalValue = newProgram;
+            const row = this.closest('tr');
+            row.dataset.program = newProgram.toLowerCase();
+                  if (statsDropdown.classList.contains('active')) {
+                    updateStats();
+                  }
+          });
+          });
+      });
+
+      // Update Dashboard Stat Numbers
+      function updatePriorityCounts() {
+        let high = document.querySelectorAll('tr[data-priority="high"]').length;
+        let medium = document.querySelectorAll('tr[data-priority="medium"]').length;
+        let low = document.querySelectorAll('tr[data-priority="low"]').length;
+        
+        document.getElementById('count-high').textContent = high;
+        document.getElementById('count-medium').textContent = medium;
+        document.getElementById('count-low').textContent = low;
+      }
+    </script> 
+</body>
+</html>

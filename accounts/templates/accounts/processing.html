@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Processing Dashboard - LP CRM</title>
+  <!-- Basecoat CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/basecoat.cdn.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/all.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --card-bg: #111111;
+      --border-color: #1f1f1f;
+      --border-hover: #333333;
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #71717a;
+      --accent: #ffffff;
+      --accent-hover: #f4f4f5;
+      --shadow-small: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+    }
+    body {
+      background: var(--bg-primary);
+      background-image: 
+        radial-gradient(circle at 25% 25%, #1f1f1f 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, #1a1a1a 0%, transparent 50%);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh; line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .dashboard-header {
+      margin-bottom: 3rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      
+    }
+    .dashboard-title {
+      font-size: clamp(2rem, 4vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.025em;
+      background: linear-gradient(135deg, #989595 0%, #45454a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      
+    }
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .files-btn-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .files-btn {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-color: var(--border-color);
+    }
+    .files-btn:hover {
+      background: var(--border-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-1px);
+    }
+    .files-btn:active {
+      transform: translateY(0);
+    }
+    .stats-dropdown {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .stats-btn {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-color: var(--border-color);
+    }
+    .stats-btn:hover {
+      background: var(--border-hover);
+      border-color: var(--border-hover);
+    }
+    .stats-dropdown-content {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: var(--shadow-large);
+      z-index: 1000;
+      width: 350px;
+      padding: 1rem;
+      display: none;
+      backdrop-filter: blur(60px);
+      background: rgba(17, 17, 17, 0.95);
+      filter: none !important;
+    }
+    .stats-dropdown-content.active {
+      display: block;
+    }
+    .stats-section {
+      margin-bottom: 1.5rem;
+    }
+    .stats-section:last-child {
+      margin-bottom: 0;
+    }
+    .stats-section h4 {
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+    .stat-item {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+    .stat-item:hover {
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .stat-item .label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .stat-item .value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+    }
+    .search-box {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem;
+      transition: border 0.18s;
+      min-width: 300px;
+    }
+    .search-box:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+    .search-icon {
+      color: var(--text-secondary);
+      margin-right: 0.5rem;
+      font-size: 0.9rem;
+    }
+    .search-input {
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      flex: 1;
+      outline: none;
+    }
+    .search-input::placeholder {
+      color: var(--text-tertiary);
+    }
+    .clear-search {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: color 0.18s;
+    }
+    .clear-search:hover {
+      color: var(--text-primary);
+    }
+    .table-row {
+      transition: opacity 0.3s ease;
+    }
+    .table-row.hidden {
+      display: none;
+    }
+    .no-results {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+    /* Blur effect for background when dropdown is active */
+    .tab-content.blurred {
+      filter: blur(10px);
+      transition: filter 0.3s ease;
+    }
+    .tabs.blurred {
+      filter: blur(10px);
+      transition: filter 0.3s ease;
+    }
+    .table-container {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-large);
+      margin-top: 1rem;
+    }
+    .table-scroll-vert {
+      max-height: 70vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      width: 100%;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .table-scroll-vert::-webkit-scrollbar {
+      display: none;
+    }
+    table.bc-table {
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border-radius: 0;
+      border: none;
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .bc-table th, .bc-table td {
+      background: transparent;
+      color: var(--text-primary);
+      border: none;
+      font-size: 1rem;
+      padding: 1.05rem 0.9rem;
+      vertical-align: middle;
+      transition: background 0.18s;
+      text-align: left;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+    .bc-table th {
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .bc-table-striped tbody tr:nth-child(odd) {
+      background: rgba(255,255,255,0.01);
+    }
+    .bc-table tbody tr {
+      border-bottom: 1px solid var(--border-color);
+      transition: background 0.18s, box-shadow 0.18s;
+    }
+    .bc-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    .bc-table tbody tr:hover {
+      background: rgba(255,255,255,0.03);
+      box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+    }
+    .editable-select {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.35rem 1.5rem 0.35rem 0.7rem;
+      font-size: 0.95rem;
+      appearance: none;
+      cursor: pointer;
+      transition: all 0.18s;
+      width: 100%;
+      max-width: 180px;
+    }
+    .editable-select:focus {
+      outline: 2px solid var(--accent);
+      border-color: var(--accent);
+      background: var(--card-bg);
+    }
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-right: 0.2rem;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, #f4f4f5 100%);
+      color: var(--bg-primary);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .btn-primary:hover, .btn-primary:active {
+      background: linear-gradient(135deg, #f4f4f5 0%, var(--accent) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .btn-secondary:hover, .btn-secondary:active {
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .btn:disabled {
+      background: var(--border-color);
+      color: var(--text-tertiary);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn:disabled:hover {
+      background: var(--border-color);
+      transform: none;
+      box-shadow: none;
+    }
+    .processing-actions {
+      display: flex;
+      gap: 0.5rem;
+      min-width: 200px;
+    }
+    .notes-field {
+      position: relative;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 6px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s ease;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .notes-field:hover {
+      background: var(--card-bg);
+      border-color: var(--border-hover);
+    }
+    .notes-field.empty {
+      color: var(--text-tertiary);
+      font-style: italic;
+    }
+    .notes-textarea {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+      min-height: 80px;
+      resize: vertical;
+      font-family: inherit;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      transition: all 0.2s ease;
+      display: none;
+    }
+    .notes-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+      background: var(--card-bg);
+    }
+    .notes-textarea::placeholder {
+      color: var(--text-tertiary);
+    }
+    .notes-textarea.active {
+      display: block;
+    }
+    .notes-field.active {
+      display: none;
+    }
+    .document-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 150px;
+    }
+    .document-status select {
+      flex-grow: 1;
+    }
+    /* Tab styling */
+    .tab-container {
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .tabs {
+      display: flex;
+      flex-direction: row;
+      background: transparent;
+      border-radius: 12px;
+      padding: 0.5rem;
+      border: none;
+      position: relative;
+      overflow: hidden;
+      gap: 0.25rem;
+      max-width: 400px;
+      width: 100%;
+      justify-content: center;
+    }
+    .tab {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: var(--text-secondary);
+      text-align: center;
+      position: relative;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      letter-spacing: 0.025em;
+      background: transparent;
+      border: none;
+      outline: none;
+      white-space: nowrap;
+      min-width: 120px;
+    }
+    .tab:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .tab.active {
+      color: rgb(255, 255, 255);
+      background: rgba(27, 36, 115, 0.277);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-1px);
+    }
+    .tab.active::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 1px;
+    }
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease-in-out;
+      width: 100%;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+    }
+    .status-pending { 
+      background: linear-gradient(135deg, rgba(156, 163, 175, 0.2) 0%, rgba(156, 163, 175, 0.1) 100%); 
+      color: #9ca3af; 
+      border: 1px solid rgba(156, 163, 175, 0.3);
+    }
+    .status-collected { 
+      background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(96, 165, 250, 0.1) 100%); 
+      color: #60a5fa; 
+      border: 1px solid rgba(96, 165, 250, 0.3);
+    }
+    .status-verified { 
+      background: linear-gradient(135deg, rgba(167, 139, 250, 0.2) 0%, rgba(167, 139, 250, 0.1) 100%); 
+      color: #a78bfa; 
+      border: 1px solid rgba(167, 139, 250, 0.3);
+    }
+    .status-submitted { 
+      background: linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(52, 211, 153, 0.1) 100%); 
+      color: #34d399; 
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .status-approved { 
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%); 
+      color: #10b981; 
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .status-rejected { 
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%); 
+      color: #ef4444; 
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    .action-buttons {
+      display: flex;
+      flex-direction: row;
+      gap: 0.5rem;
+    }
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-right: 0.2rem;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, #f4f4f5 100%);
+      color: var(--bg-primary);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .btn-primary:hover, .btn-primary:active {
+      background: linear-gradient(135deg, #f4f4f5 0%, var(--accent) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    .btn-secondary:hover, .btn-secondary:active {
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    .btn:disabled {
+      background: var(--border-color);
+      color: var(--text-tertiary);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn:disabled:hover {
+      background: var(--border-color);
+      transform: none;
+      box-shadow: none;
+    }
+    .toast-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .toast-notification.success {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%);
+    }
+    .toast-notification.error {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%);
+    }
+    .toast-notification.warning {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(245, 158, 11, 0.8) 100%);
+    }
+    .toast-notification.fade-out {
+      animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes slideIn {
+      from { 
+        transform: translateX(100%) scale(0.95); 
+        opacity: 0; 
+      }
+      to { 
+        transform: translateX(0) scale(1); 
+        opacity: 1; 
+      }
+    }
+    @keyframes slideOut {
+      from { 
+        transform: translateX(0) scale(1); 
+        opacity: 1; 
+      }
+      to { 
+        transform: translateX(100%) scale(0.95); 
+        opacity: 0; 
+      }
+    }
+    @media (max-width: 1200px) {
+      .dashboard-container { padding:1rem }
+      .dashboard-header { flex-direction: column; align-items: flex-start }
+      .header-controls { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+      .bc-table th, .bc-table td { padding: 0.75rem 0.5rem; font-size: 0.9rem; }
+      .search-box { min-width: 250px; }
+      .stats-dropdown-content { width: 300px; }
+    }
+    @media (max-width: 768px) {
+      .dashboard-container { padding:0.5rem }
+      .dashboard-header { gap: 0.6rem }
+      .bc-table th, .bc-table td { padding: 0.5rem 0.3rem; font-size: 0.8rem; }
+      .table-scroll-vert { max-height: 60vh; }
+      .search-box { min-width: 200px; padding: 0.4rem; }
+      .search-input { font-size: 0.8rem; }
+      .stats-dropdown-content { width: 280px; padding: 1rem; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .tabs { 
+        flex-direction: row; 
+        padding: 0.4rem;
+        gap: 0.25rem;
+        max-width: 350px;
+        width: 100%;
+      }
+      .tab { 
+        padding: 0.6rem 0.5rem;
+        font-size: 0.8rem;
+        border-radius: 6px;
+        flex: 1;
+        min-width: 100px;
+      }
+      .tab.active { 
+        transform: translateY(-1px);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+      }
+      .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.75rem;
+      }
+      .action-buttons {
+        flex-direction: row;
+        gap: 0.25rem;
+      }
+      .notes-textarea {
+        min-height: 60px;
+        font-size: 0.85rem;
+        padding: 0.6rem;
+      }
+      .status-badge {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="dashboard-header">
+      <h1 class="dashboard-title">PROCESSING DASHBOARD</h1>
+      <div class="header-controls">
+        <div class="stats-dropdown">
+          <button class="stats-btn" id="statsBtn">
+            <i class="fas fa-chart-bar"></i>
+            <span>Stats</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="stats-dropdown-content" id="statsDropdown">
+            <div class="stats-section">
+              <h4>Programs</h4>
+              <div class="stats-grid" id="programStats">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+            <div class="stats-section">
+              <h4>Document Status</h4>
+              <div class="stats-grid" id="documentStatusStats">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+            <div class="stats-section">
+              <h4>Processing Status</h4>
+              <div class="stats-grid" id="processingStatusStats">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="files-btn-container">
+          <button class="files-btn" id="filesBtn" onclick="openGoogleDrive()">
+            <i class="fas fa-folder-open"></i>
+            <span>Drive Folder</span>
+          </button>
+        </div>
+        <div class="search-container">
+          <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="searchInput" placeholder=" Search..." class="search-input">
+            <button id="clearSearch" class="clear-search" style="display: none;">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-container">
+      <div class="tabs">
+        <div class="tab active" data-tab="registrations">Registrations</div>
+        <div class="tab" data-tab="processing">Processing</div>
+        <div class="tab" data-tab="completed">Completed</div>
+      </div>
+      
+      <!-- Registrations Tab -->
+      <div class="tab-content active" id="registrations">
+        <div class="table-container">
+          <div class="table-scroll-vert">
+            <table class="bc-table bc-table-striped">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Program</th>
+                  <th>Forwarded On</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for lead in forwarded_leads %}
+                <tr class="table-row" 
+                    data-name="{{ lead.name|lower }}"
+                    data-phone="{{ lead.phone|lower }}"
+                    data-program="{{ lead.get_program_display|lower|default:'' }}">
+                  <td>{{ lead.name }}</td>
+                  <td>{{ lead.phone }}</td>
+                  <td>{{ lead.get_program_display|default:"-" }}</td>
+                  
+                  <td>{{ lead.processing_status_date|date:"M d, Y H:i" }}</td>
+                  <td class="processing-actions">
+                    <div class="action-buttons">
+                      <button class="btn btn-primary accept-btn" 
+                              data-lead-id="{{ lead.id }}">
+                        Accept
+                      </button>
+                      <button class="btn btn-secondary reject-btn" 
+                              data-lead-id="{{ lead.id }}">
+                        Reject
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="no-results">No forwarded registrations</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Processing Tab -->
+      <div class="tab-content" id="processing">
+        <div class="table-container">
+          <div class="table-scroll-vert">
+            <table class="bc-table bc-table-striped">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Program</th>
+                  <th>Status</th>
+                  <th>Details</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for lead in processing_leads %}
+                <tr class="table-row" 
+                    data-name="{{ lead.name|lower }}"
+                    data-phone="{{ lead.phone|lower }}"
+                    data-program="{{ lead.get_program_display|lower|default:'' }}"
+                    data-document-status="{{ lead.get_document_status_display|lower }}">
+                  <td>{{ lead.name }}</td>
+                  <td>{{ lead.phone }}</td>
+                  <td>{{ lead.get_program_display|default:"-" }}</td>
+                  <td class="document-status">
+                    <select class="editable-select document-status-select" 
+                            data-lead-id="{{ lead.id }}">
+                      {% for value, label in document_status_choices %}
+                        <option value="{{ value }}" 
+                                {% if lead.document_status == value %}selected{% endif %}
+                                class="status-{{ value|lower }}">
+                          {{ label }}
+                        </option>
+                      {% endfor %}
+                    </select>
+                  </td>
+                  <td>
+                    <div class="notes-field" data-lead-id="{{ lead.id }}">
+                      {% if lead.processing_notes %}
+                        {{ lead.processing_notes|truncatechars:50 }}
+                      {% else %}
+                        <span class="empty">Click to add notes...</span>
+                      {% endif %}
+                    </div>
+                    <textarea class="notes-textarea" 
+                              data-lead-id="{{ lead.id }}"
+                              placeholder="Add processing notes">{{ lead.processing_notes }}</textarea>
+                  </td>
+                  <td class="processing-actions">
+                    <div class="action-buttons">
+                      <button class="btn btn-primary complete-btn" 
+                              data-lead-id="{{ lead.id }}">
+                        Complete
+                      </button>
+                      <!-- <button class="btn btn-secondary hold-btn" 
+                              data-lead-id="{{ lead.id }}">
+                        Put on Hold
+                      </button> -->
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="6" class="no-results">No leads in processing</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Completed Tab -->
+      <div class="tab-content" id="completed">
+        <div class="table-container">
+          <div class="table-scroll-vert">
+            <table class="bc-table bc-table-striped">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Phone</th>
+                  <th>Program</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for lead in completed_leads %}
+                <tr class="table-row" 
+                    data-name="{{ lead.name|lower }}"
+                    data-phone="{{ lead.phone|lower }}"
+                    data-program="{{ lead.get_program_display|lower|default:'' }}"
+                    data-document-status="{{ lead.get_document_status_display|lower }}">
+                  <td>{{ lead.name }}</td>
+                  <td>{{ lead.phone }}</td>
+                  <td>{{ lead.get_program_display|default:"-" }}</td>
+                  <td>
+                    <span class="status-badge status-{{ lead.document_status|lower }}">
+                      {{ lead.get_document_status_display }}
+                    </span>
+                  </td>
+                  <td class="processing-actions">
+                    <div class="action-buttons">
+                      <button class="btn btn-primary reopen-btn" 
+                              data-lead-id="{{ lead.id }}">
+                        Reopen
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="5" class="no-results">No completed processes</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <script>
+        // Configure axios properly
+        axios.defaults.xsrfCookieName = 'csrftoken';
+        axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+        
+        // Function to open Google Drive
+        function openGoogleDrive() {
+          // Replace this URL with your actual Google Drive link
+          const googleDriveUrl = 'https://drive.google.com/drive/folders/YOUR_FOLDER_ID';
+          
+          // Open in new tab
+          window.open(googleDriveUrl, '_blank');
+        }
+        
+        // Stats dropdown functionality
+        const statsBtn = document.getElementById('statsBtn');
+        const statsDropdown = document.getElementById('statsDropdown');
+        
+        // Toggle stats dropdown
+        statsBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          statsDropdown.classList.toggle('active');
+          if (statsDropdown.classList.contains('active')) {
+            updateStats();
+            // Blur tabs and tab content
+            document.querySelector('.tabs').classList.add('blurred');
+            document.querySelectorAll('.tab-content').forEach(content => {
+              content.classList.add('blurred');
+            });
+          } else {
+            // Remove blur from tabs and tab content
+            document.querySelector('.tabs').classList.remove('blurred');
+            document.querySelectorAll('.tab-content').forEach(content => {
+              content.classList.remove('blurred');
+            });
+          }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+          if (!statsBtn.contains(e.target) && !statsDropdown.contains(e.target)) {
+            statsDropdown.classList.remove('active');
+            // Remove blur from tabs and tab content
+            document.querySelector('.tabs').classList.remove('blurred');
+            document.querySelectorAll('.tab-content').forEach(content => {
+              content.classList.remove('blurred');
+            });
+          }
+        });
+        
+        // Function to calculate and update stats
+        function updateStats() {
+          const visibleRows = Array.from(document.querySelectorAll('.table-row:not(.hidden)'));
+          
+          // Calculate program stats
+          const programCounts = {};
+          const documentStatusCounts = {};
+          const processingStatusCounts = {};
+          
+          visibleRows.forEach(row => {
+            let program = row.dataset.program || 'Unassigned';
+            const documentStatus = row.dataset.documentStatus || 'Unknown';
+            
+            // Shorten "Hotel Management" to "Hotel"
+            if (program === 'hotel management') {
+              program = 'hotel';
+            }
+            
+            programCounts[program] = (programCounts[program] || 0) + 1;
+            documentStatusCounts[documentStatus] = (documentStatusCounts[documentStatus] || 0) + 1;
+          });
+          
+          // Update program stats
+          const programStats = document.getElementById('programStats');
+          programStats.innerHTML = '';
+          Object.entries(programCounts).forEach(([program, count]) => {
+            const statItem = document.createElement('div');
+            statItem.className = 'stat-item';
+            statItem.innerHTML = `
+              <span class="label">${program}</span>
+              <span class="value">${count}</span>
+            `;
+            programStats.appendChild(statItem);
+          });
+          
+          // Update document status stats
+          const documentStatusStats = document.getElementById('documentStatusStats');
+          documentStatusStats.innerHTML = '';
+          Object.entries(documentStatusCounts).forEach(([status, count]) => {
+            const statItem = document.createElement('div');
+            statItem.className = 'stat-item';
+            statItem.innerHTML = `
+              <span class="label">${status}</span>
+              <span class="value">${count}</span>
+            `;
+            documentStatusStats.appendChild(statItem);
+          });
+          
+          // Update processing status stats (based on active tab)
+          const processingStatusStats = document.getElementById('processingStatusStats');
+          processingStatusStats.innerHTML = '';
+          const activeTab = document.querySelector('.tab.active').dataset.tab;
+          const tabCounts = {
+            'registrations': 'Forwarded',
+            'processing': 'In Processing',
+            'completed': 'Completed'
+          };
+          
+          const activeTabCount = document.querySelectorAll(`#${activeTab} .table-row:not(.hidden)`).length;
+          const statItem = document.createElement('div');
+          statItem.className = 'stat-item';
+          statItem.innerHTML = `
+            <span class="label">${tabCounts[activeTab]}</span>
+            <span class="value">${activeTabCount}</span>
+          `;
+          processingStatusStats.appendChild(statItem);
+        }
+        
+        // Search functionality
+        const searchInput = document.getElementById('searchInput');
+        const clearSearchBtn = document.getElementById('clearSearch');
+        const tableRows = document.querySelectorAll('.table-row');
+        
+        function performSearch() {
+          const searchTerm = searchInput.value.toLowerCase().trim();
+          let visibleCount = 0;
+          
+          tableRows.forEach(row => {
+            const name = row.dataset.name;
+            const phone = row.dataset.phone;
+            const program = row.dataset.program;
+            const documentStatus = row.dataset.documentStatus;
+
+            if (name.includes(searchTerm) ||
+                phone.includes(searchTerm) ||
+                program.includes(searchTerm) ||
+                (documentStatus && documentStatus.includes(searchTerm))) {
+              row.classList.remove('hidden');
+              visibleCount++;
+            } else {
+              row.classList.add('hidden');
+            }
+          });
+          
+          // Show/hide clear button
+          clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
+          
+          // Show no results message if needed
+          let noResultsRow = document.querySelector('.no-results-row');
+          if (visibleCount === 0 && searchTerm) {
+            if (!noResultsRow) {
+              noResultsRow = document.createElement('tr');
+              noResultsRow.className = 'no-results-row';
+              noResultsRow.innerHTML = '<td colspan="7" class="no-results">No leads found matching your search</td>';
+              document.querySelector('tbody').appendChild(noResultsRow);
+            }
+          } else if (noResultsRow) {
+            noResultsRow.remove();
+          }
+          
+          // Update stats if dropdown is open
+          if (statsDropdown.classList.contains('active')) {
+            updateStats();
+          }
+        }
+        
+        // Search input event listener
+        searchInput.addEventListener('input', performSearch);
+        
+        // Clear search functionality
+        clearSearchBtn.addEventListener('click', () => {
+          searchInput.value = '';
+          performSearch();
+          searchInput.focus();
+        });
+        
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+          tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            tab.classList.add('active');
+            document.getElementById(tab.dataset.tab).classList.add('active');
+            
+            // Update stats if dropdown is open
+            if (statsDropdown.classList.contains('active')) {
+              updateStats();
+            }
+          });
+        });
+
+        // Function to refresh tab content dynamically
+        function refreshTabContent(tabName) {
+          const tabContent = document.getElementById(tabName);
+          if (!tabContent) return;
+          
+          // Show loading state
+          const originalContent = tabContent.innerHTML;
+          tabContent.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">Loading...</div>';
+          
+          // Fetch updated content
+          axios.get(window.location.href, {
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => {
+            // Create a temporary div to parse the response
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = response.data;
+            
+            // Extract the specific tab content
+            const newTabContent = tempDiv.querySelector(`#${tabName}`);
+            if (newTabContent) {
+              tabContent.innerHTML = newTabContent.innerHTML;
+              
+              // Re-attach event listeners for the new content
+              attachEventListeners();
+              
+              // Update stats if dropdown is open
+              if (statsDropdown.classList.contains('active')) {
+                updateStats();
+              }
+            } else {
+              tabContent.innerHTML = originalContent;
+            }
+          })
+          .catch(error => {
+            console.error('Error refreshing tab content:', error);
+            tabContent.innerHTML = originalContent;
+          });
+        }
+
+        // Function to attach event listeners to new content
+        function attachEventListeners() {
+          // Re-attach accept button listeners
+          document.querySelectorAll('.accept-btn').forEach(btn => {
+            if (!btn.hasAttribute('data-listener-attached')) {
+              btn.setAttribute('data-listener-attached', 'true');
+              btn.addEventListener('click', function() {
+                const leadId = this.dataset.leadId;
+                const row = this.closest('tr');
+                
+                axios.post('{% url "accounts:accept_lead" %}', 
+                  JSON.stringify({ lead_id: leadId }),
+                  {
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-Requested-With': 'XMLHttpRequest'
+                    }
+                  }
+                )
+                .then(response => {
+                  showToast('Lead accepted successfully', 'success');
+                  row.remove();
+                  // If no more rows, show empty message
+                  if (document.querySelectorAll('#registrations tbody tr').length <= 1) {
+                    document.querySelector('#registrations tbody').innerHTML = `
+                      <tr>
+                        <td colspan="6" class="no-results">No forwarded registrations</td>
+                      </tr>
+                    `;
+                  }
+                  // Update stats if dropdown is open
+                  if (statsDropdown.classList.contains('active')) {
+                    updateStats();
+                  }
+                  // Refresh registrations tab to show updated list
+                  refreshTabContent('registrations');
+                })
+                .catch(error => {
+                  console.error('Error accepting lead:', error.response?.data || error);
+                  showToast('Failed to accept lead', 'error');
+                });
+              });
+            }
+          });
+
+          // Re-attach reject button listeners
+          document.querySelectorAll('.reject-btn').forEach(btn => {
+            if (!btn.hasAttribute('data-listener-attached')) {
+              btn.setAttribute('data-listener-attached', 'true');
+              btn.addEventListener('click', function() {
+                const leadId = this.dataset.leadId;
+                const row = this.closest('tr');
+                
+                axios.post('{% url "accounts:reject_lead" %}', 
+                  JSON.stringify({ lead_id: leadId }),
+                  {
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-Requested-With': 'XMLHttpRequest'
+                    }
+                  }
+                )
+                .then(response => {
+                  showToast('Lead rejected successfully', 'success');
+                  row.remove();
+                  // If no more rows, show empty message
+                  if (document.querySelectorAll('#registrations tbody tr').length <= 1) {
+                    document.querySelector('#registrations tbody').innerHTML = `
+                      <tr>
+                        <td colspan="6" class="no-results">No forwarded registrations</td>
+                      </tr>
+                    `;
+                  }
+                  // Update stats if dropdown is open
+                  if (statsDropdown.classList.contains('active')) {
+                    updateStats();
+                  }
+                  // Refresh registrations tab to show updated list
+                  refreshTabContent('registrations');
+                })
+                .catch(error => {
+                  console.error('Error rejecting lead:', error.response?.data || error);
+                  showToast('Failed to reject lead', 'error');
+                });
+              });
+            }
+          });
+
+          // Re-attach complete button listeners
+          document.querySelectorAll('.complete-btn').forEach(btn => {
+            if (!btn.hasAttribute('data-listener-attached')) {
+              btn.setAttribute('data-listener-attached', 'true');
+              btn.addEventListener('click', function() {
+                const leadId = this.dataset.leadId;
+                const row = this.closest('tr');
+                const notes = row.querySelector('.notes-textarea').value;
+                
+                axios.post('{% url "accounts:complete_processing" %}', 
+                  JSON.stringify({ 
+                    lead_id: leadId,
+                    notes: notes 
+                  }),
+                  {
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-Requested-With': 'XMLHttpRequest'
+                    }
+                  }
+                )
+                .then(response => {
+                  showToast('Processing marked as complete', 'success');
+                  row.remove();
+                  // If no more rows, show empty message
+                  if (document.querySelectorAll('#processing tbody tr').length <= 1) {
+                    document.querySelector('#processing tbody').innerHTML = `
+                      <tr>
+                        <td colspan="6" class="no-results">No leads in processing</td>
+                      </tr>
+                    `;
+                  }
+                  // Update stats if dropdown is open
+                  if (statsDropdown.classList.contains('active')) {
+                    updateStats();
+                  }
+                  // Refresh completed tab to show the completed lead
+                  refreshTabContent('completed');
+                })
+                .catch(error => {
+                  console.error('Error completing processing:', error.response?.data || error);
+                  showToast('Failed to complete processing', 'error');
+                });
+              });
+            }
+          });
+
+          // Re-attach reopen button listeners
+          document.querySelectorAll('.reopen-btn').forEach(btn => {
+            if (!btn.hasAttribute('data-listener-attached')) {
+              btn.setAttribute('data-listener-attached', 'true');
+              btn.addEventListener('click', function() {
+                const leadId = this.dataset.leadId;
+                const row = this.closest('tr');
+                
+                axios.post('{% url "accounts:reopen_lead" %}', 
+                  JSON.stringify({ lead_id: leadId }),
+                  {
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-Requested-With': 'XMLHttpRequest'
+                    }
+                  }
+                )
+                .then(response => {
+                  showToast('Lead reopened successfully', 'success');
+                  row.remove();
+                  // If no more rows, show empty message
+                  if (document.querySelectorAll('#completed tbody tr').length <= 1) {
+                    document.querySelector('#completed tbody').innerHTML = `
+                      <tr>
+                        <td colspan="5" class="no-results">No completed processes</td>
+                      </tr>
+                    `;
+                  }
+                  // Update stats if dropdown is open
+                  if (statsDropdown.classList.contains('active')) {
+                    updateStats();
+                  }
+                  // Refresh completed tab to show the reopened lead
+                  refreshTabContent('completed');
+                })
+                .catch(error => {
+                  console.error('Error reopening lead:', error.response?.data || error);
+                  showToast('Failed to reopen lead', 'error');
+                });
+              });
+            }
+          });
+
+          // Re-attach notes field listeners
+          document.querySelectorAll('.notes-field').forEach(field => {
+            if (!field.hasAttribute('data-listener-attached')) {
+              field.setAttribute('data-listener-attached', 'true');
+              field.addEventListener('click', function() {
+                const leadId = this.dataset.leadId;
+                const textarea = document.querySelector(`.notes-textarea[data-lead-id="${leadId}"]`);
+                if (textarea) {
+                  this.classList.add('active');
+                  textarea.classList.add('active');
+                  textarea.focus();
+                }
+              });
+            }
+          });
+
+          // Re-attach document status select listeners
+          document.querySelectorAll('.document-status-select').forEach(select => {
+            if (!select.hasAttribute('data-listener-attached')) {
+              select.setAttribute('data-listener-attached', 'true');
+              select.addEventListener('change', function() {
+                const leadId = this.dataset.leadId;
+                const newStatus = this.value;
+                
+                axios.post('{% url "accounts:update_document_status" %}', 
+                  JSON.stringify({ 
+                    lead_id: leadId,
+                    status: newStatus
+                  }),
+                  {
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-Requested-With': 'XMLHttpRequest'
+                    }
+                  }
+                )
+                .then(response => {
+                  showToast('Document status updated', 'success');
+                  
+                  // Update stats if dropdown is open
+                  if (statsDropdown.classList.contains('active')) {
+                    updateStats();
+                  }
+                })
+                .catch(error => {
+                  console.error('Error updating document status:', error.response?.data || error);
+                  showToast('Failed to update document status', 'error');
+                  // Revert to previous value
+                  this.value = this.dataset.previousValue;
+                });
+              });
+            }
+          });
+
+          // Re-attach notes textarea listeners
+          document.querySelectorAll('.notes-textarea').forEach(textarea => {
+            if (!textarea.hasAttribute('data-listener-attached')) {
+              textarea.setAttribute('data-listener-attached', 'true');
+              textarea.addEventListener('blur', function() {
+                const leadId = this.dataset.leadId;
+                const notes = this.value;
+                const field = document.querySelector(`.notes-field[data-lead-id="${leadId}"]`);
+                
+                // Hide textarea and show field
+                this.classList.remove('active');
+                if (field) {
+                  field.classList.remove('active');
+                  
+                  // Update field content
+                  if (notes.trim()) {
+                    field.textContent = notes.length > 50 ? notes.substring(0, 50) + '...' : notes;
+                    field.classList.remove('empty');
+                  } else {
+                    field.innerHTML = '<span class="empty">Click to add notes...</span>';
+                    field.classList.add('empty');
+                  }
+                }
+                
+                // Save to server
+                axios.post('{% url "accounts:update_processing_notes" %}', 
+                  JSON.stringify({ 
+                    lead_id: leadId,
+                    notes: notes 
+                  }),
+                  {
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'X-Requested-With': 'XMLHttpRequest'
+                    }
+                  }
+                )
+                .then(response => {
+                  // Silent success
+                })
+                .catch(error => {
+                  console.error('Error saving notes:', error.response?.data || error);
+                });
+              });
+            }
+          });
+        }
+
+        // Initial attachment of event listeners
+        attachEventListeners();
+
+        // Toast notification function
+        function showToast(message, type) {
+          const toast = document.createElement('div');
+          toast.className = `toast-notification ${type}`;
+          toast.textContent = message;
+          document.body.appendChild(toast);
+          
+          setTimeout(() => {
+            toast.classList.add('fade-out');
+            setTimeout(() => toast.remove(), 300);
+          }, 3000);
+        }
+
+        // Store initial values for selects
+        document.querySelectorAll('select').forEach(select => {
+          select.dataset.previousValue = select.value;
+        });
+    </script>
+</body>
+</html>

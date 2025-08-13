@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leads Management</title>
+  <!-- Basecoat CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/all.min.js" defer></script>
+  <style>
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --card-bg: #111111;
+      --border-color: #1f1f1f;
+      --border-hover: #333333;
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #71717a;
+      --accent: #ffffff;
+      --accent-hover: #f4f4f5;
+      --shadow-small: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg-primary);
+      background-image: 
+        radial-gradient(circle at 25% 25%, #1f1f1f 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, #1a1a1a 0%, transparent 50%);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Container styles */
+    .container {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    /* Header styles */
+    .header {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #989595 0%, #45454a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-description {
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    /* Card styles */
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      box-shadow: var(--shadow-large);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    /* Table styles */
+    .table-wrapper {
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+
+    .table thead {
+      position: sticky;
+      top: 0;
+      background-color: var(--bg-secondary);
+      z-index: 10;
+      box-shadow: 0 1px 0 var(--border-color);
+    }
+
+    .table th {
+      padding: 1rem;
+      text-align: left;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .table td {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    .table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table tr:hover td {
+      background-color: rgba(255, 255, 255, 0.03);
+    }
+
+    /* Badge styles */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-weight: 500;
+      font-size: 0.75rem;
+      line-height: 1.25rem;
+    }
+
+    .badge-high {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+
+    .badge-medium {
+      background-color: rgba(245, 158, 11, 0.1);
+      color: #f59e0b;
+    }
+
+    .badge-low {
+      background-color: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+    }
+
+    /* Button styles */
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 500;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .button-primary {
+      background-color: var(--accent);
+      color: var(--bg-primary);
+    }
+
+    .button-primary:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .button-secondary {
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+
+    .button-secondary:hover {
+      background-color: var(--border-hover);
+    }
+
+    .button-danger {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+
+    .button-danger:hover {
+      background-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .button-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
+
+    /* Input styles */
+    .input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.375rem;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+      transition: border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Search box */
+    .search-box {
+      position: relative;
+      max-width: 300px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      pointer-events: none;
+    }
+
+    .search-input {
+      padding-left: 2.25rem;
+    }
+
+    /* Editable cell styles */
+    .editable-cell {
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+
+    .editable-cell:focus-within, 
+    .editable-cell.editing {
+      background-color: var(--bg-secondary);
+    }
+
+    .edit-input, 
+    .edit-select {
+      width: 100%;
+      background-color: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 0.375rem;
+      padding: 0.375rem 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .edit-input:focus, 
+    .edit-select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    }
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      padding: 0.75rem 1rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      box-shadow: var(--shadow-large);
+      z-index: 50;
+      animation: slideIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .toast-success {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%);
+      color: white;
+    }
+
+    .toast-error {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%);
+      color: white;
+    }
+
+    .toast-fade-out {
+      animation: slideOut 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideOut {
+      from {
+        transform: translateX(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    .loading-spinner::after {
+      content: "";
+      display: inline-block;
+      width: 1rem;
+      height: 1rem;
+      border: 2px solid var(--border-color);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Empty state */
+    .empty-state {
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-secondary);
+    }
+
+    /* Modal styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+    }
+
+    .modal-content {
+      background: linear-gradient(to bottom, var(--card-bg), rgba(17, 17, 17, 0.95));
+      border: 1px solid var(--border-color);
+      border-radius: 1.5rem;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5),
+                 0 0 0 1px rgba(255, 255, 255, 0.1);
+      transform: scale(0.95) translateY(10px);
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-hover) var(--bg-secondary);
+    }
+
+    .modal-content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .modal-content::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+      border-radius: 3px;
+    }
+
+    .modal-content::-webkit-scrollbar-thumb {
+      background-color: var(--border-hover);
+      border-radius: 3px;
+    }
+
+    .modal.show .modal-content {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), transparent);
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0.5rem;
+      font-size: 1.25rem;
+      transition: all 0.2s;
+      border-radius: 0.5rem;
+    }
+
+    .modal-close:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .modal form {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      background: linear-gradient(to top, rgba(255, 255, 255, 0.02), transparent);
+    }
+
+    /* Form styles */
+    .form-grid {
+      display: grid;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-field {
+      margin-bottom: 1rem;
+    }
+
+    .form-field label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+    }
+
+    .field-error {
+      color: #ef4444;
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+    }
+
+
+.search-input:not(:placeholder-shown) {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.no-results {
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1 class="header-title">Leads Management</h1>
+      <p class="header-description">View and manage all your leads in one place</p>
+    </header>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">
+          <button class="button button-primary">
+            <a href="{% url 'accounts:landing' %}" class="files-btn" style="margin-left: 0.5rem;">
+            <i class="fa-regular fa-circle-left" style="margin-right: 4px;"></i> Dashboard
+          </a>
+          </button>
+          <button class="button button-primary" onclick="openModal()">
+            <i class="fas fa-plus mr-1"></i> Add Leads
+          </button>
+        </h2>
+        
+        <div class="flex items-center gap-2">
+          
+          <div class="search-box">
+            <i class="fas fa-search search-icon"></i>
+            <input 
+              type="text" 
+              name="q" 
+              value="{{ query }}" 
+              placeholder="Search leads..." 
+              class="input search-input"
+            >
+            
+          </div>
+         
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Priority</th>
+              <th>Status</th>
+              <th>Program</th>
+              <th>Source</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lead in leads %}
+            <tr data-lead-id="{{ lead.id }}">
+              <td class="editable-cell" data-field="name">{{ lead.name }}</td>
+              <td class="editable-cell" data-field="phone">{{ lead.phone }}</td>
+              <td class="editable-cell" data-field="priority">
+                <span class="badge badge-{{ lead.priority|lower }}">{{ lead.get_priority_display }}</span>
+              </td>
+              <td class="editable-cell" data-field="status">{{ lead.get_status_display }}</td>
+              <td class="editable-cell" data-field="program">{{ lead.program }}</td>
+              <td class="editable-cell" data-field="source">{{ lead.get_source_display }}</td>
+              <td>
+                <button 
+                  onclick="deleteLead('{% url 'accounts:delete_lead' lead.id %}')" 
+                  class="button button-danger button-sm"
+                >
+                  <i class="fas fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="empty-state">
+                No leads found. Try adding a new lead.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Lead Modal -->
+  <div id="addLeadModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Add New Lead</h2>
+        <button class="modal-close" onclick="closeModal()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="form-grid">
+          {% for field in form %}
+            <div class="form-field">
+              <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+              {{ field }}
+              {% if field.errors %}
+                <div class="field-error">{{ field.errors.0 }}</div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="button button-secondary" onclick="closeModal()">Cancel</button>
+          <button type="submit" class="button button-primary">Add Lead</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Constants for choices
+    const PRIORITY_CHOICES = { 'HIGH': 'High', 'MEDIUM': 'Medium', 'LOW': 'Low' };
+    const STATUS_CHOICES = { 
+      'ENQUIRY': 'Enquiry', 
+      'INTERESTED': 'Interested', 
+      'NOT_INTERESTED': 'Not Interested', 
+      'WALK_IN': 'Walk In', 
+      'ON_HOLD': 'On Hold', 
+      'REGISTERED': 'Registered' 
+    };
+    const SOURCE_CHOICES = { 
+      'WHATSAPP': 'WhatsApp', 
+      'INSTAGRAM': 'Instagram', 
+      'WEBSITE': 'Website', 
+      'WALK_IN': 'Walk-in', 
+      'OTHER': 'Other', 
+      'AUTOMATION': 'Automation'
+    };
+
+    // Toast notification system
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('toast-fade-out');
+        setTimeout(() => toast.remove(), 150);
+      }, 3000);
+    }
+
+    // Delete lead confirmation
+    function deleteLead(url) {
+      if (confirm('Are you sure you want to delete this lead?')) {
+        window.location.href = url;
+      }
+    }
+
+    // Modal functions
+    function openModal() {
+      document.getElementById('addLeadModal').classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      document.getElementById('addLeadModal').classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    // Close modal when clicking outside or pressing escape
+    document.getElementById('addLeadModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    // Debounce function to limit how often the filter runs
+    function debounce(func, wait) {
+      let timeout;
+      return function() {
+        const context = this, args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          func.apply(context, args);
+        }, wait);
+      };
+    }
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      // Initialize search functionality
+      const searchInput = document.querySelector('.search-input');
+      const tableBody = document.querySelector('tbody');
+      let tableRows = Array.from(tableBody.querySelectorAll('tr[data-lead-id]'));
+      
+      // Enhanced filter function with column-specific search
+      function filterLeads(searchQuery) {
+        const query = searchQuery.toLowerCase().trim();
+        let anyVisible = false;
+        
+        // Remove any existing no-results row
+        const existingNoResults = tableBody.querySelector('.no-results');
+        if (existingNoResults) existingNoResults.remove();
+        
+        if (query === '') {
+          tableRows.forEach(row => row.style.display = '');
+          return;
+        }
+        
+        tableRows.forEach(row => {
+          const cells = [
+            row.querySelector('td[data-field="name"]'),
+            row.querySelector('td[data-field="phone"]'),
+            row.querySelector('td[data-field="priority"]'),
+            row.querySelector('td[data-field="status"]'),
+            row.querySelector('td[data-field="program"]'),
+            row.querySelector('td[data-field="source"]')
+          ].filter(Boolean);
+          
+          let foundMatch = false;
+          
+          cells.forEach(cell => {
+            let cellText = '';
+            
+            if (cell.dataset.field === 'priority') {
+              cellText = cell.querySelector('.badge').textContent.toLowerCase();
+            } else {
+              cellText = cell.textContent.toLowerCase();
+            }
+            
+            if (cellText.includes(query)) {
+              foundMatch = true;
+            }
+          });
+          
+          if (foundMatch) {
+            row.style.display = '';
+            anyVisible = true;
+          } else {
+            row.style.display = 'none';
+          }
+        });
+        
+        // Show no results message if nothing matches
+        if (!anyVisible && query.length > 0) {
+          const noResults = document.createElement('tr');
+          noResults.className = 'no-results';
+          noResults.innerHTML = `<td colspan="7">No leads found matching "${query}"</td>`;
+          tableBody.appendChild(noResults);
+        }
+      }
+      
+      // Debounced version of filter function (300ms delay)
+      const debouncedFilter = debounce(filterLeads, 300);
+      
+      // Add event listeners for search
+      searchInput.addEventListener('input', function() {
+        debouncedFilter(this.value);
+      });
+      
+      // If there's an initial query value, filter immediately
+      if (searchInput.value) {
+        filterLeads(searchInput.value);
+      }
+
+      // Helper function to create input element based on field type
+      function createInputElement(field, currentValue) {
+        if (['priority', 'status', 'source'].includes(field)) {
+          const select = document.createElement('select');
+          select.className = 'edit-select';
+          
+          const choices = {
+            'priority': PRIORITY_CHOICES,
+            'status': STATUS_CHOICES,
+            'source': SOURCE_CHOICES
+          }[field];
+          
+          for (const [val, label] of Object.entries(choices)) {
+            const option = document.createElement('option');
+            option.value = val;
+            option.textContent = label;
+            
+            if (label === currentValue || val === currentValue) {
+              option.selected = true;
+            }
+            
+            select.appendChild(option);
+          }
+          return select;
+        }
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'edit-input';
+        input.value = currentValue;
+        return input;
+      }
+
+      // Handle saving changes to the server
+      async function saveChanges(leadId, field, newValue) {
+        try {
+          const response = await fetch("{% url 'accounts:update_lead_field' %}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}',
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ lead_id: leadId, field: field, value: newValue })
+          });
+          
+          const data = await response.json();
+          
+          if (!response.ok || data.status !== 'success') {
+            throw new Error(data.message || 'Failed to save changes');
+          }
+          
+          return data;
+        } catch (error) {
+          console.error('Error saving changes:', error);
+          throw error;
+        }
+      }
+
+      // Update cell display after successful save
+      function updateCellDisplay(cell, field, newValue) {
+        if (field === 'priority') {
+          cell.innerHTML = `<span class="badge badge-${newValue.toLowerCase()}">${PRIORITY_CHOICES[newValue]}</span>`;
+        } 
+        else if (field === 'status') {
+          cell.textContent = STATUS_CHOICES[newValue];
+        }
+        else if (field === 'source') {
+          cell.textContent = SOURCE_CHOICES[newValue];
+        }
+        else {
+          cell.textContent = newValue;
+        }
+        
+        // After updating a cell, refresh our tableRows reference
+        tableRows = Array.from(tableBody.querySelectorAll('tr[data-lead-id]'));
+        
+        // Reapply search filter if there's an active query
+        if (searchInput.value) {
+          filterLeads(searchInput.value);
+        }
+      }
+
+      // Initialize editable cells
+      document.querySelectorAll('.editable-cell').forEach(cell => {
+        cell.addEventListener('click', function(e) {
+          // Don't initiate edit if clicking on interactive elements
+          if (e.target.closest('button, a')) return;
+          if (cell.classList.contains('editing')) return;
+          
+          cell.classList.add('editing');
+          const field = cell.dataset.field;
+          
+          // Get current value - handle badge case for priority
+          let currentValue;
+          if (field === 'priority') {
+            currentValue = cell.querySelector('.badge').textContent.trim();
+          } else {
+            currentValue = cell.textContent.trim();
+          }
+          
+          // Create appropriate input element
+          const input = createInputElement(field, currentValue);
+          cell.innerHTML = '';
+          cell.appendChild(input);
+          input.focus();
+          
+          // Select all text for text inputs
+          if (input.type === 'text') {
+            input.select();
+          }
+          
+          // Handle save on blur or enter
+          const handleSave = async () => {
+            const newValue = input.value.trim();
+            
+            // No changes made
+            if (newValue === currentValue) {
+              restoreOriginal();
+              return;
+            }
+            
+            // Validate before saving
+            if (field === 'phone' && newValue.length < 10) {
+              showToast('Phone must be at least 10 digits', 'error');
+              restoreOriginal();
+              return;
+            }
+            
+            if (field === 'name' && newValue.length < 3) {
+              showToast('Name must be at least 3 characters', 'error');
+              restoreOriginal();
+              return;
+            }
+            
+            try {
+              const row = cell.closest('tr');
+              const leadId = row.dataset.leadId;
+              
+              // Show loading state
+              cell.innerHTML = '<span class="loading-spinner">Saving...</span>';
+              
+              // Save changes
+              await saveChanges(leadId, field, newValue);
+              
+              // Update display
+              updateCellDisplay(cell, field, newValue);
+              showToast('Changes saved!', 'success');
+            } catch (error) {
+              restoreOriginal();
+              showToast(error.message || 'Error saving changes', 'error');
+            } finally {
+              cell.classList.remove('editing');
+            }
+          };
+          
+          // Restore original value
+          const restoreOriginal = () => {
+            if (field === 'priority') {
+              cell.innerHTML = `<span class="badge badge-${currentValue.toLowerCase()}">${currentValue}</span>`;
+            } else {
+              cell.textContent = currentValue;
+            }
+            cell.classList.remove('editing');
+          };
+          
+          // Event listeners
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleSave();
+            if (e.key === 'Escape') restoreOriginal();
+          });
+          
+          input.addEventListener('blur', handleSave);
+        });
+      });
+    });
+  </script>
+</body>
+</html>
