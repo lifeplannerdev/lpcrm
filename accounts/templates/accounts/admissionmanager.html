@@ -457,19 +457,19 @@
           </button>
           <div class="stats-dropdown-content" id="statsDropdown">
             <div class="stats-section">
-              <h4>Programs</h4>
+             
               <div class="stats-grid" id="programStats">
                 <!-- Will be populated by JavaScript -->
               </div>
             </div>
             <div class="stats-section">
-              <h4>Priorities</h4>
+              
               <div class="stats-grid" id="priorityStats">
                 <!-- Will be populated by JavaScript -->
               </div>
             </div>
             <div class="stats-section">
-              <h4>Status</h4>
+             
               <div class="stats-grid" id="statusStats">
                 <!-- Will be populated by JavaScript -->
               </div>
@@ -781,253 +781,348 @@ function getCookie(name) {
   return cookieValue;
 }
 </script>
-    <script>
-      // Configure axios properly
-      axios.defaults.xsrfCookieName = 'csrftoken';
-      axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+  <script>
+  // Configure axios properly
+  axios.defaults.xsrfCookieName = 'csrftoken';
+  axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+  
+  // Stats dropdown functionality
+  const statsBtn = document.getElementById('statsBtn');
+  const statsDropdown = document.getElementById('statsDropdown');
+  const tableContainer = document.querySelector('.table-container');
+  
+  // Toggle stats dropdown
+  statsBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    statsDropdown.classList.toggle('active');
+    if (statsDropdown.classList.contains('active')) {
+      updateStats();
+      tableContainer.classList.add('blurred');
+    } else {
+      tableContainer.classList.remove('blurred');
+    }
+  });
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!statsBtn.contains(e.target) && !statsDropdown.contains(e.target)) {
+      statsDropdown.classList.remove('active');
+      tableContainer.classList.remove('blurred');
+    }
+  });
+  
+  // Function to calculate and update stats - Simplified for AM Dashboard
+  function updateStats() {
+    const visibleRows = Array.from(document.querySelectorAll('.table-row:not(.hidden)'));
+    
+    // Calculate only the stats we need
+    let totalCount = 0;
+    let registeredCount = 0;
+    let interestedCount = 0;
+    
+    visibleRows.forEach(row => {
+      totalCount++;
+      const status = row.dataset.status || 'Unknown';
       
-      // Stats dropdown functionality
-      const statsBtn = document.getElementById('statsBtn');
-      const statsDropdown = document.getElementById('statsDropdown');
-      const tableContainer = document.querySelector('.table-container');
-      
-      // Toggle stats dropdown
-      statsBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        statsDropdown.classList.toggle('active');
-        if (statsDropdown.classList.contains('active')) {
-          updateStats();
-          tableContainer.classList.add('blurred');
-        } else {
-          tableContainer.classList.remove('blurred');
-        }
-      });
-      
-      // Close dropdown when clicking outside
-      document.addEventListener('click', function(e) {
-        if (!statsBtn.contains(e.target) && !statsDropdown.contains(e.target)) {
-          statsDropdown.classList.remove('active');
-          tableContainer.classList.remove('blurred');
-        }
-      });
-      
-      // Function to calculate and update stats
-      function updateStats() {
-        const visibleRows = Array.from(document.querySelectorAll('.table-row:not(.hidden)'));
-        
-        // Calculate program stats
-        const programCounts = {};
-        const priorityCounts = {};
-        const statusCounts = {};
-        
-        visibleRows.forEach(row => {
-          let program = row.dataset.program || 'Unassigned';
-          const priority = row.dataset.priority || 'Unknown';
-          const status = row.dataset.status || 'Unknown';
-          
-          // Shorten "Hotel Management" to "Hotel"
-          if (program === 'hotel management') {
-            program = 'hotel';
-          }
-          
-          // Skip "Not Interested" status
-          if (status === 'not interested') {
-            return;
-          }
-          
-          programCounts[program] = (programCounts[program] || 0) + 1;
-          priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
-          statusCounts[status] = (statusCounts[status] || 0) + 1;
-        });
-        
-        // Update program stats
-        const programStats = document.getElementById('programStats');
-        programStats.innerHTML = '';
-        Object.entries(programCounts).forEach(([program, count]) => {
-          const statItem = document.createElement('div');
-          statItem.className = 'stat-item';
-          statItem.innerHTML = `
-            <span class="label">${program}</span>
-            <span class="value">${count}</span>
-          `;
-          programStats.appendChild(statItem);
-        });
-        
-        // Update priority stats
-        const priorityStats = document.getElementById('priorityStats');
-        priorityStats.innerHTML = '';
-        Object.entries(priorityCounts).forEach(([priority, count]) => {
-          const statItem = document.createElement('div');
-          statItem.className = 'stat-item';
-          statItem.innerHTML = `
-            <span class="label">${priority}</span>
-            <span class="value">${count}</span>
-          `;
-          priorityStats.appendChild(statItem);
-        });
-        
-        // Update status stats
-        const statusStats = document.getElementById('statusStats');
-        statusStats.innerHTML = '';
-        Object.entries(statusCounts).forEach(([status, count]) => {
-          const statItem = document.createElement('div');
-          statItem.className = 'stat-item';
-          statItem.innerHTML = `
-            <span class="label">${status}</span>
-            <span class="value">${count}</span>
-          `;
-          statusStats.appendChild(statItem);
-        });
+      if (status === 'registered') {
+        registeredCount++;
+      } else if (status === 'interested') {
+        interestedCount++;
       }
+    });
+    
+    // Update stats display - Simplified layout
+    const statusStats = document.getElementById('statusStats');
+    statusStats.innerHTML = '';
+    
+    // Add only the stats we want to show
+    addStatItem(statusStats, 'Total Leads', totalCount);
+    addStatItem(statusStats, 'Registered', registeredCount);
+    addStatItem(statusStats, 'Interested', interestedCount);
+    
+    // Hide the sections we don't need
+    document.getElementById('programStats').innerHTML = '';
+    document.getElementById('priorityStats').innerHTML = '';
+  }
+  
+  // Helper function to add a stat item
+  function addStatItem(container, label, value) {
+    const statItem = document.createElement('div');
+    statItem.className = 'stat-item';
+    statItem.innerHTML = `
+      <span class="label">${label}</span>
+      <span class="value">${value}</span>
+    `;
+    container.appendChild(statItem);
+  }
+  
+  // Enhanced Search functionality
+  const searchInput = document.getElementById('searchInput');
+  const clearSearchBtn = document.getElementById('clearSearch');
+  const tableRows = document.querySelectorAll('.table-row');
+  
+  function performSearch() {
+    const searchTerm = searchInput.value.toLowerCase().trim();
+    let visibleCount = 0;
+    
+    tableRows.forEach(row => {
+      const name = row.dataset.name;
+      const phone = row.dataset.phone;
       
-      // Search functionality
-      const searchInput = document.getElementById('searchInput');
-      const clearSearchBtn = document.getElementById('clearSearch');
-      const tableRows = document.querySelectorAll('.table-row');
+      // Get program from both data attribute and input field
+      const programInput = row.querySelector('.program-input');
+      const programFromInput = programInput ? programInput.value.toLowerCase() : '';
+      const programFromData = row.dataset.program || '';
+      const program = programFromInput || programFromData;
       
-      function performSearch() {
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        let visibleCount = 0;
-        
-        tableRows.forEach(row => {
-          const name = row.dataset.name;
-          const phone = row.dataset.phone;
-          const program = row.dataset.program;
-          const status = row.dataset.status;
-          const priority = row.dataset.priority;
+      const status = row.dataset.status;
+      const priority = row.dataset.priority;
 
-          if (name.includes(searchTerm) ||
-              phone.includes(searchTerm) ||
-              program.includes(searchTerm) ||
-              status.includes(searchTerm) ||
-              priority.includes(searchTerm)) {
-            row.classList.remove('hidden');
-            visibleCount++;
-          } else {
-            row.classList.add('hidden');
+      if (name.includes(searchTerm) ||
+          phone.includes(searchTerm) ||
+          program.includes(searchTerm) ||
+          status.includes(searchTerm) ||
+          priority.includes(searchTerm)) {
+        row.classList.remove('hidden');
+        visibleCount++;
+      } else {
+        row.classList.add('hidden');
+      }
+    });
+    
+    // Show/hide clear button
+    clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
+    
+    // Show no results message if needed
+    let noResultsRow = document.querySelector('.no-results-row');
+    if (visibleCount === 0 && searchTerm) {
+      if (!noResultsRow) {
+        noResultsRow = document.createElement('tr');
+        noResultsRow.className = 'no-results-row';
+        noResultsRow.innerHTML = '<td colspan="8" class="no-results">No leads found matching your search</td>';
+        document.querySelector('tbody').appendChild(noResultsRow);
+      }
+    } else if (noResultsRow) {
+      noResultsRow.remove();
+    }
+    
+    // Update stats if dropdown is open
+    if (statsDropdown.classList.contains('active')) {
+      updateStats();
+    }
+  }
+  
+  // Search input event listener
+  searchInput.addEventListener('input', performSearch);
+  
+  // Clear search functionality
+  clearSearchBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    performSearch();
+    searchInput.focus();
+  });
+  
+  function handleUpdate(endpoint, leadId, newValue, successCallback = null) {
+      return axios.post(`/leads/${leadId}/${endpoint}/`, 
+          JSON.stringify({ [endpoint.split('_')[1]]: newValue }),
+          {
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-Requested-With': 'XMLHttpRequest'
+              }
           }
-        });
-        
-        // Show/hide clear button
-        clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
-        
-        // Show no results message if needed
-        let noResultsRow = document.querySelector('.no-results-row');
-        if (visibleCount === 0 && searchTerm) {
-          if (!noResultsRow) {
-            noResultsRow = document.createElement('tr');
-            noResultsRow.className = 'no-results-row';
-            noResultsRow.innerHTML = '<td colspan="8" class="no-results">No leads found matching your search</td>';
-            document.querySelector('tbody').appendChild(noResultsRow);
-          }
-        } else if (noResultsRow) {
-          noResultsRow.remove();
-        }
+      )
+      .then(response => {
+          if (successCallback) successCallback();
+          return response;
+      });
+  }
+  
+  // Update priority via AJAX
+  document.querySelectorAll('.priority-select').forEach(select => {
+      select.dataset.originalValue = select.value;
+      select.addEventListener('change', function() {
+          const leadId = this.dataset.leadId;
+          const newPriority = this.value;
+          
+          handleUpdate('update_priority', leadId, newPriority, () => {
+              this.dataset.originalValue = newPriority;
+              const row = this.closest('tr');
+              row.dataset.priority = newPriority.toLowerCase();
+              
+              // Update stats if dropdown is open
+              if (statsDropdown.classList.contains('active')) {
+                updateStats();
+              }
+              
+              // Re-run search if there's an active search term
+              if (searchInput.value.trim()) {
+                performSearch();
+              }
+          }).catch(error => {
+              console.error('Error updating priority:', error.response?.data || error);
+              this.value = this.dataset.originalValue;
+          });
+      });
+  });
+  
+  // Update status via AJAX
+  document.querySelectorAll('.status-select').forEach(select => {
+      select.dataset.originalValue = select.value;
+      select.addEventListener('change', function() {
+          const leadId = this.dataset.leadId;
+          const newStatus = this.value;
+          
+          handleUpdate('update_status', leadId, newStatus, () => {
+              this.dataset.originalValue = newStatus;
+              
+              // Update stats if dropdown is open
+              if (statsDropdown.classList.contains('active')) {
+                updateStats();
+              }
+              
+              // Re-run search if there's an active search term
+              if (searchInput.value.trim()) {
+                performSearch();
+              }
+          }).catch(error => {
+              console.error('Error updating status:', error.response?.data || error);
+              this.value = this.dataset.originalValue;
+          });
+      });
+  });
+  
+  // Enhanced program input handling with immediate search update
+  document.querySelectorAll('.program-input').forEach(input => {
+    input.dataset.originalValue = input.value;
+    
+    // Handle program updates
+    input.addEventListener('change', function() {
+      const leadId = this.dataset.leadId;
+      const newProgram = this.value;
+      
+      handleUpdate('update_program', leadId, newProgram, () => {
+        this.dataset.originalValue = newProgram;
+        const row = this.closest('tr');
+        row.dataset.program = newProgram.toLowerCase();
         
         // Update stats if dropdown is open
         if (statsDropdown.classList.contains('active')) {
           updateStats();
         }
-      }
-      
-      // Search input event listener
-      searchInput.addEventListener('input', performSearch);
-      
-      // Clear search functionality
-      clearSearchBtn.addEventListener('click', () => {
-        searchInput.value = '';
-        performSearch();
-        searchInput.focus();
-      });
-      
-      function handleUpdate(endpoint, leadId, newValue, successCallback = null) {
-          return axios.post(`/leads/${leadId}/${endpoint}/`, 
-              JSON.stringify({ [endpoint.split('_')[1]]: newValue }),
-              {
-                  headers: {
-                      'Content-Type': 'application/json',
-                      'X-Requested-With': 'XMLHttpRequest'
-                  }
-              }
-          )
-          .then(response => {
-              if (successCallback) successCallback();
-              return response;
-          });
-      }
-      
-      // Update priority via AJAX
-      document.querySelectorAll('.priority-select').forEach(select => {
-          select.dataset.originalValue = select.value;
-          select.addEventListener('change', function() {
-              const leadId = this.dataset.leadId;
-              const newPriority = this.value;
-              
-              handleUpdate('update_priority', leadId, newPriority, () => {
-                  this.dataset.originalValue = newPriority;
-                  const row = this.closest('tr');
-                  row.dataset.priority = newPriority.toLowerCase();
-                  updatePriorityCounts();
-                  
-                  // Update stats if dropdown is open
-                  if (statsDropdown.classList.contains('active')) {
-                    updateStats();
-                  }
-              }).catch(error => {
-                  console.error('Error updating priority:', error.response?.data || error);
-                  this.value = this.dataset.originalValue;
-              });
-          });
-      });
-      
-      // Update status via AJAX
-      document.querySelectorAll('.status-select').forEach(select => {
-          select.dataset.originalValue = select.value;
-          select.addEventListener('change', function() {
-              const leadId = this.dataset.leadId;
-              const newStatus = this.value;
-              
-              handleUpdate('update_status', leadId, newStatus, () => {
-                  this.dataset.originalValue = newStatus;
-                  
-                  // Update stats if dropdown is open
-                  if (statsDropdown.classList.contains('active')) {
-                    updateStats();
-                  }
-              }).catch(error => {
-                  console.error('Error updating status:', error.response?.data || error);
-                  this.value = this.dataset.originalValue;
-              });
-          });
-      });
-      
-      // Update program via AJAX (now for text input)
-      document.querySelectorAll('.program-input').forEach(input => {
-        input.dataset.originalValue = input.value;
-        input.addEventListener('change', function() {
-              const leadId = this.dataset.leadId;
-              const newProgram = this.value;
-              handleUpdate('update_program', leadId, newProgram, () => {
-                  this.dataset.originalValue = newProgram;
-            const row = this.closest('tr');
-            row.dataset.program = newProgram.toLowerCase();
-                  if (statsDropdown.classList.contains('active')) {
-                    updateStats();
-                  }
-          });
-          });
-      });
-
-      // Update Dashboard Stat Numbers
-      function updatePriorityCounts() {
-        let high = document.querySelectorAll('tr[data-priority="high"]').length;
-        let medium = document.querySelectorAll('tr[data-priority="medium"]').length;
-        let low = document.querySelectorAll('tr[data-priority="low"]').length;
         
-        document.getElementById('count-high').textContent = high;
-        document.getElementById('count-medium').textContent = medium;
-        document.getElementById('count-low').textContent = low;
+        // Re-run search if there's an active search term
+        if (searchInput.value.trim()) {
+          performSearch();
+        }
+      }).catch(error => {
+        console.error('Error updating program:', error.response?.data || error);
+        this.value = this.dataset.originalValue;
+      });
+    });
+    
+    // Also trigger search on input (not just change) for better responsiveness
+    input.addEventListener('input', function() {
+      const row = this.closest('tr');
+      // Temporarily update the dataset for search purposes
+      row.dataset.program = this.value.toLowerCase();
+      
+      if (searchInput.value.trim()) {
+        performSearch();
       }
-    </script> 
+    });
+  });
+
+  // Handle assignment to executives
+  document.querySelectorAll('.assign-select').forEach(select => {
+    select.addEventListener('change', function() {
+      const leadId = this.dataset.leadId;
+      const executiveId = this.value;
+      
+      axios.post('{% url "accounts:assign_to_executive" %}', 
+        JSON.stringify({
+          lead_id: leadId,
+          executive_id: executiveId
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken')
+          }
+        }
+      )
+      .then(response => {
+        console.log('Lead assigned successfully');
+        const row = this.closest('tr');
+        if (executiveId) {
+          const selectedOption = this.options[this.selectedIndex];
+          row.dataset.assigned = selectedOption.text.toLowerCase();
+        } else {
+          row.dataset.assigned = 'unassigned';
+        }
+        
+        if (!executiveId) {
+          row.remove();
+        }
+      })
+      .catch(error => {
+        console.error('Error assigning lead:', error.response?.data || error);
+        const errorMsg = error.response?.data?.message || 'Failed to assign lead. Please try again.';
+        alert(errorMsg);
+        this.value = this.dataset.previousValue;
+      });
+    });
+    
+    // Store initial value
+    select.dataset.previousValue = select.value;
+  });
+
+  // Helper function to get CSRF token
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  // Handle remarks updates
+  document.querySelectorAll('.remarks-input').forEach(input => {
+    input.dataset.originalValue = input.value;
+    input.addEventListener('change', function() {
+      const leadId = this.dataset.leadId;
+      const remarks = this.value;
+      
+      axios.post('{% url "accounts:update_lead_field" %}', 
+        JSON.stringify({
+          lead_id: leadId,
+          field: 'remarks',
+          value: remarks
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        }
+      )
+      .then(response => {
+        this.dataset.originalValue = remarks;
+      })
+      .catch(error => {
+        console.error('Error updating remarks:', error.response?.data || error);
+        this.value = this.dataset.originalValue;
+      });
+    });
+  });
+</script>
 </body>
 </html>
