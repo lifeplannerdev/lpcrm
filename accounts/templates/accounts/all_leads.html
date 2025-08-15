@@ -130,6 +130,21 @@
       letter-spacing: 0.05em;
       border-bottom: 1px solid var(--border-color);
     }
+    
+    /* Serial number column styling */
+    .table th:first-child {
+      width: 60px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .table td:first-child {
+      width: 60px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.02);
+    }
 
     .table td {
       padding: 1rem;
@@ -560,6 +575,7 @@
         <table class="table">
           <thead>
             <tr>
+              <th style="width: 60px;">#</th>
               <th>Name</th>
               <th>Phone</th>
               <th>Priority</th>
@@ -572,6 +588,7 @@
           <tbody>
             {% for lead in leads %}
             <tr data-lead-id="{{ lead.id }}">
+              <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
               <td class="editable-cell" data-field="name">{{ lead.name }}</td>
               <td class="editable-cell" data-field="phone">{{ lead.phone }}</td>
               <td class="editable-cell" data-field="priority">
@@ -591,7 +608,7 @@
             </tr>
             {% empty %}
             <tr>
-              <td colspan="7" class="empty-state">
+              <td colspan="8" class="empty-state">
                 No leads found. Try adding a new lead.
               </td>
             </tr>

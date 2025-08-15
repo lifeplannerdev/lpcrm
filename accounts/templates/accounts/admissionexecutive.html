@@ -283,6 +283,21 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    
+    /* Serial number column styling */
+    .bc-table th:first-child {
+      width: 60px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .bc-table td:first-child {
+      width: 60px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.02);
+    }
     .bc-table th {
       background: var(--bg-secondary);
       color: var(--text-secondary);
@@ -647,6 +662,7 @@
         <table class="bc-table bc-table-striped">
           <thead>
             <tr>
+              <th style="width: 60px;">#</th>
               <th>Name</th>
               <th>Phone</th>
               <th>Email</th>
@@ -665,6 +681,7 @@
                   data-program="{{ lead.get_program_display|lower|default:'' }}"
                   data-status="{{ lead.get_status_display|lower }}"
                   data-priority="{{ lead.get_priority_display|lower }}">
+                <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                 <td>{{ lead.name }}</td>
                 <td>{{ lead.phone }}</td>
                 <td>{{ lead.email|default:"-" }}</td>
@@ -712,6 +729,7 @@
                   data-program="{{ lead.get_program_display|lower|default:'' }}"
                   data-status="{{ lead.get_status_display|lower }}"
                   data-priority="{{ lead.get_priority_display|lower }}">
+                <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                 <td>{{ lead.name }}</td>
                 <td>{{ lead.phone }}</td>
                 <td>{{ lead.email|default:"-" }}</td>
@@ -759,6 +777,7 @@
                   data-program="{{ lead.get_program_display|lower|default:'' }}"
                   data-status="{{ lead.get_status_display|lower }}"
                   data-priority="{{ lead.get_priority_display|lower }}">
+                <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                 <td>{{ lead.name }}</td>
                 <td>{{ lead.phone }}</td>
                 <td>{{ lead.email|default:"-" }}</td>
@@ -965,7 +984,7 @@ document.querySelectorAll('.remarks-input').forEach(input => {
     statusStats.innerHTML = '';
     
     // Add only the stats we want to show
-    addStatItem(statusStats, 'Total Leads', totalCount);
+    addStatItem(statusStats, 'Total', totalCount);
     addStatItem(statusStats, 'Registered', registeredCount);
     addStatItem(statusStats, 'Interested', interestedCount);
     
@@ -1019,6 +1038,9 @@ document.querySelectorAll('.remarks-input').forEach(input => {
       }
     });
     
+    // Update serial numbers for visible rows
+    updateSerialNumbers();
+    
     // Show/hide clear button
     clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
     
@@ -1028,7 +1050,7 @@ document.querySelectorAll('.remarks-input').forEach(input => {
       if (!noResultsRow) {
         noResultsRow = document.createElement('tr');
         noResultsRow.className = 'no-results-row';
-        noResultsRow.innerHTML = '<td colspan="8" class="no-results">No leads found matching your search</td>';
+        noResultsRow.innerHTML = '<td colspan="9" class="no-results">No leads found matching your search</td>';
         document.querySelector('tbody').appendChild(noResultsRow);
       }
     } else if (noResultsRow) {
@@ -1039,6 +1061,17 @@ document.querySelectorAll('.remarks-input').forEach(input => {
     if (statsDropdown.classList.contains('active')) {
       updateStats();
     }
+  }
+  
+  // Function to update serial numbers for visible rows
+  function updateSerialNumbers() {
+    const visibleRows = Array.from(document.querySelectorAll('.table-row:not(.hidden)'));
+    visibleRows.forEach((row, index) => {
+      const serialCell = row.querySelector('td:first-child');
+      if (serialCell) {
+        serialCell.textContent = index + 1;
+      }
+    });
   }
   
   // Search input event listener
@@ -1336,6 +1369,9 @@ document.querySelectorAll('.remarks-input').forEach(input => {
     }
   `;
   document.head.appendChild(style);
+  
+  // Initialize serial numbers
+  updateSerialNumbers();
 </script>
 </body>
 </html>

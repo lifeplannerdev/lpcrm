@@ -240,6 +240,21 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    
+    /* Serial number column styling */
+    .bc-table th:first-child {
+      width: 60px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .bc-table td:first-child {
+      width: 60px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.02);
+    }
     .bc-table th {
       background: var(--bg-secondary);
       
@@ -461,6 +476,13 @@
       .search-input { font-size: 0.8rem; }
       .stats-dropdown-content { width: 280px; padding: 1rem; }
       .stats-grid { grid-template-columns: 1fr; }
+      
+      /* Ensure serial number column remains visible on mobile */
+      .bc-table th:first-child, .bc-table td:first-child {
+        width: 50px;
+        min-width: 50px;
+        padding: 0.5rem 0.25rem;
+      }
     }
     /* Blur effect for background when dropdown is active */
     .table-container.blurred {
@@ -503,20 +525,20 @@
           </button>
           <div class="stats-dropdown-content" id="statsDropdown">
             <div class="stats-section">
-              <h4>Programs</h4>
-              <div class="stats-grid" id="programStats">
+              <h4>Lead Overview</h4>
+              <div class="stats-grid" id="overviewStats">
                 <!-- Will be populated by JavaScript -->
               </div>
             </div>
             <div class="stats-section">
-              <h4>Priorities</h4>
-              <div class="stats-grid" id="priorityStats">
+              <h4>Assignment Status</h4>
+              <div class="stats-grid" id="assignmentStats">
                 <!-- Will be populated by JavaScript -->
               </div>
             </div>
             <div class="stats-section">
-              <h4>Status</h4>
-              <div class="stats-grid" id="statusStats">
+              <h4>Processing Status</h4>
+              <div class="stats-grid" id="processingStats">
                 <!-- Will be populated by JavaScript -->
               </div>
             </div>
@@ -545,14 +567,15 @@
         <table class="bc-table bc-table-striped">
             <thead>
                 <tr>
+                    <th style="width: 60px;">#</th>
                     <th>Name</th>
                     <th>Phone</th>
                     <th>Source</th>
-              <th>Priority</th>
+                    <th>Priority</th>
                     <th>Status</th>
                     <th>Program</th>
                     <th>Assigned To</th>
-              <th class="text-green-500">Processing<i class="fa-solid fa-circle-right" style="color: #34d399;margin-left: 10px;"></i></th>
+                    <th class="text-green-500">Processing<i class="fa-solid fa-circle-right" style="color: #34d399;margin-left: 10px;"></i></th>
                 </tr>
             </thead>
             <tbody>
@@ -564,7 +587,9 @@
                 data-program="{{ lead.get_program_display|lower|default:'' }}"
                 data-status="{{ lead.get_status_display|lower }}"
                 data-priority="{{ lead.get_priority_display|lower }}"
-                data-assigned="{{ lead.assigned_to.get_full_name|lower|default:'unassigned' }}">
+                data-assigned="{{ lead.assigned_to.get_full_name|lower|default:'unassigned' }}"
+                data-processing-status="{{ lead.processing_status|lower|default:'pending' }}">
+                    <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                     <td>{{ lead.name }}</td>
                     <td>{{ lead.phone }}</td>
                     <td>{{ lead.source }}</td>
@@ -689,69 +714,85 @@
     function updateStats() {
       const visibleRows = Array.from(document.querySelectorAll('.table-row:not(.hidden)'));
       
-      // Calculate program stats
-      const programCounts = {};
-      const priorityCounts = {};
-      const statusCounts = {};
+      // Calculate overview stats
+      let totalLeads = 0;
+      let registeredCount = 0;
+      let forwardedCount = 0;
+      
+      // Calculate assignment stats
+      let assignedCount = 0;
+      let unassignedCount = 0;
+      
+      // Calculate processing stats
+      let pendingCount = 0;
+      let processingCount = 0;
+      let completedCount = 0;
+      let rejectedCount = 0;
       
       visibleRows.forEach(row => {
-        let program = row.dataset.program || 'Unassigned';
-        const priority = row.dataset.priority || 'Unknown';
-        const status = row.dataset.status || 'Unknown';
+        totalLeads++;
         
-        // Shorten "Hotel Management" to "Hotel"
-        if (program === 'hotel management') {
-          program = 'hotel';
+        const status = row.dataset.status || 'unknown';
+        const processingStatus = row.dataset.processingStatus || 'pending';
+        const assigned = row.dataset.assigned || 'unassigned';
+        
+        // Count by status
+        if (status === 'registered') {
+          registeredCount++;
         }
         
-        // Skip "Not Interested" status
-        if (status === 'not interested') {
-          return;
+        // Count by processing status
+        if (processingStatus === 'forwarded') {
+          forwardedCount++;
+        } else if (processingStatus === 'processing') {
+          processingCount++;
+        } else if (processingStatus === 'completed') {
+          completedCount++;
+        } else if (processingStatus === 'rejected') {
+          rejectedCount++;
+        } else {
+          pendingCount++;
         }
         
-        programCounts[program] = (programCounts[program] || 0) + 1;
-        priorityCounts[priority] = (priorityCounts[priority] || 0) + 1;
-        statusCounts[status] = (statusCounts[status] || 0) + 1;
+        // Count by assignment
+        if (assigned === 'unassigned') {
+          unassignedCount++;
+        } else {
+          assignedCount++;
+        }
       });
       
-      // Update program stats
-      const programStats = document.getElementById('programStats');
-      programStats.innerHTML = '';
-      Object.entries(programCounts).forEach(([program, count]) => {
-        const statItem = document.createElement('div');
-        statItem.className = 'stat-item';
-        statItem.innerHTML = `
-          <span class="label">${program}</span>
-          <span class="value">${count}</span>
-        `;
-        programStats.appendChild(statItem);
-      });
+      // Update overview stats
+      const overviewStats = document.getElementById('overviewStats');
+      overviewStats.innerHTML = '';
+      addStatItem(overviewStats, 'Total Leads', totalLeads);
+      addStatItem(overviewStats, 'Registered', registeredCount);
+      addStatItem(overviewStats, 'Forwarded', forwardedCount);
       
-      // Update priority stats
-      const priorityStats = document.getElementById('priorityStats');
-      priorityStats.innerHTML = '';
-      Object.entries(priorityCounts).forEach(([priority, count]) => {
-        const statItem = document.createElement('div');
-        statItem.className = 'stat-item';
-        statItem.innerHTML = `
-          <span class="label">${priority}</span>
-          <span class="value">${count}</span>
-        `;
-        priorityStats.appendChild(statItem);
-      });
+      // Update assignment stats
+      const assignmentStats = document.getElementById('assignmentStats');
+      assignmentStats.innerHTML = '';
+      addStatItem(assignmentStats, 'Assigned', assignedCount);
+      addStatItem(assignmentStats, 'Unassigned', unassignedCount);
       
-      // Update status stats
-      const statusStats = document.getElementById('statusStats');
-      statusStats.innerHTML = '';
-      Object.entries(statusCounts).forEach(([status, count]) => {
-        const statItem = document.createElement('div');
-        statItem.className = 'stat-item';
-        statItem.innerHTML = `
-          <span class="label">${status}</span>
-          <span class="value">${count}</span>
-        `;
-        statusStats.appendChild(statItem);
-      });
+      // Update processing stats
+      const processingStats = document.getElementById('processingStats');
+      processingStats.innerHTML = '';
+      addStatItem(processingStats, 'Pending', pendingCount);
+      addStatItem(processingStats, 'Processing', processingCount);
+      addStatItem(processingStats, 'Completed', completedCount);
+      addStatItem(processingStats, 'Rejected', rejectedCount);
+    }
+    
+    // Helper function to add a stat item
+    function addStatItem(container, label, value) {
+      const statItem = document.createElement('div');
+      statItem.className = 'stat-item';
+      statItem.innerHTML = `
+        <span class="label">${label}</span>
+        <span class="value">${value}</span>
+      `;
+      container.appendChild(statItem);
     }
     
     // Search functionality
@@ -759,7 +800,7 @@
     const clearSearchBtn = document.getElementById('clearSearch');
     const tableRows = document.querySelectorAll('.table-row');
     
-    function performSearch() {
+        function performSearch() {
       const searchTerm = searchInput.value.toLowerCase().trim();
       let visibleCount = 0;
       
@@ -784,6 +825,9 @@
         }
       });
       
+      // Update serial numbers for visible rows
+      updateSerialNumbers();
+      
       // Show/hide clear button
       clearSearchBtn.style.display = searchTerm ? 'block' : 'none';
       
@@ -793,7 +837,7 @@
         if (!noResultsRow) {
           noResultsRow = document.createElement('tr');
           noResultsRow.className = 'no-results-row';
-          noResultsRow.innerHTML = '<td colspan="7" class="no-results">No leads found matching your search</td>';
+          noResultsRow.innerHTML = '<td colspan="8" class="no-results">No leads found matching your search</td>';
           document.querySelector('tbody').appendChild(noResultsRow);
         }
       } else if (noResultsRow) {
@@ -804,6 +848,17 @@
       if (statsDropdown.classList.contains('active')) {
         updateStats();
       }
+    }
+    
+    // Function to update serial numbers for visible rows
+    function updateSerialNumbers() {
+      const visibleRows = Array.from(document.querySelectorAll('.table-row:not(.hidden)'));
+      visibleRows.forEach((row, index) => {
+        const serialCell = row.querySelector('td:first-child');
+        if (serialCell) {
+          serialCell.textContent = index + 1;
+        }
+      });
     }
     
     // Search input event listener
@@ -846,7 +901,8 @@
         if (field === 'status') {
           const forwardBtn = row.querySelector('.forward-btn');
           if (forwardBtn) {
-            forwardBtn.disabled = value !== 'REGISTERED';
+            const processingStatus = row.dataset.processingStatus || 'pending';
+            forwardBtn.disabled = value !== 'REGISTERED' || processingStatus === 'forwarded';
           }
         }
         
@@ -955,6 +1011,15 @@
           this.classList.remove('btn-primary');
           this.classList.add('btn-secondary');
           
+          // Update the row's processing status data attribute
+          const row = this.closest('tr');
+          row.dataset.processingStatus = 'forwarded';
+          
+          // Update stats if dropdown is open
+          if (statsDropdown.classList.contains('active')) {
+            updateStats();
+          }
+          
           // Show success message
           if (isRejected) {
             showToast('Rejected lead re-forwarded successfully', 'success');
@@ -966,6 +1031,7 @@
           console.error('Error forwarding lead:', error.response?.data || error);
           alert('Failed to forward lead. Please try again.');
         });
+      });
     });
 
     // Update program via AJAX (now for text input)
@@ -974,13 +1040,38 @@
       input.addEventListener('change', function() {
         const leadId = this.dataset.leadId;
         const newProgram = this.value;
-        handleFieldUpdate(this); // This will use the generic handler
+        
         // Update the data attribute for search/stats
         const row = this.closest('tr');
         row.dataset.program = newProgram.toLowerCase();
-        if (statsDropdown.classList.contains('active')) {
-          updateStats();
-        }
+        
+        // Send update to server
+        axios.post('{% url "accounts:update_lead_field" %}', 
+          JSON.stringify({
+            lead_id: leadId,
+            field: 'program',
+            value: newProgram
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          }
+        )
+        .then(response => {
+          console.log('Program updated successfully');
+          this.dataset.originalValue = newProgram;
+          
+          // Update stats if dropdown is open
+          if (statsDropdown.classList.contains('active')) {
+            updateStats();
+          }
+        })
+        .catch(error => {
+          console.error('Error updating program:', error.response?.data || error);
+          this.value = this.dataset.originalValue;
+        });
       });
     });
 
@@ -988,6 +1079,9 @@
     document.querySelectorAll('select').forEach(select => {
       select.dataset.previousValue = select.value;
     });
+    
+    // Initialize serial numbers
+    updateSerialNumbers();
     
     // Toast notification function
     function showToast(message, type) {
@@ -1006,7 +1100,6 @@
     function openGoogleDrive() {
       window.open('https://drive.google.com', '_blank');
     }
-});
 </script>
 </body>
 </html>
