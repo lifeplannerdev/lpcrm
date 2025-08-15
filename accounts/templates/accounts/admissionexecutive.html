@@ -682,7 +682,7 @@
                   data-status="{{ lead.get_status_display|lower }}"
                   data-priority="{{ lead.get_priority_display|lower }}">
                 <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
-                <td>{{ lead.name }}</td>
+                <td><a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">{{ lead.name }}</a></td>
                 <td>{{ lead.phone }}</td>
                 <td>{{ lead.email|default:"-" }}</td>
                 <td>
@@ -730,7 +730,7 @@
                   data-status="{{ lead.get_status_display|lower }}"
                   data-priority="{{ lead.get_priority_display|lower }}">
                 <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
-                <td>{{ lead.name }}</td>
+                <td><a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">{{ lead.name }}</a></td>
                 <td>{{ lead.phone }}</td>
                 <td>{{ lead.email|default:"-" }}</td>
                 <td>
@@ -778,7 +778,7 @@
                   data-status="{{ lead.get_status_display|lower }}"
                   data-priority="{{ lead.get_priority_display|lower }}">
                 <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
-                <td>{{ lead.name }}</td>
+                <td><a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">{{ lead.name }}</a></td>
                 <td>{{ lead.phone }}</td>
                 <td>{{ lead.email|default:"-" }}</td>
                 <td>

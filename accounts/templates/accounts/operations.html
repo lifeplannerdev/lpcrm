@@ -590,7 +590,7 @@
                 data-assigned="{{ lead.assigned_to.get_full_name|lower|default:'unassigned' }}"
                 data-processing-status="{{ lead.processing_status|lower|default:'pending' }}">
                     <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
-                    <td>{{ lead.name }}</td>
+                    <td><a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">{{ lead.name }}</a></td>
                     <td>{{ lead.phone }}</td>
                     <td>{{ lead.source }}</td>
               

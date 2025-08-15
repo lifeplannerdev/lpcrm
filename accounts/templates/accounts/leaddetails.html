@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lead Details - {{ lead.name }}</title>
+  <!-- Basecoat CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/all.min.js" defer></script>
+  <style>
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --card-bg: #111111;
+      --border-color: #1f1f1f;
+      --border-hover: #333333;
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #71717a;
+      --accent: #ffffff;
+      --accent-hover: #f4f4f5;
+      --shadow-small: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg-primary);
+      background-image: 
+        radial-gradient(circle at 25% 25%, #1f1f1f 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, #1a1a1a 0%, transparent 50%);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      gap: 1rem;
+    }
+
+    .header-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .back-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .back-btn:hover {
+      background: var(--border-hover);
+      border-color: var(--border-hover);
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .header-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #989595 0%, #45454a 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .lead-id {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      box-shadow: var(--shadow-large);
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.03), transparent);
+    }
+
+    .card-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card-content {
+      padding: 1.5rem;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .info-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .info-label {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    .info-value {
+      font-size: 1rem;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .info-value.empty {
+      color: var(--text-tertiary);
+      font-style: italic;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-weight: 500;
+      font-size: 0.75rem;
+      line-height: 1.25rem;
+    }
+
+    .badge-high {
+      background-color: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+
+    .badge-medium {
+      background-color: rgba(245, 158, 11, 0.1);
+      color: #f59e0b;
+    }
+
+    .badge-low {
+      background-color: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+    }
+
+    .status-badge {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+
+    .processing-badge {
+      background-color: rgba(168, 85, 247, 0.1);
+      color: #a855f7;
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    .timeline-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .timeline-content {
+      flex: 1;
+    }
+
+    .timeline-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .timeline-date {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    .actions-section {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+      justify-content: flex-start;
+      align-items: center;
+    }
+
+    .actions-container {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 0.875rem;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg-primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      color: var(--bg-primary);
+      text-decoration: none;
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-hover);
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: #ef4444;
+      text-decoration: none;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .content-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+      
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      
+      .actions-container {
+        flex-direction: column;
+        width: 100%;
+      }
+      
+      .actions-container .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <div class="header-content">
+        <h1 class="header-title">{{ lead.name }}</h1>
+        
+      </div>
+      
+      <!-- Actions Container -->
+      <div class="actions-container">
+        <a href="{% url 'accounts:all_leads' %}" class="btn btn-secondary">
+          <i class="fas fa-list"></i>
+          View All Leads
+        </a>
+        <a href="{% url 'accounts:admission_dashboard' %}" class="btn btn-primary">
+          <i class="fas fa-dashboard"></i>
+          Back to Dashboard
+        </a>
+        <a href="{% url 'accounts:delete_lead' lead.id %}" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this lead?')">
+          <i class="fas fa-trash"></i>
+          Delete Lead
+        </a>
+      </div>
+    </header>
+
+    <div class="content-grid">
+      <!-- Main Lead Information -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <i class="fas fa-user"></i>
+            Lead Information
+          </h2>
+        </div>
+        <div class="card-content">
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Name</div>
+              <div class="info-value">{{ lead.name }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Phone</div>
+              <div class="info-value">{{ lead.phone }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Email</div>
+              <div class="info-value {% if not lead.email %}empty{% endif %}">
+                {{ lead.email|default:"Not provided" }}
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Location</div>
+              <div class="info-value {% if not lead.location %}empty{% endif %}">
+                {{ lead.location|default:"Not specified" }}
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Source</div>
+              <div class="info-value">{{ lead.get_source_display }}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Program</div>
+              <div class="info-value {% if not lead.program %}empty{% endif %}">
+                {{ lead.program|default:"Not specified" }}
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Priority</div>
+              <div class="info-value">
+                <span class="badge badge-{{ lead.priority|lower }}">{{ lead.get_priority_display }}</span>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Status</div>
+              <div class="info-value">
+                <span class="badge status-badge">{{ lead.get_status_display }}</span>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Processing Status</div>
+              <div class="info-value">
+                <span class="badge processing-badge">{{ lead.get_processing_status_display }}</span>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Document Status</div>
+              <div class="info-value">
+                <span class="badge status-badge">{{ lead.get_document_status_display }}</span>
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Assigned To</div>
+              <div class="info-value {% if not lead.assigned_to %}empty{% endif %}">
+                {{ lead.assigned_to.get_full_name|default:"Unassigned" }}
+              </div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Processing Executive</div>
+              <div class="info-value {% if not lead.processing_executive %}empty{% endif %}">
+                {{ lead.processing_executive.get_full_name|default:"Not assigned" }}
+              </div>
+            </div>
+          </div>
+
+          {% if lead.remarks %}
+          <div class="info-item" style="margin-top: 1.5rem;">
+            <div class="info-label">Remarks</div>
+            <div class="info-value">{{ lead.remarks }}</div>
+          </div>
+          {% endif %}
+
+          {% if lead.processing_notes %}
+          <div class="info-item" style="margin-top: 1.5rem;">
+            <div class="info-label">Processing Notes</div>
+            <div class="info-value">{{ lead.processing_notes }}</div>
+          </div>
+          {% endif %}
+
+          {% if lead.documents_received %}
+          <div class="info-item" style="margin-top: 1.5rem;">
+            <div class="info-label">Documents Received</div>
+            <div class="info-value">{{ lead.documents_received }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Timeline and Actions -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <i class="fas fa-clock"></i>
+            Timeline
+          </h2>
+        </div>
+        <div class="card-content">
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-icon">
+                <i class="fas fa-plus"></i>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-title">Lead Created</div>
+                <div class="timeline-date">{{ lead.created_at|date:"M d, Y H:i" }}</div>
+              </div>
+            </div>
+            
+            {% if lead.assigned_date %}
+            <div class="timeline-item">
+              <div class="timeline-icon">
+                <i class="fas fa-user-plus"></i>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-title">Assigned to Executive</div>
+                <div class="timeline-date">{{ lead.assigned_date|date:"M d, Y H:i" }}</div>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if lead.registration_date %}
+            <div class="timeline-item">
+              <div class="timeline-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-title">Registered</div>
+                <div class="timeline-date">{{ lead.registration_date|date:"M d, Y H:i" }}</div>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if lead.processing_status_date %}
+            <div class="timeline-item">
+              <div class="timeline-icon">
+                <i class="fas fa-cogs"></i>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-title">Processing Status Updated</div>
+                <div class="timeline-date">{{ lead.processing_status_date|date:"M d, Y H:i" }}</div>
+              </div>
+            </div>
+            {% endif %}
+
+            <div class="timeline-item">
+              <div class="timeline-icon">
+                <i class="fas fa-edit"></i>
+              </div>
+              <div class="timeline-content">
+                <div class="timeline-title">Last Updated</div>
+                <div class="timeline-date">{{ lead.updated_at|date:"M d, Y H:i" }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

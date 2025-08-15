@@ -839,3 +839,17 @@ def update_lead_field(request):
         return JsonResponse({'status': 'error', 'message': 'Lead not found'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+def lead_details(request, lead_id):
+    """View for displaying individual lead details"""
+    try:
+        lead = Lead.objects.get(id=lead_id)
+    except Lead.DoesNotExist:
+        messages.error(request, 'Lead not found.')
+        return redirect('accounts:all_leads')
+    
+    context = {
+        'lead': lead,
+    }
+    return render(request, 'accounts/leaddetails.html', context)
