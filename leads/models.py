@@ -56,7 +56,7 @@ class Lead(models.Model):
         max_length=15,
         validators=[MinLengthValidator(10)]
     )
-    email = models.EmailField(blank=True)
+    email = models.EmailField(blank=True, null=True)
     priority = models.CharField(
         max_length=10, 
         choices=PRIORITY_CHOICES, 
@@ -78,9 +78,9 @@ class Lead(models.Model):
     null=True,
     help_text="Additional notes or comments about the lead"
     )
-    location = models.CharField(max_length=100, blank=True)
+    location = models.CharField(max_length=100, blank=True, null=True)
     source = models.CharField(max_length=10, choices=SOURCE_CHOICES)
-    custom_source = models.CharField(max_length=50, blank=True)
+    custom_source = models.CharField(max_length=50, blank=True, null=True)
     
     # Processing workflow fields
     processing_status = models.CharField(
@@ -97,7 +97,7 @@ class Lead(models.Model):
         related_name='processing_leads'
     )
     processing_status_date = models.DateTimeField(auto_now_add=True)
-    processing_notes = models.TextField(blank=True)
+    processing_notes = models.TextField(blank=True, null=True)
     
     # Document tracking
     document_status = models.CharField(
@@ -105,7 +105,7 @@ class Lead(models.Model):
         choices=DOCUMENT_STATUS_CHOICES,
         default='PENDING'
     )
-    documents_received = models.TextField(blank=True)
+    documents_received = models.TextField(blank=True, null=True)
     
     # Assignment tracking
     assigned_to = models.ForeignKey(
