@@ -24,5 +24,6 @@ urlpatterns = [
     path('all-leads/', views.all_leads, name='all_leads'),
     path('delete-lead/<int:lead_id>/', views.delete_lead, name='delete_lead'),
     path('leads/assign-to-executive/', views.assign_lead_to_executive, name='assign_to_executive'),
+    path('add-lead/', views.add_lead, name='add_lead'),
     
 ]

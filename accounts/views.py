@@ -647,6 +647,49 @@ def reopen_lead(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)    
 
 @login_required
+@require_POST
+def add_lead(request):
+    """Add a new lead and automatically assign it to the current user"""
+    try:
+        data = json.loads(request.body)
+        
+        # Validate required fields
+        name = data.get('name', '').strip()
+        phone = data.get('phone', '').strip()
+        
+        if not name or len(name) < 3:
+            return JsonResponse({'status': 'error', 'message': 'Name must be at least 3 characters'}, status=400)
+            
+        if not phone or len(phone) < 10:
+            return JsonResponse({'status': 'error', 'message': 'Phone must be at least 10 digits'}, status=400)
+        
+        # Create the lead
+        lead = Lead.objects.create(
+            name=name,
+            phone=phone,
+            email=data.get('email', '').strip() or None,
+            priority=data.get('priority', 'MEDIUM'),
+            status=data.get('status', 'ENQUIRY'),
+            program=data.get('program', '').strip() or None,
+            source=data.get('source', 'WHATSAPP'),
+            location=data.get('location', '').strip() or None,
+            remarks=data.get('remarks', '').strip() or None,
+            assigned_to=request.user,  # Automatically assign to current user
+            assigned_date=timezone.now()
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Lead added successfully',
+            'lead_id': lead.id
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
 def all_leads(request):
     query = request.GET.get('q', '')
     if query:
