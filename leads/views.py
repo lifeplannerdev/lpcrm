@@ -55,6 +55,32 @@ def update_program(request, lead_id):
         return JsonResponse({'status': 'error', 'message': 'Lead not found'}, status=404)
     except json.JSONDecodeError:
         return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
+
+
+@login_required
+@require_POST
+def update_lead(request, lead_id):
+    try:
+        data = json.loads(request.body)
+        lead = Lead.objects.get(id=lead_id)
+        
+        # Update lead fields
+        lead.name = data.get('name')
+        lead.phone = data.get('phone')
+        lead.email = data.get('email')
+        lead.location = data.get('location')
+        lead.source = data.get('source')
+        lead.program = data.get('program')
+        lead.priority = data.get('priority')
+        lead.status = data.get('status')
+        lead.remarks = data.get('remarks')
+        
+        lead.save()
+        return JsonResponse({'status': 'success'})
+    except Lead.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Lead not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
     
 
  

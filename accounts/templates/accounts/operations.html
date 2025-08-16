@@ -571,11 +571,11 @@
                     <th>Name</th>
                     <th>Phone</th>
                     <th>Source</th>
-                    <th>Priority</th>
+              <th>Priority</th>
                     <th>Status</th>
                     <th>Program</th>
                     <th>Assigned To</th>
-                    <th class="text-green-500">Processing<i class="fa-solid fa-circle-right" style="color: #34d399;margin-left: 10px;"></i></th>
+              <th class="text-green-500">Processing<i class="fa-solid fa-circle-right" style="color: #34d399;margin-left: 10px;"></i></th>
                 </tr>
             </thead>
             <tbody>
@@ -631,19 +631,19 @@
               
               <!-- Assigned To Column -->
               <td>
-  <select class="editable-select assign-select" 
-          data-lead-id="{{ lead.id }}"
-          data-field="assigned_to">
-    <option value="">Unassigned</option>
+                <select class="editable-select assign-select" 
+                        data-lead-id="{{ lead.id }}"
+                        data-field="assigned_to">
+                  <option value="">Unassigned</option>
     
     <!-- Admission Managers Group -->
     <optgroup label="Admission Managers">
-      {% for manager in admission_managers %}
-        <option value="{{ manager.id }}" 
-                {% if lead.assigned_to == manager %}selected{% endif %}>
+                                {% for manager in admission_managers %}
+                    <option value="{{ manager.id }}" 
+                            {% if lead.assigned_to == manager %}selected{% endif %}>
           {{ manager.get_full_name }} (Manager)
-        </option>
-      {% endfor %}
+                    </option>
+                                {% endfor %}
     </optgroup>
     
     <!-- Admission Executives Group -->
@@ -655,8 +655,8 @@
         </option>
       {% endfor %}
     </optgroup>
-  </select>
-</td>
+                            </select>
+                    </td>
               
               <!-- Actions Column -->
                     <td>
@@ -786,12 +786,12 @@
     
     // Helper function to add a stat item
     function addStatItem(container, label, value) {
-      const statItem = document.createElement('div');
-      statItem.className = 'stat-item';
-      statItem.innerHTML = `
+        const statItem = document.createElement('div');
+        statItem.className = 'stat-item';
+        statItem.innerHTML = `
         <span class="label">${label}</span>
         <span class="value">${value}</span>
-      `;
+        `;
       container.appendChild(statItem);
     }
     
@@ -800,7 +800,7 @@
     const clearSearchBtn = document.getElementById('clearSearch');
     const tableRows = document.querySelectorAll('.table-row');
     
-        function performSearch() {
+    function performSearch() {
       const searchTerm = searchInput.value.toLowerCase().trim();
       let visibleCount = 0;
       
@@ -1072,7 +1072,7 @@
           console.error('Error updating program:', error.response?.data || error);
           this.value = this.dataset.originalValue;
         });
-      });
+        });
     });
 
     // Store initial values for selects
