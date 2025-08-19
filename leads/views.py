@@ -3,6 +3,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 import json
 from .models import Lead
+from .models import RemarkHistory
 
 
 @login_required
@@ -73,7 +74,21 @@ def update_lead(request, lead_id):
         lead.program = data.get('program')
         lead.priority = data.get('priority')
         lead.status = data.get('status')
-        lead.remarks = data.get('remarks')
+
+        # Record remark history if remarks changed
+        previous_remarks = lead.remarks
+        new_remarks = data.get('remarks')
+        if previous_remarks != new_remarks:
+            last = lead.remark_history.order_by('-changed_at').first()
+            user_id = request.user.id if request.user.is_authenticated else None
+            if not (last and last.previous_remarks == previous_remarks and last.new_remarks == new_remarks and (last.changed_by_id == user_id)):
+                RemarkHistory.objects.create(
+                    lead=lead,
+                    previous_remarks=previous_remarks,
+                    new_remarks=new_remarks,
+                    changed_by=request.user if request.user.is_authenticated else None
+                )
+        lead.remarks = new_remarks
         
         lead.save()
         return JsonResponse({'status': 'success'})

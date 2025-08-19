@@ -915,39 +915,7 @@
         </form>
       </div>
     </div>
-<script>
-  // Handle remarks updates
-document.querySelectorAll('.remarks-input').forEach(input => {
-  input.dataset.originalValue = input.value;
-  input.addEventListener('change', function() {
-    const leadId = this.dataset.leadId;
-    const remarks = this.value;
-    
-    axios.post('{% url "accounts:update_lead_field" %}', 
-      JSON.stringify({
-        lead_id: leadId,
-        field: 'remarks',
-        value: remarks
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      }
-    )
-    .then(response => {
-      console.log('Remarks updated successfully');
-      this.dataset.originalValue = remarks;
-    })
-    .catch(error => {
-      console.error('Error updating remarks:', error.response?.data || error);
-      alert('Failed to update remarks. Please try again.');
-      this.value = this.dataset.originalValue;
-    });
-  });
-});
-</script>
+ 
   <script>
   // Configure axios properly
   axios.defaults.xsrfCookieName = 'csrftoken';

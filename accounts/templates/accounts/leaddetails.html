@@ -591,6 +591,8 @@
             </div>
           </div>
 
+          
+
           {% if lead.remarks %}
           <div class="info-item" style="margin-top: 1.5rem;">
             <div class="info-label">Remarks</div>
@@ -646,6 +648,29 @@
             </div>
             {% endif %}
 
+            <!-- Remarks History inside timeline -->
+            <div class="timeline-item">
+              <div class="timeline-content" style="width: 100%;">
+                <div class="timeline-title">Remarks History</div>
+                <div style="max-height: 240px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary);">
+                  {% if remarks_history %}
+                    <ul style="list-style: none; margin: 0; padding: 0;">
+                      {% for rh in remarks_history %}
+                        <li style="padding: 0.85rem 1rem; border-bottom: 1px solid var(--border-color);">
+                          <div style="color: var(--text-primary); font-size: 0.95rem; white-space: pre-wrap;">{{ rh.previous_remarks|default:rh.new_remarks }}</div>
+                          <div style="margin-top: 0.35rem; color: var(--text-tertiary); font-size: 0.8rem;">
+                            {{ rh.changed_at|date:"M d, Y H:i" }} · {{ rh.changed_by.get_full_name|default:"System" }}
+                          </div>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <div style="padding: 1rem; color: var(--text-tertiary);">No remark changes yet.</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
             {% if lead.registration_date %}
             <div class="timeline-item">
               <div class="timeline-icon">
@@ -658,27 +683,7 @@
             </div>
             {% endif %}
 
-            {% if lead.processing_status_date %}
-            <div class="timeline-item">
-              <div class="timeline-icon">
-                <i class="fas fa-cogs"></i>
-              </div>
-              <div class="timeline-content">
-                <div class="timeline-title">Processing Status Updated</div>
-                <div class="timeline-date">{{ lead.processing_status_date|date:"M d, Y H:i" }}</div>
-              </div>
-            </div>
-            {% endif %}
 
-            <div class="timeline-item">
-              <div class="timeline-icon">
-                <i class="fas fa-edit"></i>
-              </div>
-              <div class="timeline-content">
-                <div class="timeline-title">Last Updated</div>
-                <div class="timeline-date">{{ lead.updated_at|date:"M d, Y H:i" }}</div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

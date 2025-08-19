@@ -202,3 +202,22 @@ class ProcessingUpdate(models.Model):
 
     def __str__(self):
         return f"{self.lead} - {self.get_status_display()} at {self.timestamp}"
+
+
+class RemarkHistory(models.Model):
+    """History of remarks edits for a lead"""
+    lead = models.ForeignKey(
+        Lead,
+        on_delete=models.CASCADE,
+        related_name='remark_history'
+    )
+    previous_remarks = models.TextField(blank=True, null=True)
+    new_remarks = models.TextField(blank=True, null=True)
+    changed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-changed_at']
+
+    def __str__(self):
+        return f"Remarks changed for {self.lead} at {self.changed_at}"

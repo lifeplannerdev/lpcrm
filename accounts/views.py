@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import User
 from django.contrib import messages
 from leads.models import Lead
+from leads.models import RemarkHistory
 from leads.forms import LeadForm
 from django.conf import settings
 import json
@@ -775,7 +776,20 @@ def update_lead_field(request):
             lead.source = value
 
         elif field == 'remarks':
-            lead.remarks = value if value != '' else None    
+            previous = lead.remarks
+            new_value = value if value != '' else None
+            # Only record history if there is a change
+            if previous != new_value:
+                # Prevent duplicate logs when multiple rapid requests occur
+                last = lead.remark_history.order_by('-changed_at').first()
+                if not (last and last.previous_remarks == previous and last.new_remarks == new_value and last.changed_by_id == (user.id if user.is_authenticated else None)):
+                    RemarkHistory.objects.create(
+                        lead=lead,
+                        previous_remarks=previous,
+                        new_remarks=new_value,
+                        changed_by=user if user.is_authenticated else None
+                    )
+            lead.remarks = new_value    
             
         elif field == 'assigned_to':
             # Handle assignment changes
@@ -851,5 +865,6 @@ def lead_details(request, lead_id):
     
     context = {
         'lead': lead,
+        'remarks_history': lead.remark_history.all(),
     }
     return render(request, 'accounts/leaddetails.html', context)
