@@ -16,6 +16,13 @@ from django.utils.decorators import method_decorator
 from django.utils import timezone
 from leads.models import ProcessingUpdate
 from django.db.models import Q
+import pandas as pd
+from django.http import JsonResponse, HttpResponse
+import tempfile
+import os
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from django.views.decorators.http import require_http_methods
 
 
 
@@ -719,7 +726,160 @@ def all_leads(request):
         'form': form,
         'query': query,
     }) 
+@login_required
+@require_http_methods(["POST"])
+def import_leads_excel(request):
+    try:
+        if 'excel_file' not in request.FILES:
+            return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
+        
+        excel_file = request.FILES['excel_file']
+        
+        # Validate file type
+        if not excel_file.name.endswith(('.xlsx', '.xls')):
+            return JsonResponse({'status': 'error', 'message': 'Please upload a valid Excel file (.xlsx or .xls)'})
+        
+        # Read Excel file
+        try:
+            df = pd.read_excel(excel_file)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Error reading Excel file: {str(e)}'})
+        
+        # Check if this is just a preview request
+        preview_only = request.POST.get('preview_only') == 'true'
+        
+        if preview_only:
+            # Return preview data
+            preview_data = {
+                'headers': df.columns.tolist(),
+                'rows': df.head(5).fillna('').values.tolist()  # First 5 rows for preview
+            }
+            
+            stats = {
+                'total_rows': len(df),
+                'valid_rows': len(df),
+                'invalid_rows': 0
+            }
+            
+            return JsonResponse({
+                'status': 'success',
+                'preview_data': preview_data,
+                'stats': stats
+            })
+        
+        # Process and import data
+        imported_count = 0
+        errors = []
+        
+        for index, row in df.iterrows():
+            try:
+                # Map Excel columns to Lead model fields
+                lead_data = {
+                    'name': str(row.get('name', '')).strip(),
+                    'phone': str(row.get('phone', '')).strip(),
+                    'email': str(row.get('email', '')).strip() or None,
+                    'location': str(row.get('location', '')).strip() or '',
+                    'program': str(row.get('program', '')).strip() or '',
+                    'priority': str(row.get('priority', 'MEDIUM')).strip().upper(),
+                    'status': str(row.get('status', 'ENQUIRY')).strip().upper(),
+                    'source': str(row.get('source', 'OTHER')).strip().upper(),
+                    'remarks': str(row.get('remarks', '')).strip() or '',
+                }
+                
+                # Validate required fields
+                if not lead_data['name'] or not lead_data['phone']:
+                    errors.append(f"Row {index + 2}: Missing required fields (name or phone)")
+                    continue
+                
+                # Validate phone length
+                if len(lead_data['phone']) < 10:
+                    errors.append(f"Row {index + 2}: Phone number too short")
+                    continue
+                
+                # Create or update lead
+                lead, created = Lead.objects.get_or_create(
+                    phone=lead_data['phone'],
+                    defaults=lead_data
+                )
+                
+                if not created:
+                    # Update existing lead
+                    for key, value in lead_data.items():
+                        setattr(lead, key, value)
+                    lead.save()
+                
+                imported_count += 1
+                
+            except Exception as e:
+                errors.append(f"Row {index + 2}: {str(e)}")
+                continue
+        
+        if errors and imported_count == 0:
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'No leads imported. Errors: ' + '; '.join(errors[:5])  # Show first 5 errors
+            })
+        
+        message = f'Successfully imported {imported_count} leads'
+        if errors:
+            message += f' ({len(errors)} errors)'
+        
+        return JsonResponse({
+            'status': 'success',
+            'imported_count': imported_count,
+            'error_count': len(errors),
+            'message': message
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Unexpected error: {str(e)}'})
 
+@login_required
+def download_excel_template(request):
+    """Download an Excel template for lead imports"""
+    try:
+        # Create a sample DataFrame with the expected columns
+        sample_data = {
+            'name': ['John Doe', 'Jane Smith'],
+            'phone': ['1234567890', '0987654321'],
+            'email': ['john@example.com', 'jane@example.com'],
+            'location': ['New York', 'Los Angeles'],
+            'program': ['MBA', 'BBA'],
+            'priority': ['HIGH', 'MEDIUM'],
+            'status': ['ENQUIRY', 'INTERESTED'],
+            'source': ['WEBSITE', 'WHATSAPP'],
+            'remarks': ['Interested in evening classes', 'Requested callback']
+        }
+        
+        df = pd.DataFrame(sample_data)
+        
+        # Create response
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="leads_import_template.xlsx"'
+        
+        # Write DataFrame to Excel
+        with pd.ExcelWriter(response, engine='openpyxl') as writer:
+            df.to_excel(writer, sheet_name='Leads Template', index=False)
+            
+            # Get the worksheet and auto-adjust column widths
+            worksheet = writer.sheets['Leads Template']
+            for column in worksheet.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                worksheet.column_dimensions[column_letter].width = adjusted_width
+        
+        return response
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': f'Error creating template: {str(e)}'})
+        
 @login_required
 def delete_lead(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
