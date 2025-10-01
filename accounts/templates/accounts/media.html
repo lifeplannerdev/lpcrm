@@ -134,6 +134,7 @@
       color: var(--text-primary);
       font-size: 1rem;
       transition: border 0.18s, background 0.18s;
+      font-family: inherit;
     }
     .form-control:focus {
       outline: 2px solid var(--accent);
@@ -143,6 +144,41 @@
     .form-control::placeholder {
       color: var(--text-tertiary);
     }
+    
+    /* Textarea Specific Styles */
+    .form-control.textarea {
+      resize: vertical;
+      min-height: 120px;
+      line-height: 1.5;
+      padding: 1rem;
+    }
+    
+    .form-control.textarea::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .form-control.textarea::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+      border-radius: 3px;
+    }
+    
+    .form-control.textarea::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 3px;
+    }
+    
+    .form-control.textarea::-webkit-scrollbar-thumb:hover {
+      background: var(--border-hover);
+    }
+    
+    /* Full width form group for textarea */
+    .form-group-full {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
     .btn-primary {
       background: var(--accent);
       color: var(--bg-primary);
@@ -302,122 +338,127 @@
           </a>
         </div>
       </div>
-                </div>
+    </div>
 
     <!-- Add Lead Form -->
     <div class="form-container">
       <h2 class="form-title">Add New Lead</h2>
       
-                    {% if messages %}
-                        {% for message in messages %}
+      {% if messages %}
+        {% for message in messages %}
           <div class="alert alert-{% if message.tags == 'error' %}error{% else %}success{% endif %}" style="width: 100%;">
-                                {{ message }}
-                            </div>
-                        {% endfor %}
-                    {% endif %}
-                    
-                    <form method="post">
-                        {% csrf_token %}
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+      
+      <form method="post">
+        {% csrf_token %}
         <div class="form-grid">
           <div class="form-group">
             <label class="form-label" for="id_name">Name *</label>
-                                {{ form.name }}
-                            </div>
+            {{ form.name }}
+          </div>
           
           <div class="form-group">
             <label class="form-label" for="id_phone">Phone *</label>
-                                {{ form.phone }}
-                            </div>
+            {{ form.phone }}
+          </div>
                             
           <div class="form-group">
             <label class="form-label" for="id_email">Email</label>
-                                {{ form.email }}
-                            </div>
+            {{ form.email }}
+          </div>
           
           <div class="form-group">
             <label class="form-label" for="id_location">Location</label>
-                                {{ form.location }}
-                            </div>
+            {{ form.location }}
+          </div>
                             
           <div class="form-group">
             <label class="form-label" for="id_priority">Priority</label>
-                                {{ form.priority }}
-                            </div>
+            {{ form.priority }}
+          </div>
           
           <div class="form-group">
             <label class="form-label" for="id_status">Status</label>
-                                {{ form.status }}
-                            </div>
+            {{ form.status }}
+          </div>
                             
           <div class="form-group">
             <label class="form-label" for="id_program">Program</label>
-                                {{ form.program }}
-                            </div>
+            {{ form.program }}
+          </div>
                             
           <div class="form-group">
             <label class="form-label" for="id_source">Source</label>
-                                {{ form.source }}
-                            </div>
+            {{ form.source }}
+          </div>
+          
+          <div class="form-group-full">
+            <label class="form-label" for="id_remarks">Remarks</label>
+            {{ form.remarks }}
+          </div>
           
           <div class="form-group">
             <label class="form-label" for="id_custom_source">Custom Source (if Other)</label>
-                                {{ form.custom_source }}
+            {{ form.custom_source }}
           </div>
-                            </div>
-                            
+        </div>
+                          
         <div style="margin-top: 2rem;">
           <button type="submit" class="btn-primary">
             Save Lead
-                                </button>
-                        </div>
-                    </form>
-            </div>
+          </button>
+        </div>
+      </form>
+    </div>
             
     <!-- Recent Leads Table -->
     <div class="table-container">
       <div class="table-header">
         <h3 class="table-title">Recently Added Leads</h3>
-                </div>
+      </div>
       <div class="table-scroll-vert">
         <table class="bc-table bc-table-striped">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Phone</th>
-                                    <th>Program</th>
-                                    <th>Priority</th>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Program</th>
+              <th>Priority</th>
               <th>Status</th>
               <th>Source</th>
-                                    <th>Date</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for lead in leads %}
-                                <tr>
-                                    <td>{{ lead.name }}</td>
-                                    <td>{{ lead.phone }}</td>
-                                    <td>{{ lead.program|default:"-" }}</td>
-                                    <td>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for lead in leads %}
+            <tr>
+              <td>{{ lead.name }}</td>
+              <td>{{ lead.phone }}</td>
+              <td>{{ lead.program|default:"-" }}</td>
+              <td>
                 <span class="badge badge-{{ lead.priority|lower }}">
-                                            {{ lead.get_priority_display }}
-                                        </span>
-                                    </td>
+                  {{ lead.get_priority_display }}
+                </span>
+              </td>
               <td>{{ lead.get_status_display }}</td>
               <td>{{ lead.get_source_display }}</td>
-                                    <td>{{ lead.created_at|date:"d M Y" }}</td>
-                                </tr>
-                                {% empty %}
-                                <tr>
+              <td>{{ lead.created_at|date:"d M Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
               <td colspan="7" style="text-align: center; color: var(--text-secondary);">
                 No leads added yet
               </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   <script>
     // Configure axios properly
@@ -450,6 +491,13 @@
         
         sourceSelect.addEventListener('change', toggleCustomSource);
         toggleCustomSource(); // Initial state
+      }
+      
+      // Add textarea class to remarks field
+      const remarksField = document.getElementById('id_remarks');
+      if (remarksField) {
+        remarksField.classList.add('form-control', 'textarea');
+        remarksField.setAttribute('placeholder', 'Enter any additional remarks or notes about this lead...');
       }
     });
   </script>

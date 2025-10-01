@@ -13,6 +13,7 @@ class LeadForm(forms.ModelForm):
             'program', 
             'location', 
             'source', 
+            'remarks',
             'custom_source'
         ]
         widgets = {
@@ -43,6 +44,10 @@ class LeadForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Specify custom source',
                 'style': 'display: none;'
+            }),
+            'remarks': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter remarks'
             }),
         }
 
