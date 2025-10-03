@@ -784,6 +784,9 @@ def import_leads_excel(request):
                     'status': str(row.get('status', 'ENQUIRY')).strip().upper(),
                     'source': str(row.get('source', 'OTHER')).strip().upper(),
                     'remarks': str(row.get('remarks', '')).strip() or '',
+                    # Automatically assign to logged-in user
+                    'assigned_to': request.user,
+                    'assigned_date': timezone.now()
                 }
                 
                 # Validate required fields
@@ -796,6 +799,20 @@ def import_leads_excel(request):
                     errors.append(f"Row {index + 2}: Phone number too short")
                     continue
                 
+                # Validate priority, status, source choices
+                valid_priorities = ['HIGH', 'MEDIUM', 'LOW']
+                valid_statuses = ['ENQUIRY', 'INTERESTED', 'NOT_INTERESTED', 'WALK_IN', 'ON_HOLD', 'REGISTERED']
+                valid_sources = ['WHATSAPP', 'INSTAGRAM', 'WEBSITE', 'WALK_IN', 'AUTOMATION', 'OTHER']
+                
+                if lead_data['priority'] not in valid_priorities:
+                    lead_data['priority'] = 'MEDIUM'
+                
+                if lead_data['status'] not in valid_statuses:
+                    lead_data['status'] = 'ENQUIRY'
+                
+                if lead_data['source'] not in valid_sources:
+                    lead_data['source'] = 'OTHER'
+                
                 # Create or update lead
                 lead, created = Lead.objects.get_or_create(
                     phone=lead_data['phone'],
@@ -803,9 +820,10 @@ def import_leads_excel(request):
                 )
                 
                 if not created:
-                    # Update existing lead
+                    # Update existing lead - but preserve assignment unless it's the same user
                     for key, value in lead_data.items():
-                        setattr(lead, key, value)
+                        if key not in ['assigned_to', 'assigned_date']:  # Don't override assignment on updates
+                            setattr(lead, key, value)
                     lead.save()
                 
                 imported_count += 1
@@ -817,7 +835,7 @@ def import_leads_excel(request):
         if errors and imported_count == 0:
             return JsonResponse({
                 'status': 'error', 
-                'message': 'No leads imported. Errors: ' + '; '.join(errors[:5])  # Show first 5 errors
+                'message': 'No leads imported. Errors: ' + '; '.join(errors[:5])
             })
         
         message = f'Successfully imported {imported_count} leads'
@@ -833,7 +851,6 @@ def import_leads_excel(request):
         
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': f'Unexpected error: {str(e)}'})
-
 @login_required
 def download_excel_template(request):
     """Download an Excel template for lead imports"""

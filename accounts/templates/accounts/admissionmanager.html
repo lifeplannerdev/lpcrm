@@ -497,6 +497,8 @@
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: var(--shadow-large);
+  display: flex;
+  flex-direction: column;
   /* Custom scrollbar styling for cleaner appearance */
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
@@ -601,6 +603,7 @@
   gap: 1rem;
   padding: 1.5rem;
   border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 @media (max-width: 768px) {
@@ -633,6 +636,10 @@
           <button class="add-leads-btn" id="addLeadBtn" style="margin-left: 0.5rem;">
             <i class="fas fa-plus"></i>
             <span>Add Lead</span>
+          </button>
+          <button class="add-leads-btn" id="importExcelBtn" style="margin-left: 0.5rem;">
+            <i class="fas fa-file-excel"></i>
+            <span>Import Excel</span>
           </button>
           <button class="stats-btn" id="statsBtn">
             <i class="fas fa-chart-bar"></i>
@@ -672,6 +679,7 @@
       </div>
     </div>
 
+  
     <div class="table-container">
       <div class="table-scroll-vert">
         <table class="bc-table bc-table-striped">
@@ -941,7 +949,267 @@
         </form>
       </div>
     </div>
+      <!-- Import Excel Modal -->
+<div id="importExcelModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">Import Leads from Excel</h2>
+      <button class="modal-close" onclick="closeImportModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <form id="importExcelForm" enctype="multipart/form-data" style="display: flex; flex-direction: column; flex: 1;">
+      {% csrf_token %}
+      <div style="padding: 1.5rem; flex: 1; overflow-y: auto;">
+        <div class="form-field">
+          <label for="excel_file">Select Excel File</label>
+          <input 
+            type="file" 
+            id="excel_file" 
+            name="excel_file" 
+            accept=".xlsx, .xls" 
+            class="form-input"
+            required
+          >
+          <div class="field-info" style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">
+            <p>✅ Supported formats: .xlsx, .xls</p>
+            <p>📝 Leads will be automatically assigned to you</p>
+            <p>📥 Download <a href="{% url 'accounts:download_excel_template' %}" style="color: var(--accent); text-decoration: underline;">Excel template</a> for reference</p>
+          </div>
+        </div>
+        
+        <!-- Preview Section -->
+        <div id="previewSection" style="display: none; margin-top: 1rem; margin-bottom: 1rem;">
+          <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-secondary);">Preview (First 5 rows)</h3>
+          <div id="previewTable" class="table-wrapper" style="max-height: 200px; font-size: 0.75rem; background: var(--bg-secondary); border-radius: 8px; padding: 0.5rem; overflow-y: auto;">
+            <!-- Preview will be loaded here -->
+          </div>
+          <div id="previewStats" style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.75rem;">
+            <!-- Stats will be loaded here -->
+          </div>
+        </div>
+        
+        <!-- Import Progress -->
+        <div id="importProgress" style="display: none; margin-top: 1rem; margin-bottom: 1rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span style="color: var(--text-secondary);">Importing...</span>
+            <span id="progressText" style="color: var(--accent); font-weight: 600;">0%</span>
+          </div>
+          <div style="background: var(--bg-secondary); border-radius: 4px; height: 8px;">
+            <div id="progressBar" style="background: var(--accent); height: 100%; width: 0%; border-radius: 4px; transition: width 0.3s;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-notes" onclick="closeImportModal()">Cancel</button>
+        <button type="submit" class="btn btn-contact" id="importButton">
+          <i class="fas fa-upload mr-1"></i> Import Leads
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+  // Import Modal functionality
+const importExcelBtn = document.getElementById('importExcelBtn');
+const importExcelModal = document.getElementById('importExcelModal');
+const importExcelForm = document.getElementById('importExcelForm');
+
+// Open import modal
+if (importExcelBtn) {
+  importExcelBtn.addEventListener('click', function() {
+    importExcelModal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    resetImportForm();
+  });
+}
+
+// Close import modal
+function closeImportModal() {
+  importExcelModal.style.display = 'none';
+  document.body.style.overflow = 'auto';
+  resetImportForm();
+}
+
+function resetImportForm() {
+  const excelFileInput = document.getElementById('excel_file');
+  const previewSection = document.getElementById('previewSection');
+  const importProgress = document.getElementById('importProgress');
+  const importButton = document.getElementById('importButton');
+  
+  if (excelFileInput) excelFileInput.value = '';
+  if (previewSection) previewSection.style.display = 'none';
+  if (importProgress) importProgress.style.display = 'none';
+  if (importButton) {
+    importButton.disabled = false;
+    importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+  }
+}
+
+// Handle file selection for preview
+document.addEventListener('DOMContentLoaded', function() {
+  const excelFileInput = document.getElementById('excel_file');
+  
+  if (excelFileInput) {
+    excelFileInput.addEventListener('change', function(e) {
+      if (this.files.length > 0) {
+        previewExcelFile(this.files[0]);
+      }
+    });
+  }
+  
+  // Handle import form submission
+  const importForm = document.getElementById('importExcelForm');
+  if (importForm) {
+    importForm.addEventListener('submit', handleExcelImport);
+  }
+});
+
+// Close import modal when clicking outside
+if (importExcelModal) {
+  importExcelModal.addEventListener('click', function(e) {
+    if (e.target === importExcelModal) {
+      closeImportModal();
+    }
+  });
+}
+
+// Preview Excel file
+function previewExcelFile(file) {
+  const previewSection = document.getElementById('previewSection');
+  const previewTable = document.getElementById('previewTable');
+  const previewStats = document.getElementById('previewStats');
+  
+  previewSection.style.display = 'block';
+  previewTable.innerHTML = '<div class="loading-spinner" style="text-align: center; padding: 1rem;">Loading preview...</div>';
+  previewStats.innerHTML = '';
+  
+  const formData = new FormData();
+  formData.append('excel_file', file);
+  formData.append('preview_only', 'true');
+  
+  fetch("{% url 'accounts:import_leads_excel' %}", {
+    method: 'POST',
+    headers: {
+      'X-CSRFToken': '{{ csrf_token }}',
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.status === 'success') {
+      displayPreview(data.preview_data, data.stats);
+    } else {
+      previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error: ${data.message}</div>`;
+    }
+  })
+  .catch(error => {
+    previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error loading preview: ${error.message}</div>`;
+  });
+}
+
+// Display preview data
+function displayPreview(previewData, stats) {
+  const previewTable = document.getElementById('previewTable');
+  const previewStats = document.getElementById('previewStats');
+  
+  let tableHTML = `
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem;">
+      <thead>
+        <tr style="background: var(--bg-secondary);">
+          ${previewData.headers.map(header => `<th style="padding: 0.5rem; border: 1px solid var(--border-color); text-align: left;">${header}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${previewData.rows.map(row => `
+          <tr>
+            ${row.map(cell => `<td style="padding: 0.5rem; border: 1px solid var(--border-color);">${cell || ''}</td>`).join('')}
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+  
+  previewTable.innerHTML = tableHTML;
+  
+  let statsHTML = `
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <div><strong>Total rows:</strong> ${stats.total_rows}</div>
+      <div style="color: #22c55e;"><strong>Valid rows:</strong> ${stats.valid_rows}</div>
+      ${stats.invalid_rows > 0 ? `<div style="color: #f59e0b;"><strong>Invalid rows:</strong> ${stats.invalid_rows}</div>` : ''}
+    </div>
+  `;
+  
+  previewStats.innerHTML = statsHTML;
+}
+
+// Handle Excel import
+async function handleExcelImport(e) {
+  e.preventDefault();
+  
+  const fileInput = document.getElementById('excel_file');
+  const importButton = document.getElementById('importButton');
+  const importProgress = document.getElementById('importProgress');
+  const progressBar = document.getElementById('progressBar');
+  const progressText = document.getElementById('progressText');
+  
+  if (!fileInput.files.length) {
+    showToast('Please select an Excel file', 'error');
+    return;
+  }
+  
+  const formData = new FormData(this);
+  importButton.disabled = true;
+  importButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Importing...';
+  importProgress.style.display = 'block';
+  
+  // Simulate progress
+  let progress = 0;
+  const progressInterval = setInterval(() => {
+    progress += 5;
+    if (progress <= 90) {
+      progressBar.style.width = `${progress}%`;
+      progressText.textContent = `${progress}%`;
+    }
+  }, 200);
+  
+  try {
+    const response = await fetch("{% url 'accounts:import_leads_excel' %}", {
+      method: 'POST',
+      headers: {
+        'X-CSRFToken': '{{ csrf_token }}',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: formData
+    });
     
+    clearInterval(progressInterval);
+    progressBar.style.width = '100%';
+    progressText.textContent = '100%';
+    
+    const data = await response.json();
+    
+    if (data.status === 'success') {
+      showToast(`Successfully imported ${data.imported_count} leads! They are now assigned to you.`, 'success');
+      setTimeout(() => {
+        closeImportModal();
+        // Reload the page to show new leads
+        window.location.reload();
+      }, 1500);
+    } else {
+      showToast(`Import failed: ${data.message}`, 'error');
+      importButton.disabled = false;
+      importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+    }
+  } catch (error) {
+    clearInterval(progressInterval);
+    showToast(`Import error: ${error.message}`, 'error');
+    importButton.disabled = false;
+    importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+  }
+}
+</script>
 <script>
   // Handle assignment to executives
 document.querySelectorAll('.assign-select').forEach(select => {
