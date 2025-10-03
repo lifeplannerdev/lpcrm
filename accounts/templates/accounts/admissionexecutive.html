@@ -1228,7 +1228,13 @@
         <form id="importExcelForm" enctype="multipart/form-data" style="display: flex; flex-direction: column; flex: 1;">
           {% csrf_token %}
           <div style="padding: 1.5rem; flex: 1; overflow-y: auto;">
-            <div class="form-field">
+            <div class="form-field" style="margin-bottom: 1rem;">
+              <div style="display: inline-flex; gap: 0.5rem; background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 0.25rem; border-radius: 0.5rem;">
+                <button type="button" id="tabUpload" class="btn btn-notes" style="padding: 0.35rem 0.75rem;">Upload Excel</button>
+                <button type="button" id="tabPaste" class="btn" style="padding: 0.35rem 0.75rem;">Paste Rows</button>
+              </div>
+            </div>
+            <div class="form-field" id="uploadSection">
               <label for="excel_file">Select Excel File</label>
               <input 
                 type="file" 
@@ -1242,6 +1248,17 @@
                 <p>✅ Supported formats: .xlsx, .xls</p>
                 <p>📝 Leads will be automatically assigned to you</p>
                 <p>📥 Download <a href="{% url 'accounts:download_excel_template' %}" style="color: var(--accent); text-decoration: underline;">Excel template</a> for reference</p>
+              </div>
+            </div>
+            <div class="form-field" id="pasteSection" style="display: none;">
+              <label for="pasted_rows">Paste table rows (CSV/TSV)</label>
+              <textarea id="pasted_rows" name="pasted_rows" class="form-textarea" placeholder="Paste rows with headers here (CSV or tab-separated)"></textarea>
+              <div class="field-info" style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">
+                <p>🧩 Required columns: name, phone. Optional: email, location, program, priority, status, source, remarks</p>
+                <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                  <button type="button" id="previewPasteBtn" class="btn btn-notes">Preview Pasted Rows</button>
+                  <button type="button" id="clearPasteBtn" class="btn">Clear</button>
+                </div>
               </div>
             </div>
             
@@ -1316,6 +1333,13 @@
     // Handle file selection for preview
     document.addEventListener('DOMContentLoaded', function() {
       const excelFileInput = document.getElementById('excel_file');
+      const tabUpload = document.getElementById('tabUpload');
+      const tabPaste = document.getElementById('tabPaste');
+      const uploadSection = document.getElementById('uploadSection');
+      const pasteSection = document.getElementById('pasteSection');
+      const pastedTextarea = document.getElementById('pasted_rows');
+      const previewPasteBtn = document.getElementById('previewPasteBtn');
+      const clearPasteBtn = document.getElementById('clearPasteBtn');
       
       if (excelFileInput) {
         excelFileInput.addEventListener('change', function(e) {
@@ -1330,6 +1354,41 @@
       if (importForm) {
         importForm.addEventListener('submit', handleExcelImport);
       }
+
+      // Tabs toggle
+      function activateUploadTab() {
+        if (tabUpload) tabUpload.classList.add('btn-notes');
+        if (tabPaste) tabPaste.classList.remove('btn-notes');
+        if (uploadSection) uploadSection.style.display = '';
+        if (pasteSection) pasteSection.style.display = 'none';
+      }
+
+      function activatePasteTab() {
+        if (tabPaste) tabPaste.classList.add('btn-notes');
+        if (tabUpload) tabUpload.classList.remove('btn-notes');
+        if (uploadSection) uploadSection.style.display = 'none';
+        if (pasteSection) pasteSection.style.display = '';
+      }
+
+      if (tabUpload && tabPaste) {
+        tabUpload.addEventListener('click', activateUploadTab);
+        tabPaste.addEventListener('click', activatePasteTab);
+        activateUploadTab();
+      }
+
+      if (previewPasteBtn) {
+        previewPasteBtn.addEventListener('click', function() {
+          previewPastedData(pastedTextarea.value);
+        });
+      }
+
+      if (clearPasteBtn) {
+        clearPasteBtn.addEventListener('click', function() {
+          pastedTextarea.value = '';
+          const previewSection = document.getElementById('previewSection');
+          if (previewSection) previewSection.style.display = 'none';
+        });
+      }
     });
     
     // Close import modal when clicking outside
@@ -1341,6 +1400,46 @@
       });
     }
     
+    // Preview pasted data
+    function previewPastedData(text) {
+      const previewSection = document.getElementById('previewSection');
+      const previewTable = document.getElementById('previewTable');
+      const previewStats = document.getElementById('previewStats');
+
+      if (!text || !text.trim()) {
+        showToast('Please paste some rows first', 'error');
+        return;
+      }
+
+      previewSection.style.display = 'block';
+      previewTable.innerHTML = '<div class="loading-spinner" style="text-align: center; padding: 1rem;">Parsing preview...</div>';
+      previewStats.innerHTML = '';
+
+      const formData = new FormData();
+      formData.append('pasted_data', text);
+      formData.append('preview_only', 'true');
+
+      fetch("{% url 'accounts:import_leads_excel' %}", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          displayPreview(data.preview_data, data.stats);
+        } else {
+          previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error: ${data.message}</div>`;
+        }
+      })
+      .catch(error => {
+        previewTable.innerHTML = `<div style=\"color: #ef4444; text-align: center; padding: 1rem;\">Error loading preview: ${error.message}</div>`;
+      });
+    }
+
     // Preview Excel file
     function previewExcelFile(file) {
       const previewSection = document.getElementById('previewSection');
@@ -1420,13 +1519,21 @@
       const importProgress = document.getElementById('importProgress');
       const progressBar = document.getElementById('progressBar');
       const progressText = document.getElementById('progressText');
+      const pastedTextarea = document.getElementById('pasted_rows');
       
-      if (!fileInput.files.length) {
-        showToast('Please select an Excel file', 'error');
+      const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+      const hasPasted = pastedTextarea && pastedTextarea.value.trim().length > 0;
+
+      if (!hasFile && !hasPasted) {
+        showToast('Please select a file or paste rows to import', 'error');
         return;
       }
       
       const formData = new FormData(this);
+      if (hasPasted && !hasFile) {
+        formData.delete('excel_file');
+        formData.append('pasted_data', pastedTextarea.value);
+      }
       importButton.disabled = true;
       importButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Importing...';
       importProgress.style.display = 'block';

@@ -21,6 +21,7 @@ from django.http import JsonResponse, HttpResponse
 import tempfile
 import os
 from django.views.decorators.csrf import csrf_exempt
+import io
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
 
@@ -730,47 +731,55 @@ def all_leads(request):
 @require_http_methods(["POST"])
 def import_leads_excel(request):
     try:
-        if 'excel_file' not in request.FILES:
-            return JsonResponse({'status': 'error', 'message': 'No file uploaded'})
-        
-        excel_file = request.FILES['excel_file']
-        
-        # Validate file type
-        if not excel_file.name.endswith(('.xlsx', '.xls')):
-            return JsonResponse({'status': 'error', 'message': 'Please upload a valid Excel file (.xlsx or .xls)'})
-        
-        # Read Excel file
-        try:
-            df = pd.read_excel(excel_file)
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': f'Error reading Excel file: {str(e)}'})
-        
+        # Determine data source: uploaded Excel or pasted CSV/TSV
+        df = None
+        pasted_text = request.POST.get('pasted_data', '').strip()
+
+        if pasted_text:
+            try:
+                # Try to infer delimiter (CSV or TSV) automatically
+                df = pd.read_csv(io.StringIO(pasted_text), sep=None, engine='python')
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': f'Error reading pasted data: {str(e)}'})
+        elif 'excel_file' in request.FILES:
+            excel_file = request.FILES['excel_file']
+            # Validate file type
+            if not excel_file.name.endswith(('.xlsx', '.xls')):
+                return JsonResponse({'status': 'error', 'message': 'Please upload a valid Excel file (.xlsx or .xls)'})
+            # Read Excel file
+            try:
+                df = pd.read_excel(excel_file)
+            except Exception as e:
+                return JsonResponse({'status': 'error', 'message': f'Error reading Excel file: {str(e)}'})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'No data provided. Upload a file or paste rows.'})
+
         # Check if this is just a preview request
         preview_only = request.POST.get('preview_only') == 'true'
-        
+
         if preview_only:
             # Return preview data
             preview_data = {
                 'headers': df.columns.tolist(),
-                'rows': df.head(5).fillna('').values.tolist()  # First 5 rows for preview
+                'rows': df.head(5).fillna('').values.tolist()
             }
-            
+
             stats = {
                 'total_rows': len(df),
                 'valid_rows': len(df),
                 'invalid_rows': 0
             }
-            
+
             return JsonResponse({
                 'status': 'success',
                 'preview_data': preview_data,
                 'stats': stats
             })
-        
+
         # Process and import data
         imported_count = 0
         errors = []
-        
+
         for index, row in df.iterrows():
             try:
                 # Map Excel columns to Lead model fields
