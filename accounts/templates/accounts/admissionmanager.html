@@ -621,6 +621,18 @@
     padding: 1rem;
   }
     }
+
+    /* Tab Styles for Import Modal */
+.active-tab {
+  background: var(--accent) !important;
+  color: var(--bg-primary) !important;
+  border-color: var(--accent) !important;
+}
+
+.add-leads-btn.active-tab:hover {
+  background: var(--accent-hover) !important;
+  color: var(--bg-primary) !important;
+}
   </style>
 </head>
 <body>
@@ -1027,7 +1039,7 @@
   </div>
 </div>
 <script>
-  // Import Modal functionality
+ // Import Modal functionality
 const importExcelBtn = document.getElementById('importExcelBtn');
 const importExcelModal = document.getElementById('importExcelModal');
 const importExcelForm = document.getElementById('importExcelForm');
@@ -1035,6 +1047,7 @@ const importExcelForm = document.getElementById('importExcelForm');
 // Open import modal
 if (importExcelBtn) {
   importExcelBtn.addEventListener('click', function() {
+    console.log('Import button clicked');
     importExcelModal.style.display = 'flex';
     document.body.style.overflow = 'hidden';
     resetImportForm();
@@ -1043,6 +1056,7 @@ if (importExcelBtn) {
 
 // Close import modal
 function closeImportModal() {
+  console.log('Closing import modal');
   importExcelModal.style.display = 'none';
   document.body.style.overflow = 'auto';
   resetImportForm();
@@ -1050,11 +1064,13 @@ function closeImportModal() {
 
 function resetImportForm() {
   const excelFileInput = document.getElementById('excel_file');
+  const pastedTextarea = document.getElementById('pasted_rows');
   const previewSection = document.getElementById('previewSection');
   const importProgress = document.getElementById('importProgress');
   const importButton = document.getElementById('importButton');
   
   if (excelFileInput) excelFileInput.value = '';
+  if (pastedTextarea) pastedTextarea.value = '';
   if (previewSection) previewSection.style.display = 'none';
   if (importProgress) importProgress.style.display = 'none';
   if (importButton) {
@@ -1063,8 +1079,10 @@ function resetImportForm() {
   }
 }
 
-// Handle file selection for preview
+// Initialize import functionality when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded - initializing import functionality');
+  
   const excelFileInput = document.getElementById('excel_file');
   const tabUpload = document.getElementById('tabUpload');
   const tabPaste = document.getElementById('tabPaste');
@@ -1074,8 +1092,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const previewPasteBtn = document.getElementById('previewPasteBtn');
   const clearPasteBtn = document.getElementById('clearPasteBtn');
   
+  // Handle file selection for preview
   if (excelFileInput) {
     excelFileInput.addEventListener('change', function(e) {
+      console.log('File selected:', this.files[0]?.name);
       if (this.files.length > 0) {
         previewExcelFile(this.files[0]);
       }
@@ -1085,63 +1105,95 @@ document.addEventListener('DOMContentLoaded', function() {
   // Handle import form submission
   const importForm = document.getElementById('importExcelForm');
   if (importForm) {
-    importForm.addEventListener('submit', handleExcelImport);
-  }
-
-  // Tabs toggle
-  function activateUploadTab() {
-    if (tabUpload) tabUpload.classList.add('active-tab');
-    if (tabPaste) tabPaste.classList.remove('active-tab');
-    if (uploadSection) uploadSection.style.display = '';
-    if (pasteSection) pasteSection.style.display = 'none';
-  }
-
-  function activatePasteTab() {
-    if (tabPaste) tabPaste.classList.add('active-tab');
-    if (tabUpload) tabUpload.classList.remove('active-tab');
-    if (uploadSection) uploadSection.style.display = 'none';
-    if (pasteSection) pasteSection.style.display = '';
-  }
-
-  if (tabUpload && tabPaste) {
-    tabUpload.addEventListener('click', activateUploadTab);
-    tabPaste.addEventListener('click', activatePasteTab);
-    activateUploadTab();
-  }
-
-  if (previewPasteBtn) {
-    previewPasteBtn.addEventListener('click', function() {
-      previewPastedData(pastedTextarea.value);
+    importForm.addEventListener('submit', function(e) {
+      console.log('Import form submitted');
+      handleExcelImport(e);
     });
   }
 
+  // Tab switching functionality
+  function activateUploadTab() {
+    console.log('Activating upload tab');
+    if (tabUpload) tabUpload.classList.add('active-tab');
+    if (tabPaste) tabPaste.classList.remove('active-tab');
+    if (uploadSection) uploadSection.style.display = 'block';
+    if (pasteSection) pasteSection.style.display = 'none';
+    
+    // Update form requirements
+    const fileInput = document.getElementById('excel_file');
+    if (fileInput) fileInput.required = true;
+  }
+
+  function activatePasteTab() {
+    console.log('Activating paste tab');
+    if (tabPaste) tabPaste.classList.add('active-tab');
+    if (tabUpload) tabUpload.classList.remove('active-tab');
+    if (uploadSection) uploadSection.style.display = 'none';
+    if (pasteSection) pasteSection.style.display = 'block';
+    
+    // Update form requirements
+    const fileInput = document.getElementById('excel_file');
+    if (fileInput) fileInput.required = false;
+  }
+
+  // Initialize tabs
+  if (tabUpload && tabPaste) {
+    tabUpload.addEventListener('click', activateUploadTab);
+    tabPaste.addEventListener('click', activatePasteTab);
+    activateUploadTab(); // Start with upload tab active
+  }
+
+  // Preview paste data
+  if (previewPasteBtn) {
+    previewPasteBtn.addEventListener('click', function() {
+      console.log('Preview paste button clicked');
+      const pastedData = pastedTextarea ? pastedTextarea.value : '';
+      previewPastedData(pastedData);
+    });
+  }
+
+  // Clear paste data
   if (clearPasteBtn) {
     clearPasteBtn.addEventListener('click', function() {
-      pastedTextarea.value = '';
+      console.log('Clear paste button clicked');
+      if (pastedTextarea) pastedTextarea.value = '';
       const previewSection = document.getElementById('previewSection');
       if (previewSection) previewSection.style.display = 'none';
     });
   }
-});
 
-// Close import modal when clicking outside
-if (importExcelModal) {
-  importExcelModal.addEventListener('click', function(e) {
-    if (e.target === importExcelModal) {
+  // Close modal when clicking outside
+  if (importExcelModal) {
+    importExcelModal.addEventListener('click', function(e) {
+      if (e.target === importExcelModal) {
+        closeImportModal();
+      }
+    });
+  }
+
+  // Close modal with escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && importExcelModal.style.display === 'flex') {
       closeImportModal();
     }
   });
-}
+});
 
 // Preview Excel file
 function previewExcelFile(file) {
+  console.log('Previewing Excel file:', file.name);
   const previewSection = document.getElementById('previewSection');
   const previewTable = document.getElementById('previewTable');
   const previewStats = document.getElementById('previewStats');
   
+  if (!previewSection || !previewTable) {
+    console.error('Preview elements not found');
+    return;
+  }
+  
   previewSection.style.display = 'block';
-  previewTable.innerHTML = '<div class="loading-spinner" style="text-align: center; padding: 1rem;">Loading preview...</div>';
-  previewStats.innerHTML = '';
+  previewTable.innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-secondary);">Loading preview...</div>';
+  if (previewStats) previewStats.innerHTML = '';
   
   const formData = new FormData();
   formData.append('excel_file', file);
@@ -1155,8 +1207,14 @@ function previewExcelFile(file) {
     },
     body: formData
   })
-  .then(response => response.json())
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
   .then(data => {
+    console.log('Preview response:', data);
     if (data.status === 'success') {
       displayPreview(data.preview_data, data.stats);
     } else {
@@ -1164,12 +1222,14 @@ function previewExcelFile(file) {
     }
   })
   .catch(error => {
+    console.error('Error loading preview:', error);
     previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error loading preview: ${error.message}</div>`;
   });
 }
 
 // Preview pasted data
 function previewPastedData(text) {
+  console.log('Previewing pasted data');
   const previewSection = document.getElementById('previewSection');
   const previewTable = document.getElementById('previewTable');
   const previewStats = document.getElementById('previewStats');
@@ -1179,9 +1239,14 @@ function previewPastedData(text) {
     return;
   }
 
+  if (!previewSection || !previewTable) {
+    console.error('Preview elements not found');
+    return;
+  }
+
   previewSection.style.display = 'block';
-  previewTable.innerHTML = '<div class="loading-spinner" style="text-align: center; padding: 1rem;">Parsing preview...</div>';
-  previewStats.innerHTML = '';
+  previewTable.innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-secondary);">Parsing preview...</div>';
+  if (previewStats) previewStats.innerHTML = '';
 
   const formData = new FormData();
   formData.append('pasted_data', text);
@@ -1195,8 +1260,14 @@ function previewPastedData(text) {
     },
     body: formData
   })
-  .then(response => response.json())
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
   .then(data => {
+    console.log('Paste preview response:', data);
     if (data.status === 'success') {
       displayPreview(data.preview_data, data.stats);
     } else {
@@ -1204,14 +1275,21 @@ function previewPastedData(text) {
     }
   })
   .catch(error => {
-    previewTable.innerHTML = `<div style=\"color: #ef4444; text-align: center; padding: 1rem;\">Error loading preview: ${error.message}</div>`;
+    console.error('Error loading paste preview:', error);
+    previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error loading preview: ${error.message}</div>`;
   });
 }
 
 // Display preview data
 function displayPreview(previewData, stats) {
+  console.log('Displaying preview data');
   const previewTable = document.getElementById('previewTable');
   const previewStats = document.getElementById('previewStats');
+  
+  if (!previewTable) {
+    console.error('Preview table element not found');
+    return;
+  }
   
   let tableHTML = `
     <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem;">
@@ -1232,20 +1310,22 @@ function displayPreview(previewData, stats) {
   
   previewTable.innerHTML = tableHTML;
   
-  let statsHTML = `
-    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-      <div><strong>Total rows:</strong> ${stats.total_rows}</div>
-      <div style="color: #22c55e;"><strong>Valid rows:</strong> ${stats.valid_rows}</div>
-      ${stats.invalid_rows > 0 ? `<div style="color: #f59e0b;"><strong>Invalid rows:</strong> ${stats.invalid_rows}</div>` : ''}
-    </div>
-  `;
-  
-  previewStats.innerHTML = statsHTML;
+  if (previewStats) {
+    let statsHTML = `
+      <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <div><strong>Total rows:</strong> ${stats.total_rows}</div>
+        <div style="color: #22c55e;"><strong>Valid rows:</strong> ${stats.valid_rows}</div>
+        ${stats.invalid_rows > 0 ? `<div style="color: #f59e0b;"><strong>Invalid rows:</strong> ${stats.invalid_rows}</div>` : ''}
+      </div>
+    `;
+    previewStats.innerHTML = statsHTML;
+  }
 }
 
 // Handle Excel import
 async function handleExcelImport(e) {
   e.preventDefault();
+  console.log('Handling Excel import');
   
   const fileInput = document.getElementById('excel_file');
   const importButton = document.getElementById('importButton');
@@ -1257,16 +1337,27 @@ async function handleExcelImport(e) {
   const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
   const hasPasted = pastedTextarea && pastedTextarea.value.trim().length > 0;
 
+  console.log('Has file:', hasFile, 'Has pasted:', hasPasted);
+
   if (!hasFile && !hasPasted) {
     showToast('Please select a file or paste rows to import', 'error');
     return;
   }
   
-  const formData = new FormData(this);
-  if (hasPasted && !hasFile) {
-    formData.delete('excel_file');
+  const formData = new FormData();
+  
+  if (hasFile) {
+    formData.append('excel_file', fileInput.files[0]);
+  } else if (hasPasted) {
     formData.append('pasted_data', pastedTextarea.value);
   }
+  
+  if (!importButton || !importProgress || !progressBar || !progressText) {
+    console.error('Import progress elements not found');
+    showToast('Import system error - please refresh the page', 'error');
+    return;
+  }
+  
   importButton.disabled = true;
   importButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Importing...';
   importProgress.style.display = 'block';
@@ -1295,7 +1386,12 @@ async function handleExcelImport(e) {
     progressBar.style.width = '100%';
     progressText.textContent = '100%';
     
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
+    console.log('Import response:', data);
     
     if (data.status === 'success') {
       showToast(`Successfully imported ${data.imported_count} leads! They are now assigned to you.`, 'success');
@@ -1310,11 +1406,48 @@ async function handleExcelImport(e) {
       importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
     }
   } catch (error) {
+    console.error('Import error:', error);
     clearInterval(progressInterval);
     showToast(`Import error: ${error.message}`, 'error');
-    importButton.disabled = false;
-    importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+    if (importButton) {
+      importButton.disabled = false;
+      importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+    }
   }
+}
+
+// Toast notification function (make sure it exists)
+function showToast(message, type = 'success') {
+  console.log('Showing toast:', message, type);
+  const toast = document.createElement('div');
+  toast.className = `toast-notification ${type}`;
+  toast.textContent = message;
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    color: white;
+    font-weight: 500;
+    z-index: 10001;
+    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: ${type === 'success' ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%)' : 'linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%)'};
+  `;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.parentNode.removeChild(toast);
+      }
+    }, 300);
+  }, 3000);
 }
 </script>
 <script>
