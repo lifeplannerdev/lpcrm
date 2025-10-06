@@ -732,7 +732,7 @@
               <td class="editable-cell" data-field="priority">
                 <span class="badge badge-{{ lead.priority|lower }}">{{ lead.get_priority_display }}</span>
               </td>
-              <td class="editable-cell" data-field="status">{{ lead.get_status_display }}</td>
+              <td class="editable-cell" data-field="status">{{ lead.status }}</td>
               <td class="editable-cell" data-field="program">{{ lead.program }}</td>
               <td class="editable-cell" data-field="source">{{ lead.get_source_display }}</td>
               <td>
@@ -793,18 +793,36 @@
       </form>
     </div>
   </div>
-
+  <datalist id="status-suggestions">
+    <option value="ENQUIRY">
+    <option value="INTERESTED">
+    <option value="NOT_INTERESTED">
+    <option value="WALK_IN">
+    <option value="ON_HOLD">
+    <option value="REGISTERED">
+    <option value="FOLLOW_UP">
+    <option value="CONVERTED">
+    <option value="LOST">
+    <option value="COLD">
+    <option value="WARM">
+    <option value="HOT">
+    <option value="Enquiry">
+    <option value="Interested">
+    <option value="Not Interested">
+    <option value="Walk In">
+    <option value="On Hold">
+    <option value="Registered">
+    <option value="Follow Up">
+    <option value="Converted">
+    <option value="Lost">
+    <option value="Cold">
+    <option value="Warm">
+    <option value="Hot">
+  </datalist>
   <script>
     // Constants for choices
     const PRIORITY_CHOICES = { 'HIGH': 'High', 'MEDIUM': 'Medium', 'LOW': 'Low' };
-    const STATUS_CHOICES = { 
-      'ENQUIRY': 'Enquiry', 
-      'INTERESTED': 'Interested', 
-      'NOT_INTERESTED': 'Not Interested', 
-      'WALK_IN': 'Walk In', 
-      'ON_HOLD': 'On Hold', 
-      'REGISTERED': 'Registered' 
-    };
+    
     const SOURCE_CHOICES = { 
       'WHATSAPP': 'WhatsApp', 
       'INSTAGRAM': 'Instagram', 
@@ -950,13 +968,12 @@
 
       // Helper function to create input element based on field type
       function createInputElement(field, currentValue) {
-        if (['priority', 'status', 'source'].includes(field)) {
+        if (['priority', 'source'].includes(field)) {
           const select = document.createElement('select');
           select.className = 'edit-select';
           
           const choices = {
             'priority': PRIORITY_CHOICES,
-            'status': STATUS_CHOICES,
             'source': SOURCE_CHOICES
           }[field];
           
@@ -978,9 +995,18 @@
         input.type = 'text';
         input.className = 'edit-input';
         input.value = currentValue;
+
+        // Add datalist for status suggestions
+        if (field === 'status') {
+          input.setAttribute('list', 'status-suggestions');
+          input.setAttribute('placeholder', 'Enter status');
+        }
+
+
         return input;
       }
 
+      
       // Handle saving changes to the server
       async function saveChanges(leadId, field, newValue) {
         try {
@@ -1012,9 +1038,8 @@
         if (field === 'priority') {
           cell.innerHTML = `<span class="badge badge-${newValue.toLowerCase()}">${PRIORITY_CHOICES[newValue]}</span>`;
         } 
-        else if (field === 'status') {
-          cell.textContent = STATUS_CHOICES[newValue];
-        }
+        
+        
         else if (field === 'source') {
           cell.textContent = SOURCE_CHOICES[newValue];
         }
@@ -1121,15 +1146,14 @@
             }
           };
           
-          // Restore original value
           const restoreOriginal = () => {
             if (field === 'priority') {
-              cell.innerHTML = `<span class="badge badge-${currentValue.toLowerCase()}">${currentValue}</span>`;
-            } else {
-              cell.textContent = currentValue;
-            }
+            cell.innerHTML = `<span class="badge badge-${currentValue.toLowerCase()}">${currentValue}</span>`;
+  } else {
+            cell.textContent = currentValue;
+  }
             cell.classList.remove('editing');
-          };
+};
           
           // Event listeners
           input.addEventListener('keydown', (e) => {

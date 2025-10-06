@@ -34,7 +34,10 @@ class LeadForm(forms.ModelForm):
                 'placeholder': 'Enter location'
             }),
             'priority': forms.Select(attrs={'class': 'form-control'}),
-            'status': forms.Select(attrs={'class': 'form-control'}),
+            'status': forms.TextInput(attrs={  # Changed from Select to TextInput
+                'class': 'form-control',
+                'placeholder': 'Enter status'
+            }),
             'program': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter program name'
@@ -59,3 +62,8 @@ class LeadForm(forms.ModelForm):
         self.fields['email'].required = False
         self.fields['location'].required = False
         self.fields['custom_source'].required = False
+        
+        # Optional: Add suggestions for status field
+        self.fields['status'].widget.attrs.update({
+            'list': 'status-suggestions'
+        })

@@ -19,17 +19,8 @@ class Lead(models.Model):
         ('OTHER', 'Other')
     ]
     
-    STATUS_CHOICES = [
-        ('ENQUIRY', 'Enquiry'),
-        ('INTERESTED', 'Interested'),
-        ('NOT_INTERESTED', 'Not Interested'),
-        ('WALK_IN', 'Walk In'),
-        ('ON_HOLD', 'On Hold'),
-        ('REGISTERED', 'Registered')
-    ]
+    # Remove STATUS_CHOICES since we're using TextField now
     
-    
-
     PROCESSING_STATUS_CHOICES = [
         ('PENDING', 'Pending'),
         ('FORWARDED', 'Forwarded to Processing'),
@@ -62,11 +53,13 @@ class Lead(models.Model):
         choices=PRIORITY_CHOICES, 
         default='MEDIUM'
     )
-    status = models.CharField(
-        max_length=15, 
-        choices=STATUS_CHOICES, 
-        default='ENQUIRY'
+    
+    # Changed from CharField with choices to TextField
+    status = models.TextField(
+        default='ENQUIRY',
+        help_text="Current status of the lead"
     )
+    
     program = models.CharField(
         max_length=100, 
         blank=True, 
@@ -74,9 +67,9 @@ class Lead(models.Model):
         help_text="Enter the program name"
     )
     remarks = models.TextField(
-    blank=True,
-    null=True,
-    help_text="Additional notes or comments about the lead"
+        blank=True,
+        null=True,
+        help_text="Additional notes or comments about the lead"
     )
     location = models.CharField(max_length=100, blank=True, null=True)
     source = models.CharField(max_length=10, choices=SOURCE_CHOICES)
@@ -128,14 +121,14 @@ class Lead(models.Model):
         verbose_name = 'Lead'
         verbose_name_plural = 'Leads'
         indexes = [
-            models.Index(fields=['status']),
+            models.Index(fields=['status']),  # This will still work with TextField
             models.Index(fields=['priority']),
             models.Index(fields=['processing_status']),
             models.Index(fields=['assigned_to']),
         ]
 
     def __str__(self):
-        return f"{self.name} ({self.phone}) - {self.get_status_display()}"
+        return f"{self.name} ({self.phone}) - {self.status}"  # Removed get_status_display()
 
     def save(self, *args, **kwargs):
         # Update registration date when status changes to REGISTERED

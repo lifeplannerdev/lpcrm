@@ -562,7 +562,7 @@
             <div class="info-item">
               <div class="info-label">Status</div>
               <div class="info-value">
-                <span class="badge status-badge">{{ lead.get_status_display }}</span>
+                <span class="badge status-badge">{{ lead.status }}</span>
               </div>
             </div>
             <div class="info-item">
@@ -690,134 +690,221 @@
     </div>
   </div>
 
-  <!-- Edit Lead Modal -->
-  <div id="editLeadModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title">Edit Lead</h2>
-        <button class="modal-close" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="card-content">
-        <form id="editLeadForm" class="form-grid">
-          {% csrf_token %}
-          <div class="info-item">
-            <label class="info-label" for="edit-name">Name</label>
-            <input type="text" id="edit-name" class="form-input" value="{{ lead.name }}">
-          </div>
-          <div class="info-item">
-            <label class="info-label" for="edit-phone">Phone</label>
-            <input type="text" id="edit-phone" class="form-input" value="{{ lead.phone }}">
-          </div>
-          <div class="info-item">
-            <label class="info-label" for="edit-email">Email</label>
-            <input type="email" id="edit-email" class="form-input" value="{{ lead.email|default:'' }}">
-          </div>
-          <div class="info-item">
-            <label class="info-label" for="edit-location">Location</label>
-            <input type="text" id="edit-location" class="form-input" value="{{ lead.location|default:'' }}">
-          </div>
-          <div class="info-item">
-            <label class="info-label" for="edit-source">Source</label>
-            <select id="edit-source" class="form-input">
-              {% for value, label in lead.SOURCE_CHOICES %}
-                <option value="{{ value }}" {% if lead.source == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="info-item">
-            <label class="info-label" for="edit-program">Program</label>
-            <input type="text" id="edit-program" class="form-input" value="{{ lead.program|default:'' }}">
-          </div>
-          <div class="info-item">
-            <label class="info-label" for="edit-priority">Priority</label>
-            <select id="edit-priority" class="form-input">
-              {% for value, label in lead.PRIORITY_CHOICES %}
-                <option value="{{ value }}" {% if lead.priority == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="info-item">
-            <label class="info-label" for="edit-status">Status</label>
-            <select id="edit-status" class="form-input">
-              {% for value, label in lead.STATUS_CHOICES %}
-                <option value="{{ value }}" {% if lead.status == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="info-item">
-            <label class="info-label" for="edit-remarks">Remarks</label>
-            <textarea id="edit-remarks" class="form-input">{{ lead.remarks|default:'' }}</textarea>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="saveLead()">Save Changes</button>
-      </div>
+ <!-- Edit Lead Modal -->
+<div id="editLeadModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 class="modal-title">Edit Lead</h2>
+      <button class="modal-close" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="card-content">
+      <form id="editLeadForm" class="form-grid">
+        {% csrf_token %}
+        <div class="info-item">
+          <label class="info-label" for="edit-name">Name</label>
+          <input type="text" id="edit-name" class="form-input" value="{{ lead.name }}">
+        </div>
+        <div class="info-item">
+          <label class="info-label" for="edit-phone">Phone</label>
+          <input type="text" id="edit-phone" class="form-input" value="{{ lead.phone }}">
+        </div>
+        <div class="info-item">
+          <label class="info-label" for="edit-email">Email</label>
+          <input type="email" id="edit-email" class="form-input" value="{{ lead.email|default:'' }}">
+        </div>
+        <div class="info-item">
+          <label class="info-label" for="edit-location">Location</label>
+          <input type="text" id="edit-location" class="form-input" value="{{ lead.location|default:'' }}">
+        </div>
+        <div class="info-item">
+          <label class="info-label" for="edit-source">Source</label>
+          <select id="edit-source" class="form-input">
+            {% for value, label in lead.SOURCE_CHOICES %}
+              <option value="{{ value }}" {% if lead.source == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="info-item">
+          <label class="info-label" for="edit-program">Program</label>
+          <input type="text" id="edit-program" class="form-input" value="{{ lead.program|default:'' }}">
+        </div>
+        <div class="info-item">
+          <label class="info-label" for="edit-priority">Priority</label>
+          <select id="edit-priority" class="form-input">
+            {% for value, label in lead.PRIORITY_CHOICES %}
+              <option value="{{ value }}" {% if lead.priority == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="info-item">
+          <label class="info-label" for="edit-status">Status</label>
+          <!-- Changed from select to text input with datalist -->
+          <input type="text" id="edit-status" class="form-input" 
+                 value="{{ lead.status }}" 
+                 placeholder="Enter status"
+                 list="status-suggestions">
+        </div>
+        <div class="info-item">
+          <label class="info-label" for="edit-remarks">Remarks</label>
+          <textarea id="edit-remarks" class="form-input">{{ lead.remarks|default:'' }}</textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="saveLead()">Save Changes</button>
     </div>
   </div>
+</div>
 
-  <script>
-    function openEditModal() {
-      const modal = document.getElementById('editLeadModal');
-      modal.classList.add('show');
-      document.body.style.overflow = 'hidden';
+<!-- Status suggestions datalist -->
+<datalist id="status-suggestions">
+  <option value="ENQUIRY">
+  <option value="INTERESTED">
+  <option value="NOT_INTERESTED">
+  <option value="WALK_IN">
+  <option value="ON_HOLD">
+  <option value="REGISTERED">
+  <option value="FOLLOW_UP">
+  <option value="CONVERTED">
+  <option value="LOST">
+  <option value="COLD">
+  <option value="WARM">
+  <option value="HOT">
+  <option value="Enquiry">
+  <option value="Interested">
+  <option value="Not Interested">
+  <option value="Walk In">
+  <option value="On Hold">
+  <option value="Registered">
+  <option value="Follow Up">
+  <option value="Converted">
+  <option value="Lost">
+  <option value="Cold">
+  <option value="Warm">
+  <option value="Hot">
+</datalist>
+
+<script>
+  function openEditModal() {
+    const modal = document.getElementById('editLeadModal');
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeEditModal() {
+    const modal = document.getElementById('editLeadModal');
+    modal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  function saveLead() {
+    const formData = {
+      name: document.getElementById('edit-name').value,
+      phone: document.getElementById('edit-phone').value,
+      email: document.getElementById('edit-email').value,
+      location: document.getElementById('edit-location').value,
+      source: document.getElementById('edit-source').value,
+      program: document.getElementById('edit-program').value,
+      priority: document.getElementById('edit-priority').value,
+      status: document.getElementById('edit-status').value, // Now accepts any text value
+      remarks: document.getElementById('edit-remarks').value
+    };
+
+    fetch(`/leads/{{ lead.id }}/update/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      },
+      body: JSON.stringify(formData)
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        window.location.reload();
+      } else {
+        alert(data.message || 'Error updating lead');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error updating lead');
+    });
+  }
+
+  // Close modal when clicking outside
+  document.getElementById('editLeadModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeEditModal();
     }
+  });
 
-    function closeEditModal() {
-      const modal = document.getElementById('editLeadModal');
-      modal.classList.remove('show');
-      document.body.style.overflow = '';
+  // Close modal on escape key
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      closeEditModal();
     }
+  });
 
-    function saveLead() {
-      const formData = {
-        name: document.getElementById('edit-name').value,
-        phone: document.getElementById('edit-phone').value,
-        email: document.getElementById('edit-email').value,
-        location: document.getElementById('edit-location').value,
-        source: document.getElementById('edit-source').value,
-        program: document.getElementById('edit-program').value,
-        priority: document.getElementById('edit-priority').value,
-        status: document.getElementById('edit-status').value,
-        remarks: document.getElementById('edit-remarks').value
-      };
-
-      fetch(`/leads/{{ lead.id }}/update/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-        },
-        body: JSON.stringify(formData)
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'success') {
-          window.location.reload();
-        } else {
-          alert(data.message || 'Error updating lead');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('Error updating lead');
+  // Optional: Add autocomplete functionality for status field
+  document.addEventListener('DOMContentLoaded', function() {
+    const statusInput = document.getElementById('edit-status');
+    
+    // Focus on status field when modal opens (optional enhancement)
+    if (statusInput) {
+      // You can add additional autocomplete logic here if needed
+      statusInput.addEventListener('focus', function() {
+        // Optional: Load recent status values from localStorage or API
+        loadRecentStatuses();
       });
     }
+  });
 
-    // Close modal when clicking outside
-    document.getElementById('editLeadModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeEditModal();
-      }
-    });
+  // Optional: Function to load recent status values
+  function loadRecentStatuses() {
+    // This could be enhanced to load frequently used statuses
+    // from localStorage or make an API call to get common status values
+    const recentStatuses = JSON.parse(localStorage.getItem('recentStatuses') || '[]');
+    
+    if (recentStatuses.length > 0) {
+      const datalist = document.getElementById('status-suggestions');
+      // Add recent statuses to datalist (avoid duplicates)
+      recentStatuses.forEach(status => {
+        if (!Array.from(datalist.options).some(opt => opt.value === status)) {
+          const option = document.createElement('option');
+          option.value = status;
+          datalist.appendChild(option);
+        }
+      });
+    }
+  }
 
-    // Close modal on escape key
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        closeEditModal();
-      }
-    });
-  </script>
+  // Optional: Function to save recently used status
+  function saveRecentStatus(status) {
+    if (!status || status.trim() === '') return;
+    
+    let recentStatuses = JSON.parse(localStorage.getItem('recentStatuses') || '[]');
+    
+    // Remove if already exists
+    recentStatuses = recentStatuses.filter(s => s !== status);
+    
+    // Add to beginning
+    recentStatuses.unshift(status);
+    
+    // Keep only last 10
+    recentStatuses = recentStatuses.slice(0, 10);
+    
+    localStorage.setItem('recentStatuses', JSON.stringify(recentStatuses));
+  }
+
+  // Optional: Save status when form is submitted
+  document.getElementById('editLeadForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const status = document.getElementById('edit-status').value;
+    saveRecentStatus(status);
+    saveLead();
+  });
+</script>
 </body>
 </html>

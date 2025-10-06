@@ -81,6 +81,8 @@ def quick_login(request):
                 return redirect('accounts:processing_dashboard')
             elif role == 'TRAINER':
                 return redirect('trainers:dashboard')
+            elif role == 'BUSINESS_HEAD':
+                return redirect('tasks:business_head_dashboard')    
             # Changed to use namespace
             # Add other role redirects as needed
             
@@ -265,7 +267,8 @@ def operations_dashboard(request):
         'admission_managers': admission_managers,
         'admission_executives': admission_executives,
         'priority_choices': Lead.PRIORITY_CHOICES,
-        'status_choices': Lead.STATUS_CHOICES,
+        # Status is now free-text; keep template happy with empty list
+        'status_choices': [],
     }
     return render(request, 'accounts/operations.html', context)
 
@@ -335,10 +338,10 @@ def update_lead_field(request):
                 return JsonResponse({'status': 'error', 'message': 'Invalid priority'}, status=400)
                 
         elif field == 'status':
-            if value in dict(Lead.STATUS_CHOICES).keys():
-                lead.status = value
-            else:
-                return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
+            # Status is free-text now; accept non-empty values only
+            if not value or not str(value).strip():
+                return JsonResponse({'status': 'error', 'message': 'Status cannot be empty'}, status=400)
+            lead.status = str(value).strip()
                 
         elif field == 'program':
             lead.program = value if value != '' else None
@@ -910,7 +913,7 @@ def download_excel_template(request):
 def delete_lead(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
     lead.delete()
-    return redirect('accounts:all_leads') 
+    return redirect('accounts:dashboard') 
 @login_required
 @require_POST
 def update_lead_field(request):
@@ -944,13 +947,13 @@ def update_lead_field(request):
             lead.priority = value
             
         elif field == 'status':
-            if value not in dict(Lead.STATUS_CHOICES).keys():
-                return JsonResponse({'status': 'error', 'message': 'Invalid status value'}, status=400)
-            lead.status = value
+            # Status is free-text now; accept non-empty values only
+            if not value or not str(value).strip():
+                return JsonResponse({'status': 'error', 'message': 'Status cannot be empty'}, status=400)
+            lead.status = str(value).strip()
             
             # Update registration date if status changed to REGISTERED
-            if value == 'REGISTERED' and not lead.registration_date:
-                from django.utils import timezone
+            if lead.status == 'REGISTERED' and not lead.registration_date:
                 lead.registration_date = timezone.now()
             
         elif field == 'program':

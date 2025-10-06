@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'leads',
     'widget_tweaks',
     'trainers',
+    'tasks',
 ]
 
 MIDDLEWARE = [

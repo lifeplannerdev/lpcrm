@@ -338,7 +338,7 @@
     .bc-table th:nth-child(8), .bc-table td:nth-child(8) { width: 13%; } /* Priority */
     .bc-table th:nth-child(9), .bc-table td:nth-child(9) { width: 14%; } /* Assign */
     
-    .priority-select, .status-select, .program-select {
+    .priority-select, .program-select {
       background: var(--bg-secondary);
       color: var(--text-primary);
       border: 1px solid var(--border-color);
@@ -350,11 +350,29 @@
       transition: border 0.18s, background 0.18s;
       width: 100%;
     }
-    .priority-select:focus, .status-select:focus, .program-select:focus {
+    .priority-select:focus, .program-select:focus {
       outline: 2px solid var(--accent);
       border-color: var(--accent);
       background: var(--card-bg);
     }
+    
+    /* Status input field styling */
+    .status-input {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.35rem 0.7rem;
+      font-size: 1rem;
+      width: 100%;
+      transition: border 0.18s, background 0.18s;
+    }
+    .status-input:focus {
+      outline: 2px solid var(--accent);
+      border-color: var(--accent);
+      background: var(--card-bg);
+    }
+    
     .btn {
       padding: 0.5rem 1rem;
       border-radius: 6px;
@@ -713,8 +731,8 @@
               <tr class="table-row" data-priority="high" data-lead-id="{{ lead.id }}"
                   data-name="{{ lead.name|lower }}"
                   data-phone="{{ lead.phone|lower }}"
-                  data-program="{{ lead.get_program_display|lower|default:'' }}"
-                  data-status="{{ lead.get_status_display|lower }}"
+                  data-program="{{ lead.program|lower|default:'' }}"
+                  data-status="{{ lead.status|lower }}"
                   data-priority="{{ lead.get_priority_display|lower }}">
                 <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                 <td><a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">{{ lead.name }}</a></td>
@@ -734,14 +752,19 @@
 </td>
                 <td>{{ lead.get_source_display }}</td>
                 <td>
-                  <select class="status-select" data-lead-id="{{ lead.id }}">
-                    <option value="ENQUIRY" {% if lead.status == 'ENQUIRY' %}selected{% endif %}>Enquiry</option>
-                    <option value="INTERESTED" {% if lead.status == 'INTERESTED' %}selected{% endif %}>Interested</option>
-                    <option value="NOT_INTERESTED" {% if lead.status == 'NOT_INTERESTED' %}selected{% endif %}>Not Interested</option>
-                    <option value="WALK_IN" {% if lead.status == 'WALK_IN' %}selected{% endif %}>Walk In</option>
-                    <option value="ON_HOLD" {% if lead.status == 'ON_HOLD' %}selected{% endif %}>On Hold</option>
-                    <option value="REGISTERED" {% if lead.status == 'REGISTERED' %}selected{% endif %}>Registered</option>
-                  </select>
+                  <!-- Changed from select to input for status -->
+                  <input type="text" class="status-input" 
+                         data-lead-id="{{ lead.id }}" 
+                         value="{{ lead.status }}" 
+                         placeholder="Enter status"
+                         list="status-suggestions"
+                         style="width: 100%; 
+                                background: var(--bg-secondary); 
+                                color: var(--text-primary); 
+                                border: 1px solid var(--border-color); 
+                                border-radius: 8px; 
+                                padding: 0.35rem 0.7rem; 
+                                font-size: 1rem;" />
                 </td>
                 <td>
                   <input type="text" class="program-input" data-lead-id="{{ lead.id }}" value="{{ lead.program|default:'' }}" placeholder="Enter program name" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
@@ -771,8 +794,8 @@
               <tr class="table-row" data-priority="medium" data-lead-id="{{ lead.id }}"
                   data-name="{{ lead.name|lower }}"
                   data-phone="{{ lead.phone|lower }}"
-                  data-program="{{ lead.get_program_display|lower|default:'' }}"
-                  data-status="{{ lead.get_status_display|lower }}"
+                  data-program="{{ lead.program|lower|default:'' }}"
+                  data-status="{{ lead.status|lower }}"
                   data-priority="{{ lead.get_priority_display|lower }}">
                 <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                 <td><a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">{{ lead.name }}</a></td>
@@ -792,14 +815,19 @@
 </td>
                 <td>{{ lead.get_source_display }}</td>
                 <td>
-                  <select class="status-select" data-lead-id="{{ lead.id }}">
-                    <option value="ENQUIRY" {% if lead.status == 'ENQUIRY' %}selected{% endif %}>Enquiry</option>
-                    <option value="INTERESTED" {% if lead.status == 'INTERESTED' %}selected{% endif %}>Interested</option>
-                    <option value="NOT_INTERESTED" {% if lead.status == 'NOT_INTERESTED' %}selected{% endif %}>Not Interested</option>
-                    <option value="WALK_IN" {% if lead.status == 'WALK_IN' %}selected{% endif %}>Walk In</option>
-                    <option value="ON_HOLD" {% if lead.status == 'ON_HOLD' %}selected{% endif %}>On Hold</option>
-                    <option value="REGISTERED" {% if lead.status == 'REGISTERED' %}selected{% endif %}>Registered</option>
-                  </select>
+                  <!-- Changed from select to input for status -->
+                  <input type="text" class="status-input" 
+                         data-lead-id="{{ lead.id }}" 
+                         value="{{ lead.status }}" 
+                         placeholder="Enter status"
+                         list="status-suggestions"
+                         style="width: 100%; 
+                                background: var(--bg-secondary); 
+                                color: var(--text-primary); 
+                                border: 1px solid var(--border-color); 
+                                border-radius: 8px; 
+                                padding: 0.35rem 0.7rem; 
+                                font-size: 1rem;" />
                 </td>
                 <td>
                   <input type="text" class="program-input" data-lead-id="{{ lead.id }}" value="{{ lead.program|default:'' }}" placeholder="Enter program name" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
@@ -829,8 +857,8 @@
               <tr class="table-row" data-priority="low" data-lead-id="{{ lead.id }}"
                   data-name="{{ lead.name|lower }}"
                   data-phone="{{ lead.phone|lower }}"
-                  data-program="{{ lead.get_program_display|lower|default:'' }}"
-                  data-status="{{ lead.get_status_display|lower }}"
+                  data-program="{{ lead.program|lower|default:'' }}"
+                  data-status="{{ lead.status|lower }}"
                   data-priority="{{ lead.get_priority_display|lower }}">
                 <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                 <td><a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">{{ lead.name }}</a></td>
@@ -850,14 +878,19 @@
 </td>
                 <td>{{ lead.get_source_display }}</td>
                 <td>
-                  <select class="status-select" data-lead-id="{{ lead.id }}">
-                    <option value="ENQUIRY" {% if lead.status == 'ENQUIRY' %}selected{% endif %}>Enquiry</option>
-                    <option value="INTERESTED" {% if lead.status == 'INTERESTED' %}selected{% endif %}>Interested</option>
-                    <option value="NOT_INTERESTED" {% if lead.status == 'NOT_INTERESTED' %}selected{% endif %}>Not Interested</option>
-                    <option value="WALK_IN" {% if lead.status == 'WALK_IN' %}selected{% endif %}>Walk In</option>
-                    <option value="ON_HOLD" {% if lead.status == 'ON_HOLD' %}selected{% endif %}>On Hold</option>
-                    <option value="REGISTERED" {% if lead.status == 'REGISTERED' %}selected{% endif %}>Registered</option>
-                  </select>
+                  <!-- Changed from select to input for status -->
+                  <input type="text" class="status-input" 
+                         data-lead-id="{{ lead.id }}" 
+                         value="{{ lead.status }}" 
+                         placeholder="Enter status"
+                         list="status-suggestions"
+                         style="width: 100%; 
+                                background: var(--bg-secondary); 
+                                color: var(--text-primary); 
+                                border: 1px solid var(--border-color); 
+                                border-radius: 8px; 
+                                padding: 0.35rem 0.7rem; 
+                                font-size: 1rem;" />
                 </td>
                 <td>
                   <input type="text" class="program-input" data-lead-id="{{ lead.id }}" value="{{ lead.program|default:'' }}" placeholder="Enter program name" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
@@ -886,6 +919,22 @@
         </table>
       </div>
     </div>
+
+    <!-- Status suggestions datalist -->
+    <datalist id="status-suggestions">
+      <option value="Enquiry">
+      <option value="Interested">
+      <option value="Not Interested">
+      <option value="Walk In">
+      <option value="On Hold">
+      <option value="Registered">
+      <option value="Follow Up">
+      <option value="Converted">
+      <option value="Lost">
+      <option value="Cold">
+      <option value="Warm">
+      <option value="Hot">
+    </datalist>
 
     <!-- Add Lead Modal -->
     <div id="addLeadModal" class="modal" style="display: none;">
@@ -921,14 +970,8 @@
             </div>
             <div class="form-field">
               <label for="leadStatus">Status</label>
-              <select id="leadStatus" name="status" class="form-select">
-                <option value="ENQUIRY" selected>Enquiry</option>
-                <option value="INTERESTED">Interested</option>
-                <option value="NOT_INTERESTED">Not Interested</option>
-                <option value="WALK_IN">Walk In</option>
-                <option value="ON_HOLD">On Hold</option>
-                <option value="REGISTERED">Registered</option>
-              </select>
+              <input type="text" id="leadStatus" name="status" class="form-input" 
+                     placeholder="Enter status" value="ENQUIRY" list="status-suggestions">
             </div>
             <div class="form-field">
               <label for="leadProgram">Program</label>
@@ -1716,11 +1759,15 @@ function getCookie(name) {
       });
       
       // Update status via AJAX
-      document.querySelectorAll('.status-select').forEach(select => {
-          select.dataset.originalValue = select.value;
-          select.addEventListener('change', function() {
+      document.querySelectorAll('.status-input').forEach(input => {
+          input.dataset.originalValue = input.value;
+          input.addEventListener('change', function() {
               const leadId = this.dataset.leadId;
               const newStatus = this.value;
+              
+              // Update the row's data attribute immediately for search
+              const row = this.closest('tr');
+              row.dataset.status = newStatus.toLowerCase();
               
               handleUpdate('update_status', leadId, newStatus, () => {
                   this.dataset.originalValue = newStatus;
@@ -1737,7 +1784,19 @@ function getCookie(name) {
               }).catch(error => {
                   console.error('Error updating status:', error.response?.data || error);
                   this.value = this.dataset.originalValue;
+                  // Revert the data attribute on error
+                  row.dataset.status = this.dataset.originalValue.toLowerCase();
               });
+          });
+          
+          // Also update on input for better responsiveness in search
+          input.addEventListener('input', function() {
+              const row = this.closest('tr');
+              row.dataset.status = this.value.toLowerCase();
+              
+              if (searchInput.value.trim()) {
+                performSearch();
+              }
           });
       });
       

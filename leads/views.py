@@ -32,11 +32,13 @@ def update_status(request, lead_id):
         lead = Lead.objects.get(id=lead_id, assigned_to=request.user)
         new_status = data.get('status')
         
-        if new_status in dict(Lead.STATUS_CHOICES).keys():
-            lead.status = new_status
+        # Remove the choices validation since status is now free-form text
+        # Only validate that it's not empty
+        if new_status and new_status.strip():
+            lead.status = new_status.strip()
             lead.save()
             return JsonResponse({'status': 'success'})
-        return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
+        return JsonResponse({'status': 'error', 'message': 'Status cannot be empty'}, status=400)
     except Lead.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Lead not found'}, status=404)
     except json.JSONDecodeError:
@@ -73,7 +75,7 @@ def update_lead(request, lead_id):
         lead.source = data.get('source')
         lead.program = data.get('program')
         lead.priority = data.get('priority')
-        lead.status = data.get('status')
+        lead.status = data.get('status')  # Now accepts any text value
 
         # Record remark history if remarks changed
         previous_remarks = lead.remarks
@@ -96,6 +98,3 @@ def update_lead(request, lead_id):
         return JsonResponse({'status': 'error', 'message': 'Lead not found'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-    
-
- 
