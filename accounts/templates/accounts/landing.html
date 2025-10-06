@@ -8,26 +8,20 @@
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/all.min.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/js/toast.min.js" defer></script>
 
-
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         :root {
             --bg-primary: #000000;
             --bg-secondary: #0a0a0a;
-            --card-bg: #111111;
-            --border-color: #1f1f1f;
-            --border-hover: #333333;
-            --text-primary: #ffffff;
-            --text-secondary: #a1a1aa;
-            --text-tertiary: #71717a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --border-hover: rgba(255, 255, 255, 0.2);
+            --text-primary: #ededed;
+            --text-secondary: #888888;
+            --text-tertiary: #666666;
             --accent: #ffffff;
-            --accent-hover: #f4f4f5;
-            --gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --shadow-small: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-            --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --accent-hover: #f5f5f5;
         }
         
         * {
@@ -37,248 +31,215 @@
         }
         
         body {
-            background: var(--bg-primary);
-            background-image: 
-                radial-gradient(circle at 25% 25%, #1f1f1f 0%, transparent 50%),
-                radial-gradient(circle at 75% 75%, #1a1a1a 0%, transparent 50%);
+            background: #000000;
             color: var(--text-primary);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             min-height: 100vh;
             line-height: 1.6;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+        }
+
+        /* Vercel-style animated grid background */
+        .grid-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100px 100px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .gradient-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            z-index: 1;
+            pointer-events: none;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 4rem 2rem;
+            padding: 0 2rem;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .split {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 6rem;
+            align-items: center;
+            width: 100%;
         }
         
         .header {
-            text-align: center;
-            margin-bottom: 4rem;
+            margin-bottom: 3rem;
+        }
+        
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+            padding: 0.5rem 1rem 0.5rem 0.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #ffffff 0%, #888888 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .logo-text {
+            font-size: 0.875rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
         }
         
         .header h1 {
-            font-size: clamp(2rem, 3vw, 3rem);
-            font-weight: bold;
-            letter-spacing: -0.025em;
-            background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            background: linear-gradient(to bottom, #ffffff 30%, #888888 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 1rem;
         }
         
         .header p {
-            font-size: 1.125rem;
+            font-size: 1.25rem;
             color: var(--text-secondary);
             font-weight: 400;
+            line-height: 1.6;
+            max-width: 480px;
         }
         
-        .grid {
-            display: grid;
-            gap: 1.5rem;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        .features {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 3rem;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .feature-item:hover {
+            border-color: var(--border-hover);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .feature-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .feature-icon i {
+            font-size: 1.125rem;
+            color: var(--text-primary);
+        }
+
+        .feature-text {
+            font-size: 0.9375rem;
+            color: var(--text-secondary);
+            font-weight: 400;
         }
         
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 2rem;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-        
-        .card:hover {
-            border-color: var(--border-hover);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-large);
-        }
-        
-        .card:hover::before {
-            opacity: 1;
-        }
-        
-        .card:active {
-            transform: translateY(0);
-        }
-        
-        .card-content {
-            text-align: center;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .card-icon {
-            width: 48px;
-            height: 48px;
-            margin: 0 auto 1.5rem;
-            background: linear-gradient(135deg, rgba(0, 140, 255, 0.15) 0%, rgba(0, 34, 255, 0.15) 100%);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            transition: transform 0.2s ease;
-        }
-        
-        .card:hover .card-icon {
-            transform: scale(1.05);
+            border-radius: 16px;
+            padding: 2.5rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
         }
         
         .card h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.01em;
-        }
-        
-        .card p {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-            font-weight: 400;
-        }
-        
-        /* Admin Badge Styles */
-        .admin-badge {
-            position: fixed;
-            top: 2rem;
-            right: 2rem;
-            z-index: 100;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .admin-badge-content {
-            background: linear-gradient(135deg, rgba(0, 140, 255, 0.15) 0%, rgba(0, 34, 255, 0.15) 100%);
-            border: 1px solid rgba(38, 0, 255, 0.3);
-            border-radius: 50px;
-            padding: 0.75rem 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1);
-        }
-        
-        .admin-icon {
-            font-size: 1.25rem;
-            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.3));
-            margin-right: 0.5rem;
-        }
-        
-        .admin-badge-content span {
-            color: #ffffff;
-            font-weight: 600;
-            font-size: 1.25rem;
-            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-        }
-        
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(12px);
-            animation: fadeIn 0.2s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes slideUp {
-            from { 
-                opacity: 0;
-                transform: translateY(20px) scale(0.95);
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-        
-        .modal-content {
-            background: var(--card-bg);
-            margin: 10vh auto;
-            padding: 2.5rem;
-            width: 90%;
-            max-width: 440px;
-            border-radius: 16px;
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-large);
-            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .modal-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        
-        .modal-header h3 {
             font-size: 1.5rem;
             font-weight: 600;
             color: var(--text-primary);
             margin-bottom: 0.5rem;
             letter-spacing: -0.02em;
         }
-        
-        .modal-subtitle {
-            color: var(--text-secondary);
+
+        .card-subtitle {
             font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
         }
         
         .form-group {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
         
         .form-label {
             display: block;
             margin-bottom: 0.5rem;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             font-weight: 500;
-            color: var(--text-primary);
+            color: var(--text-secondary);
+            letter-spacing: -0.01em;
         }
         
         .form-control {
             width: 100%;
-            padding: 0.875rem 1rem;
-            background: var(--bg-secondary);
+            padding: 0.75rem 0.875rem;
+            background: rgba(255, 255, 255, 0.02);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             color: var(--text-primary);
-            font-size: 0.875rem;
-            transition: all 0.2s ease;
+            font-size: 0.9375rem;
+            transition: all 0.15s ease;
+            font-family: inherit;
         }
         
         .form-control:focus {
             outline: none;
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.04);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.05);
         }
         
         .form-control::placeholder {
@@ -286,83 +247,124 @@
         }
         
         .btn {
-            padding: 0.875rem 1.5rem;
+            padding: 0.75rem 1.25rem;
             border-radius: 8px;
             font-weight: 500;
             font-size: 0.875rem;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.15s ease;
             cursor: pointer;
             border: none;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+            letter-spacing: -0.01em;
+            width: 100%;
         }
         
         .btn-primary {
             background: var(--accent);
             color: var(--bg-primary);
-            box-shadow: var(--shadow-small);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
         }
         
         .btn-primary:hover {
             background: var(--accent-hover);
             transform: translateY(-1px);
-            box-shadow: var(--shadow-medium);
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
         }
         
         .btn-primary:active {
             transform: translateY(0);
         }
         
-        .btn-secondary {
-            background: transparent;
-            color: var(--text-secondary);
+        /* Admin Badge */
+        .admin-badge {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            z-index: 100;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .admin-badge:hover {
+            transform: translateY(-2px);
+        }
+        
+        .admin-badge-content {
+            background: var(--card-bg);
             border: 1px solid var(--border-color);
-        }
-        
-        .btn-secondary:hover {
-            color: var(--text-primary);
-            border-color: var(--border-hover);
-            background: rgba(255, 255, 255, 0.02);
-        }
-        
-        .modal-footer {
+            border-radius: 50px;
+            padding: 0.625rem 1.25rem;
             display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            margin-top: 2rem;
+            align-items: center;
+            gap: 0.625rem;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+        }
+
+        .admin-badge:hover .admin-badge-content {
+            border-color: var(--border-hover);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .admin-icon i {
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+        
+        .admin-badge-content span {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 0.875rem;
+            letter-spacing: -0.01em;
         }
         
         /* Responsive Design */
-        @media (max-width: 768px) {
+        @media (max-width: 968px) {
             .container {
-                padding: 2rem 1rem;
+                padding: 4rem 1.5rem;
             }
-            
-            .grid {
+
+            .split {
                 grid-template-columns: 1fr;
-                gap: 1rem;
+                gap: 4rem;
             }
-            
-            .modal-content {
-                margin: 5vh auto;
-                padding: 2rem;
-                width: 95%;
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            .header p {
+                font-size: 1.125rem;
             }
             
             .admin-badge {
-                top: 1rem;
-                right: 1rem;
+                top: 1.5rem;
+                right: 1.5rem;
             }
-            
-            .admin-badge-content {
-                padding: 0.5rem 1rem;
-                font-size: 0.8rem;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 3rem 1rem;
             }
-            
-            .admin-icon {
+
+            .card {
+                padding: 2rem 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
                 font-size: 1rem;
+            }
+
+            .features {
+                margin-top: 2rem;
             }
         }
         
@@ -374,208 +376,129 @@
         
         .btn.loading::after {
             content: '';
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             margin-left: 8px;
             border: 2px solid transparent;
             border-top: 2px solid currentColor;
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: spin 0.6s linear infinite;
         }
         
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-       
+        /* Subtle animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header, .card, .feature-item {
+            animation: fadeInUp 0.6s ease-out backwards;
+        }
+
+        .card {
+            animation-delay: 0.1s;
+        }
+
+        .feature-item:nth-child(1) { animation-delay: 0.2s; }
+        .feature-item:nth-child(2) { animation-delay: 0.3s; }
+        .feature-item:nth-child(3) { animation-delay: 0.4s; }
     </style>
 </head>
 <body>
-   
+    <div class="grid-background"></div>
+    <div class="gradient-overlay"></div>
 
-    <div class="container">
-        <!-- Admin Badge -->
-        <div class="admin-badge" onclick="window.location='/admin';">
-            <div class="admin-badge-content">
-                <div class="admin-icon">
-                    <i class="fa-solid fa-user-tie"></i>
-                </div>
-                <span>Admins</span>
+    <div class="admin-badge" onclick="window.location='/admin';">
+        <div class="admin-badge-content">
+            <div class="admin-icon">
+                <i class="fa-solid fa-user-tie"></i>
             </div>
-        </div>
-        
-        <div class="header">
-            <h1>LIFE PLANNER CRM</h1>
-            <p>Select your role to access the system</p>
-        </div>
-        
-        <div class="grid">
-            <!-- Operations Card -->
-            <div class="card" onclick="openModal('OPS')">
-                <div class="card-content">
-                    <div class="card-icon">
-                        <i class="fa-solid fa-gear" style="color: #ffffff;"></i>
-                    </div>
-                    <h3>Operations</h3>
-                    <p>System administration and support</p>
-                </div>
-            </div>
-
-            <!-- Admission Manager Card -->
-            <div class="card" onclick="openModal('ADM_MANAGER')">
-                <div class="card-content">
-                    <div class="card-icon">
-                        <i class="fa-solid fa-people-arrows" style="color: #ffffff;"></i>
-                    </div>
-                    <h3>Admission Manager</h3>
-                    <p>Lead management and admissions</p>
-                    
-                </div>
-            </div>
-
-            <!-- Admission Executive Card -->
-            <div class="card" onclick="openModal('ADM_EXEC')">
-                <div class="card-content">
-                    <div class="card-icon">
-                        <i class="fa-solid fa-people-group" style="color: #ffffff;"></i>
-                    </div>
-                    <h3>Admission Executive</h3>
-                    <p>Student enrollment and follow-up</p>
-                    <!-- <p style="color: red;">No Access</p> -->
-                </div>
-            </div>
-
-            <!-- Media Team Card -->
-            <div class="card" onclick="openModal('MEDIA')">
-                <div class="card-content">
-                    <div class="card-icon">
-                        <i class="fa-solid fa-photo-film" style="color: #ffffff;"></i>
-                    </div>
-                    <h3>Media Team</h3>
-                    <p>Content creation and marketing</p>
-                </div>
-            </div>
-
-            <!-- Trainers Card -->
-            <div class="card" onclick="openModal('TRAINER')">
-                <div class="card-content">
-                    <div class="card-icon">
-                       <i class="fa-solid fa-graduation-cap" style="color: #ffffff;"></i>
-                    </div>
-                    <h3>Trainers</h3>
-                    <p>Session management and delivery</p>
-                </div>
-            </div>
-
-            <!-- Processing Executive Card -->
-            <div class="card" onclick="openModal('PROCESSING')">
-                <div class="card-content">
-                    <div class="card-icon">
-                        <i class="fa-brands fa-cc-visa" style="color: #ffffff;"></i>
-                    </div>
-                    <h3>Processing Executive</h3>
-                    <p>Document verification and processing</p>
-                </div>
-            </div>
-
-            <!-- Business Head Card -->
-            <div class="card" onclick="openModal('BUSINESS_HEAD')">
-                <div class="card-content">
-                    <div class="card-icon">
-                        <i class="fa-solid fa-user-tie" style="color: #ffffff;"></i>
-                    </div>
-                    <h3>Business Head</h3>
-                    <p>Marketting and Business</p>
-                </div>
-            </div>
+            <span>Admin</span>
         </div>
     </div>
-   
-    <!-- Password Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalRoleTitle">Authentication Required</h3>
-                <div class="modal-subtitle">Enter your credentials to continue</div>
+
+    <div class="container">
+        <div class="split">
+            <!-- Left: Hero content -->
+            <div>
+                <div class="header">
+                    <div class="logo">
+                        <div class="logo-icon">LP</div>
+                        <span class="logo-text">Life Planner</span>
+                    </div>
+                    <h1>Customer Relationship<br>Management</h1>
+                    <p>Streamline your workflow with powerful tools for lead management, admissions, and operations.</p>
+                </div>
+
+                <div class="features">
+                    
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div class="feature-text">Role-based workflows for teams of any size</div>
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-icon">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div class="feature-text">Real-time analytics and reporting</div>
+                    </div>
+                </div>
             </div>
-            <form method="post" action="{% url 'accounts:quick_login' %}" id="loginForm">
-                {% csrf_token %}
-                <input type="hidden" name="role" id="modalRoleInput">
-                <div class="form-group">
-                    <label class="form-label" for="password">Password</label>
-                    <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
+
+            <!-- Right: Login Form -->
+            <div>
+                <div class="card">
+                    <h3>Sign in</h3>
+                    <p class="card-subtitle">Welcome back. Please enter your details.</p>
+                    
+                    <form method="post" action="{% url 'accounts:quick_login' %}" id="loginForm">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label class="form-label" for="username">Username</label>
+                            <input type="text" name="username" id="username" class="form-control" placeholder="Enter your username" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="password">Password</label>
+                            <input type="password" name="password" id="password" class="form-control" placeholder="Enter your password" required>
+                        </div>
+                        <div style="margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <span>Sign In</span>
+                            </button>
+                        </div>
+                    </form>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary" id="submitBtn">
-                        Sign In
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
     
     <script>
-        
-
-        // Modal functions
-        function openModal(role) {
-
-            const roleNames = {
-                'OPS': 'Operations',
-                'ADM_MANAGER': 'Admission Manager',
-                'ADM_EXECUTIVE': 'Admission Executive',
-                'MEDIA': 'Media Team',
-                'TRAINER': 'Trainer',
-                'PROCESSING': 'Processing Executive',
-                'BUSINESS_HEAD': 'Business Head',
-            };
-            
-            document.getElementById('modalRoleInput').value = role;
-            document.getElementById('modalRoleTitle').textContent = `Sign in as ${roleNames[role]}`;
-            document.getElementById('loginModal').style.display = 'block';
-            
-            // Focus on password input
-            setTimeout(() => {
-                document.getElementById('password').focus();
-            }, 300);
-        }
-        
-        function closeModal() {
-            document.getElementById('loginModal').style.display = 'none';
-            document.getElementById('loginForm').reset();
-            document.getElementById('submitBtn').classList.remove('loading');
-        }
-        
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('loginModal');
-            if (event.target === modal) {
-                closeModal();
-            }
-        }
-        
-        // Handle form submission
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.classList.add('loading');
-            submitBtn.textContent = 'Signing in...';
-            
-            // Example: Show a loading toast
+            submitBtn.querySelector('span').textContent = 'Signing in';
             if (window.showToast) {
                 window.showToast('Authenticating...', 'info');
             }
         });
         
-        // Handle escape key
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeModal();
-            }
+        // Autofocus username on load
+        window.addEventListener('load', function() {
+            const u = document.getElementById('username');
+            if (u) u.focus();
         });
-
-      
-        
     </script>
 </body>
 </html>

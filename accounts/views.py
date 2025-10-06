@@ -34,68 +34,52 @@ def landing_page(request):
 
 @require_POST
 def quick_login(request):
-    """Handle role-based quick login authentication"""
+    """Authenticate with username/password and redirect by role"""
     request.session.cookie_name = settings.SESSION_COOKIE_NAME
     request.session.cookie_path = settings.SESSION_COOKIE_PATH
-    
-    role = request.POST.get('role')
+
+    username = request.POST.get('username')
     password = request.POST.get('password')
-    
-    # Validate required fields
-    if not role or not password:
-        messages.error(request, "Role and password are required")
+
+    if not username or not password:
+        messages.error(request, "Username and password are required")
         return redirect('accounts:landing')
 
     try:
-        users = User.objects.filter(role=role, is_active=True)
-        
-        if not users.exists():
-            messages.error(request, "No active users found with this role")
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            messages.error(request, "Invalid username or password")
             return redirect('accounts:landing')
-        
-        # Try authenticating each user with the provided password
-        authenticated_user = None
-        for user in users:
-            auth_user = authenticate(
-                request,
-                username=user.username,
-                password=password
-            )
-            if auth_user is not None:
-                authenticated_user = auth_user
-                break
-        
-        if authenticated_user:
-            login(request, authenticated_user)
-            
-            # Role-based redirection - UPDATED THIS SECTION
-            if role == 'ADM_MANAGER':
-                return redirect('accounts:admission_dashboard')
-            elif role == 'ADM_EXEC':
-                return redirect('accounts:admission_executive_dashboard')
-            elif role == 'MEDIA':
-                return redirect('accounts:media_dashboard') 
-            elif role == 'OPS':
-                return redirect('accounts:operations_dashboard')
-            elif role == 'PROCESSING':
-                return redirect('accounts:processing_dashboard')
-            elif role == 'TRAINER':
-                return redirect('trainers:dashboard')
-            elif role == 'BUSINESS_HEAD':
-                return redirect('tasks:business_head_dashboard')    
-            # Changed to use namespace
-            # Add other role redirects as needed
-            
-            # Default redirect if role not specifically handled
+
+        if not user.is_active:
+            messages.error(request, "Your account is inactive")
             return redirect('accounts:landing')
-            
-        messages.error(request, "Invalid password for this role")
-        
+
+        login(request, user)
+
+        # Redirect based on the authenticated user's role
+        role = getattr(user, 'role', None)
+        if role == 'ADM_MANAGER':
+            return redirect('accounts:admission_dashboard')
+        elif role == 'ADM_EXEC':
+            return redirect('accounts:admission_executive_dashboard')
+        elif role == 'MEDIA':
+            return redirect('accounts:media_dashboard')
+        elif role == 'OPS':
+            return redirect('accounts:operations_dashboard')
+        elif role == 'PROCESSING':
+            return redirect('accounts:processing_dashboard')
+        elif role == 'TRAINER':
+            return redirect('trainers:dashboard')
+        elif role == 'BUSINESS_HEAD':
+            return redirect('tasks:business_head_dashboard')
+
+        # Fallback
+        return redirect('accounts:landing')
+
     except Exception as e:
-        messages.error(request, f"An error occurred during login: {str(e)}")  # More detailed error
-        # Consider logging the actual error for admin review
-    
-    return redirect('accounts:landing')
+        messages.error(request, f"An error occurred during login: {str(e)}")
+        return redirect('accounts:landing')
 
 
 
