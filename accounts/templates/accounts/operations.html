@@ -547,8 +547,23 @@
               <h4>Lead Overview</h4>
               <div class="stats-grid" id="overviewStats">
                 <!-- Will be populated by JavaScript -->
-              </div>
-            </div>
+  </div>
+  <!-- Shared status suggestions for datalist -->
+  <datalist id="status-suggestions-ops">
+    <option value="ENQUIRY"></option>
+    <option value="INTERESTED"></option>
+    <option value="NOT_INTERESTED"></option>
+    <option value="WALK_IN"></option>
+    <option value="ON_HOLD"></option>
+    <option value="REGISTERED"></option>
+    <option value="FOLLOW_UP"></option>
+    <option value="CONVERTED"></option>
+    <option value="LOST"></option>
+    <option value="COLD"></option>
+    <option value="WARM"></option>
+    <option value="HOT"></option>
+  </datalist>
+</div>
             <div class="stats-section">
               <h4>Assignment Status</h4>
               <div class="stats-grid" id="assignmentStats">
@@ -604,7 +619,7 @@
                 data-phone="{{ lead.phone|lower }}"
                 data-source="{{ lead.source|lower }}"
                 data-program="{{ lead.get_program_display|lower|default:'' }}"
-                data-status="{{ lead.get_status_display|lower }}"
+                data-status="{{ lead.status|lower }}"
                 data-priority="{{ lead.get_priority_display|lower }}"
                 data-assigned="{{ lead.assigned_to.get_full_name|lower|default:'unassigned' }}"
                 data-processing-status="{{ lead.processing_status|lower|default:'pending' }}">
@@ -628,19 +643,9 @@
                 </select>
               </td>
               
-              <!-- Status Column -->
+              <!-- Status Column (free-text) -->
               <td>
-                <select class="editable-select status-select" 
-                        data-lead-id="{{ lead.id }}"
-                        data-field="status">
-                  {% for value, label in status_choices %}
-                    <option value="{{ value }}" 
-                            {% if lead.status == value %}selected{% endif %}
-                            class="status-{{ value|lower|cut:' ' }}">
-                      {{ label }}
-                    </option>
-                  {% endfor %}
-                </select>
+                <input type="text" class="status-input" data-lead-id="{{ lead.id }}" value="{{ lead.status|default:'' }}" placeholder="Enter status" list="status-suggestions-ops" style="width: 100%; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.35rem 0.7rem; font-size: 1rem;" />
               </td>
               
               <!-- Program Column -->
@@ -700,6 +705,13 @@
 </div>
 
 <script>
+    // CSRF helper for axios
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+    axios.defaults.headers.common['X-CSRFToken'] = getCookie('csrftoken');
     // Configure axios properly
     axios.defaults.xsrfCookieName = 'csrftoken';
     axios.defaults.xsrfHeaderName = 'X-CSRFToken';
@@ -935,6 +947,67 @@
         selectElement.value = selectElement.dataset.previousValue;
       });
     }
+    // Handle free-text status input updates
+    document.querySelectorAll('.status-input').forEach(input => {
+      input.dataset.originalValue = input.value;
+      const commitChange = () => {
+        const leadId = input.dataset.leadId;
+        const newStatus = (input.value || '').trim();
+        if (!newStatus) {
+          alert('Status cannot be empty');
+          input.value = input.dataset.originalValue;
+          return;
+        }
+        axios.post('{% url "accounts:update_lead_field" %}', 
+          JSON.stringify({
+            lead_id: leadId,
+            field: 'status',
+            value: newStatus
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          }
+        )
+        .then(response => {
+          input.dataset.originalValue = newStatus;
+          // Update row dataset for search and forward button state
+          const row = input.closest('tr');
+          if (row) {
+            row.dataset.status = newStatus.toLowerCase();
+            const forwardBtn = row.querySelector('.forward-btn');
+            if (forwardBtn) {
+              const processingStatus = row.dataset.processingStatus || 'pending';
+              forwardBtn.disabled = newStatus !== 'REGISTERED' || processingStatus === 'forwarded';
+            }
+          }
+          if (statsDropdown.classList.contains('active')) {
+            updateStats();
+          }
+        })
+        .catch(error => {
+          console.error('Error updating status:', error.response?.data || error);
+          alert('Failed to update status. Please try again.');
+          input.value = input.dataset.originalValue;
+        });
+      };
+      // Save on blur
+      input.addEventListener('blur', commitChange);
+      // Save on Enter
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          commitChange();
+          input.blur();
+        }
+        if (e.key === 'Escape') {
+          input.value = input.dataset.originalValue;
+          input.blur();
+        }
+      });
+    });
     
     // Function to update search data attributes when fields change
     function updateRowSearchData(row, field, value) {
