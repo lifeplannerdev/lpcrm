@@ -741,15 +741,11 @@ def import_leads_excel(request):
                     # If first row contains common field names, it's likely headers
                     has_field_names = any(field in first_row_text for field in ['name', 'phone', 'mobile', 'contact', 'email', 'location', 'program', 'priority', 'status', 'source', 'remarks', 'notes'])
                     
-                    if not has_field_names and len(df) == 1:
-                        # Single row of data, but pandas treated it as headers
-                        # Recreate with proper column names
-                        values = first_row_values
+                    # If first row looks like data (no field names), re-parse without headers so we don't lose the first line
+                    if not has_field_names:
+                        df = pd.read_csv(io.StringIO(pasted_text), sep=None, engine='python', header=None)
                         default_columns = ['name', 'phone', 'email', 'location', 'program', 'priority', 'status', 'source', 'remarks']
-                        while len(values) < len(default_columns):
-                            values.append('')
-                        values = values[:len(default_columns)]
-                        df = pd.DataFrame([values], columns=default_columns)
+                        df.columns = default_columns[:len(df.columns)]
                 except:
                     pass
                 
