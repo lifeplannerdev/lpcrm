@@ -964,10 +964,10 @@ def download_excel_template(request):
     try:
         # Create a sample DataFrame with the expected columns
         sample_data = {
-            'name': ['John Doe', 'Jane Smith'],
-            'phone': ['1234567890', '0987654321'],
-            'email': ['john@example.com', 'jane@example.com'],
-            'location': ['New York', 'Los Angeles'],
+            'name': ['John Doe', 'Risheb.s'],
+            'phone': ['1234567890', '7994631745'],
+            'email': ['john@example.com', 'rishebs@example.com'],
+            'location': ['New York', 'Kerala'],
             'program': ['MBA', 'BBA'],
             'priority': ['HIGH', 'MEDIUM'],
             'status': ['ENQUIRY', 'INTERESTED'],
