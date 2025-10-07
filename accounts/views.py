@@ -724,8 +724,69 @@ def import_leads_excel(request):
 
         if pasted_text:
             try:
-                # Try to infer delimiter (CSV or TSV) automatically
-                df = pd.read_csv(io.StringIO(pasted_text), sep=None, engine='python')
+                # Clean and normalize the pasted text
+                pasted_text = pasted_text.strip()
+                lines = pasted_text.split('\n')
+                
+                # Try different parsing strategies
+                df = None
+                
+                # Strategy 1: Try to parse as CSV with headers
+                try:
+                    df = pd.read_csv(io.StringIO(pasted_text), sep=None, engine='python', header=0)
+                    # Check if first row looks like data (not headers)
+                    first_row_values = df.iloc[0].astype(str).tolist()
+                    first_row_text = ' '.join(first_row_values).lower()
+                    
+                    # If first row contains common field names, it's likely headers
+                    has_field_names = any(field in first_row_text for field in ['name', 'phone', 'mobile', 'contact', 'email', 'location', 'program', 'priority', 'status', 'source', 'remarks', 'notes'])
+                    
+                    if not has_field_names and len(df) == 1:
+                        # Single row of data, but pandas treated it as headers
+                        # Recreate with proper column names
+                        values = first_row_values
+                        default_columns = ['name', 'phone', 'email', 'location', 'program', 'priority', 'status', 'source', 'remarks']
+                        while len(values) < len(default_columns):
+                            values.append('')
+                        values = values[:len(default_columns)]
+                        df = pd.DataFrame([values], columns=default_columns)
+                except:
+                    pass
+                
+                # Strategy 2: If Strategy 1 failed, try parsing as data without headers
+                if df is None or len(df) == 0:
+                    try:
+                        df = pd.read_csv(io.StringIO(pasted_text), sep=None, engine='python', header=None)
+                        # Assign default column names
+                        default_columns = ['name', 'phone', 'email', 'location', 'program', 'priority', 'status', 'source', 'remarks']
+                        df.columns = default_columns[:len(df.columns)]
+                    except:
+                        pass
+                
+                # Strategy 3: Manual parsing for single row
+                if df is None or len(df) == 0:
+                    if len(lines) == 1:
+                        # Single row, try to split by comma or tab
+                        line = lines[0].strip()
+                        if '\t' in line:
+                            values = line.split('\t')
+                        else:
+                            values = line.split(',')
+                        
+                        # Clean up values
+                        values = [str(v).strip().strip('"\'') for v in values]
+                        
+                        # Create DataFrame with default column names
+                        default_columns = ['name', 'phone', 'email', 'location', 'program', 'priority', 'status', 'source', 'remarks']
+                        while len(values) < len(default_columns):
+                            values.append('')
+                        values = values[:len(default_columns)]
+                        
+                        df = pd.DataFrame([values], columns=default_columns)
+                
+                if df is None or len(df) == 0:
+                    return JsonResponse({'status': 'error', 'message': 'Could not parse the pasted data. Please ensure it contains at least name and phone columns.'})
+                    
             except Exception as e:
                 return JsonResponse({'status': 'error', 'message': f'Error reading pasted data: {str(e)}'})
         elif 'excel_file' in request.FILES:
@@ -745,16 +806,47 @@ def import_leads_excel(request):
         preview_only = request.POST.get('preview_only') == 'true'
 
         if preview_only:
+            # Create case-insensitive column mapping for preview
+            column_mapping = {}
+            for col in df.columns:
+                col_lower = col.lower().strip()
+                if 'name' in col_lower:
+                    column_mapping['name'] = col
+                elif 'phone' in col_lower or 'mobile' in col_lower or 'contact' in col_lower:
+                    column_mapping['phone'] = col
+                elif 'email' in col_lower:
+                    column_mapping['email'] = col
+                elif 'location' in col_lower or 'address' in col_lower:
+                    column_mapping['location'] = col
+                elif 'program' in col_lower or 'course' in col_lower:
+                    column_mapping['program'] = col
+                elif 'priority' in col_lower:
+                    column_mapping['priority'] = col
+                elif 'status' in col_lower:
+                    column_mapping['status'] = col
+                elif 'source' in col_lower:
+                    column_mapping['source'] = col
+                elif 'remarks' in col_lower or 'notes' in col_lower or 'comment' in col_lower:
+                    column_mapping['remarks'] = col
+
             # Return preview data
             preview_data = {
                 'headers': df.columns.tolist(),
                 'rows': df.head(5).fillna('').values.tolist()
             }
 
+            # Count valid rows for preview (rows with name and phone)
+            valid_rows = 0
+            for index, row in df.iterrows():
+                name = str(row.get(column_mapping.get('name', 'name'), '')).strip()
+                phone = str(row.get(column_mapping.get('phone', 'phone'), '')).strip()
+                if name and phone and len(phone) >= 10:
+                    valid_rows += 1
+
             stats = {
                 'total_rows': len(df),
-                'valid_rows': len(df),
-                'invalid_rows': 0
+                'valid_rows': valid_rows,
+                'invalid_rows': len(df) - valid_rows
             }
 
             return JsonResponse({
@@ -767,19 +859,42 @@ def import_leads_excel(request):
         imported_count = 0
         errors = []
 
+        # Create case-insensitive column mapping
+        column_mapping = {}
+        for col in df.columns:
+            col_lower = col.lower().strip()
+            if 'name' in col_lower:
+                column_mapping['name'] = col
+            elif 'phone' in col_lower or 'mobile' in col_lower or 'contact' in col_lower:
+                column_mapping['phone'] = col
+            elif 'email' in col_lower:
+                column_mapping['email'] = col
+            elif 'location' in col_lower or 'address' in col_lower:
+                column_mapping['location'] = col
+            elif 'program' in col_lower or 'course' in col_lower:
+                column_mapping['program'] = col
+            elif 'priority' in col_lower:
+                column_mapping['priority'] = col
+            elif 'status' in col_lower:
+                column_mapping['status'] = col
+            elif 'source' in col_lower:
+                column_mapping['source'] = col
+            elif 'remarks' in col_lower or 'notes' in col_lower or 'comment' in col_lower:
+                column_mapping['remarks'] = col
+
         for index, row in df.iterrows():
             try:
-                # Map Excel columns to Lead model fields
+                # Map Excel columns to Lead model fields using case-insensitive mapping
                 lead_data = {
-                    'name': str(row.get('name', '')).strip(),
-                    'phone': str(row.get('phone', '')).strip(),
-                    'email': str(row.get('email', '')).strip() or None,
-                    'location': str(row.get('location', '')).strip() or '',
-                    'program': str(row.get('program', '')).strip() or '',
-                    'priority': str(row.get('priority', 'MEDIUM')).strip().upper(),
-                    'status': str(row.get('status', 'ENQUIRY')).strip().upper(),
-                    'source': str(row.get('source', 'OTHER')).strip().upper(),
-                    'remarks': str(row.get('remarks', '')).strip() or '',
+                    'name': str(row.get(column_mapping.get('name', 'name'), '')).strip(),
+                    'phone': str(row.get(column_mapping.get('phone', 'phone'), '')).strip(),
+                    'email': str(row.get(column_mapping.get('email', 'email'), '')).strip() or None,
+                    'location': str(row.get(column_mapping.get('location', 'location'), '')).strip() or '',
+                    'program': str(row.get(column_mapping.get('program', 'program'), '')).strip() or '',
+                    'priority': str(row.get(column_mapping.get('priority', 'priority'), 'MEDIUM')).strip().upper(),
+                    'status': str(row.get(column_mapping.get('status', 'status'), 'ENQUIRY')).strip(),
+                    'source': str(row.get(column_mapping.get('source', 'source'), 'OTHER')).strip().upper(),
+                    'remarks': str(row.get(column_mapping.get('remarks', 'remarks'), '')).strip() or '',
                     # Automatically assign to logged-in user
                     'assigned_to': request.user,
                     'assigned_date': timezone.now()
@@ -795,15 +910,15 @@ def import_leads_excel(request):
                     errors.append(f"Row {index + 2}: Phone number too short")
                     continue
                 
-                # Validate priority, status, source choices
+                # Validate priority and source choices (status is now free-text)
                 valid_priorities = ['HIGH', 'MEDIUM', 'LOW']
-                valid_statuses = ['ENQUIRY', 'INTERESTED', 'NOT_INTERESTED', 'WALK_IN', 'ON_HOLD', 'REGISTERED']
                 valid_sources = ['WHATSAPP', 'INSTAGRAM', 'WEBSITE', 'WALK_IN', 'AUTOMATION', 'OTHER']
                 
                 if lead_data['priority'] not in valid_priorities:
                     lead_data['priority'] = 'MEDIUM'
                 
-                if lead_data['status'] not in valid_statuses:
+                # Status is now free-text, just ensure it's not empty
+                if not lead_data['status']:
                     lead_data['status'] = 'ENQUIRY'
                 
                 if lead_data['source'] not in valid_sources:
@@ -897,7 +1012,7 @@ def download_excel_template(request):
 def delete_lead(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
     lead.delete()
-    return redirect('accounts:dashboard') 
+    return redirect('/dashboard') 
 @login_required
 @require_POST
 def update_lead_field(request):
