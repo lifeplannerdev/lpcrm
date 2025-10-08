@@ -28,6 +28,7 @@ urlpatterns = [
     path('leads/', include('leads.urls',namespace="leads")),
     path('trainers/', include('trainers.urls', namespace='trainers')),
     path('tasks/', include('tasks.urls', namespace='tasks')),
+    path('hob/', include('hob.urls', namespace='hob')),
 
 
 ]

@@ -1,0 +1,69 @@
+<!-- Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card" onclick="loadTabContent('staff')">
+        <div class="icon">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="value">{{ total_staff }}</div>
+        <div class="label">Total Staff Active</div>
+    </div>
+    
+    <div class="stat-card" onclick="loadTabContent('tasks')">
+        <div class="value">{{ total_tasks_assigned }}</div>
+        <div class="label">Tasks Assigned Today</div>
+    </div>
+    
+    <div class="stat-card" onclick="loadTabContent('tasks')">
+        <div class="value">{{ pending_tasks }}</div>
+        <div class="label">Pending Tasks</div>
+    </div>
+    
+    <div class="stat-card" onclick="loadTabContent('tasks')">
+        <div class="value">{{ completed_tasks }}</div>
+        <div class="label">Completed Tasks</div>
+    </div>
+    
+    <div class="stat-card" onclick="loadTabContent('tasks')">
+        <div class="value">{{ overdue_tasks }}</div>
+        <div class="label">Overdue Tasks</div>
+    </div>
+</div>
+
+<!-- Recent Leads Section -->
+<div class="table-container">
+    <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Recent Leads</h3>
+    </div>
+    <table class="bc-table bc-table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Program</th>
+                <th>Status</th>
+                <th>Assigned To</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for lead in recent_leads %}
+            <tr>
+                <td>{{ lead.name }}</td>
+                <td>{{ lead.phone }}</td>
+                <td>{{ lead.program|default:"-" }}</td>
+                <td>
+                    <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; background: rgba(156, 163, 175, 0.2); color: #9ca3af;">
+                        {{ lead.status }}
+                    </span>
+                </td>
+                <td>{{ lead.assigned_to.get_full_name|default:"Unassigned" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                    No leads found
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

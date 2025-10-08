@@ -1,0 +1,53 @@
+<div class="table-container">
+    <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Daily Reports - {{ today|date:"F d, Y" }}</h3>
+    </div>
+    
+    {% if daily_reports %}
+    <table class="bc-table bc-table-striped">
+        <thead>
+            <tr>
+                <th>Report Date</th>
+                <th>Created By</th>
+                <th>Total Leads</th>
+                <th>New Leads</th>
+                <th>Converted</th>
+                <th>Tasks Assigned</th>
+                <th>Tasks Completed</th>
+                <th>Conversion Rate</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in daily_reports %}
+            <tr>
+                <td>{{ report.date|date:"M d, Y" }}</td>
+                <td>{{ report.created_by.get_full_name }}</td>
+                <td>{{ report.total_leads }}</td>
+                <td>{{ report.new_leads }}</td>
+                <td>{{ report.converted_leads }}</td>
+                <td>{{ report.tasks_assigned }}</td>
+                <td>{{ report.tasks_completed }}</td>
+                <td>{{ report.conversion_rate }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+        <i class="fas fa-chart-bar" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+        <h3>No Daily Reports Yet</h3>
+        <p>Daily reports will appear here once they are created</p>
+    </div>
+    {% endif %}
+</div>
+
+<div style="margin-top: 2rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 1.5rem;">
+    <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Report Features Coming Soon</h4>
+    <ul style="color: var(--text-secondary); line-height: 1.8;">
+        <li>Automated daily performance reports</li>
+        <li>Team-wise performance analytics</li>
+        <li>Lead conversion tracking</li>
+        <li>Task completion metrics</li>
+        <li>Export to Excel functionality</li>
+    </ul>
+</div>
