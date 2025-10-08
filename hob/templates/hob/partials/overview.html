@@ -1,69 +1,281 @@
-<!-- Stats Cards -->
-<div class="stats-grid">
-    <div class="stat-card" onclick="loadTabContent('staff')">
-        <div class="icon">
-            <i class="fas fa-users"></i>
+<!-- Overview Layout: Left Stats, Right Leads -->
+<div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 2rem; align-items: stretch; min-height: 600px;">
+    
+    <!-- Left Side: Stats Cards -->
+    <div class="stats-container">
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Dashboard Overview</h3>
+            <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">Key metrics and performance indicators</p>
         </div>
-        <div class="value">{{ total_staff }}</div>
-        <div class="label">Total Staff Active</div>
+        
+        <div class="stats-grid-vertical">
+            <div class="stat-card" onclick="loadTabContent('staff')">
+                <div class="stat-card-content">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ total_staff }}</div>
+                        <div class="stat-label">Total Staffs</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card" onclick="loadTabContent('leads')">
+                <div class="stat-card-content">
+                    <div class="stat-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ total_leads }}</div>
+                        <div class="stat-label">Total Leads</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card" onclick="loadTabContent('tasks')">
+                <div class="stat-card-content">
+                    <div class="stat-icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ total_tasks_assigned }}</div>
+                        <div class="stat-label">Task Assigned Today</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card" onclick="loadTabContent('reports')">
+                <div class="stat-card-content">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ total_reports }}</div>
+                        <div class="stat-label">Reports</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <div class="stat-card" onclick="loadTabContent('tasks')">
-        <div class="value">{{ total_tasks_assigned }}</div>
-        <div class="label">Tasks Assigned Today</div>
-    </div>
-    
-    <div class="stat-card" onclick="loadTabContent('tasks')">
-        <div class="value">{{ pending_tasks }}</div>
-        <div class="label">Pending Tasks</div>
-    </div>
-    
-    <div class="stat-card" onclick="loadTabContent('tasks')">
-        <div class="value">{{ completed_tasks }}</div>
-        <div class="label">Completed Tasks</div>
-    </div>
-    
-    <div class="stat-card" onclick="loadTabContent('tasks')">
-        <div class="value">{{ overdue_tasks }}</div>
-        <div class="label">Overdue Tasks</div>
+
+    <!-- Right Side: Recent Leads -->
+    <div class="leads-container">
+        <div style="margin-bottom: 1.5rem;">
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">Recent Leads</h3>
+            <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">Latest lead activity and assignments</p>
+        </div>
+        
+        <div class="table-container">
+            <div class="table-scroll-wrapper">
+                <table class="bc-table bc-table-striped">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Program</th>
+                            <th>Status</th>
+                            <th>Assigned To</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in recent_leads %}
+                        <tr>
+                            <td style="font-weight: 500;">{{ lead.name }}</td>
+                            <td>{{ lead.phone }}</td>
+                            <td>{{ lead.program|default:"-" }}</td>
+                            <td>
+                                <span class="status-badge">{{ lead.status }}</span>
+                            </td>
+                            <td>{{ lead.assigned_to.get_full_name|default:"Unassigned" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                                <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                                    <i class="fas fa-inbox" style="font-size: 2rem; opacity: 0.5;"></i>
+                                    <span>No leads found</span>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- Recent Leads Section -->
-<div class="table-container">
-    <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
-        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Recent Leads</h3>
-    </div>
-    <table class="bc-table bc-table-striped">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Program</th>
-                <th>Status</th>
-                <th>Assigned To</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for lead in recent_leads %}
-            <tr>
-                <td>{{ lead.name }}</td>
-                <td>{{ lead.phone }}</td>
-                <td>{{ lead.program|default:"-" }}</td>
-                <td>
-                    <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; background: rgba(156, 163, 175, 0.2); color: #9ca3af;">
-                        {{ lead.status }}
-                    </span>
-                </td>
-                <td>{{ lead.assigned_to.get_full_name|default:"Unassigned" }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="5" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
-                    No leads found
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<style>
+/* Stats Container Styles */
+.stats-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-medium);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.stats-grid-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex: 1;
+}
+
+.stat-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    background: var(--border-hover);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-small);
+}
+
+.stat-card-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bg-primary);
+    font-size: 1.2rem;
+}
+
+.stat-info {
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+}
+
+/* Leads Container Styles */
+.leads-container {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-medium);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.table-container {
+    border-radius: 8px;
+    overflow: hidden;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.table-scroll-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+    border-radius: 8px;
+    /* Custom scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-hover) var(--bg-secondary);
+}
+
+.table-scroll-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+    border-radius: 3px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: var(--border-hover);
+    border-radius: 3px;
+}
+
+.table-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: rgba(156, 163, 175, 0.15);
+    color: var(--text-secondary);
+    border: 1px solid rgba(156, 163, 175, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .overview-layout {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        min-height: auto;
+    }
+    
+    .stats-container,
+    .leads-container {
+        height: auto;
+    }
+    
+    .stats-grid-vertical {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .table-scroll-wrapper {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid-vertical {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card-content {
+        gap: 0.75rem;
+    }
+    
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 1.25rem;
+    }
+}
+</style>
