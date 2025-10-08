@@ -1,9 +1,12 @@
 <div class="table-container">
     <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">All Leads</h3>
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">All Leads</h3>
+            <span id="visibleCount" style="color: var(--text-secondary); font-size: 0.9rem;">&nbsp;</span>
+        </div>
         
         <!-- Filters -->
-        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
             <!-- Source Filter -->
             <select id="sourceFilter" onchange="filterLeads()" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; font-size: 0.9rem;">
                 <option value="">All Sources</option>
@@ -13,7 +16,8 @@
             </select>
             
             <!-- Status Filter -->
-            <input type="text" id="statusFilter" oninput="filterLeads()" placeholder="Filter by status..." style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; font-size: 0.9rem; min-width: 150px;">
+            <input type="text" id="statusFilter" oninput="filterLeads()" placeholder="Filter by status..." list="status-suggestions"
+                   style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; font-size: 0.9rem; min-width: 160px;">
             
             <!-- Staff Filter -->
             <select id="staffFilter" onchange="filterLeads()" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; font-size: 0.9rem;">
@@ -22,13 +26,17 @@
                     <option value="{{ staff.id }}">{{ staff.get_full_name }}</option>
                 {% endfor %}
             </select>
+
+            <!-- Reset Filters -->
+            <button type="button" onclick="resetLeadFilters()" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.85rem; cursor: pointer;">Reset</button>
         </div>
     </div>
     
     <div class="table-scroll-vert">
-        <table class="bc-table bc-table-striped">
+        <table class="bc-table bc-table-striped" id="leadsTable">
             <thead>
                 <tr>
+                    <th style="width: 60px;">#</th>
                     <th>Name</th>
                     <th>Phone</th>
                     <th>Source</th>
@@ -38,12 +46,13 @@
                     <th>Created</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="leadsTableBody">
                 {% for lead in leads %}
                 <tr class="lead-row" 
                     data-source="{{ lead.source }}"
                     data-status="{{ lead.status|lower }}"
                     data-staff="{{ lead.assigned_to.id|default:'' }}">
+                    <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                     <td>
                         <a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">
                             {{ lead.name }}
@@ -65,8 +74,8 @@
                     <td>{{ lead.created_at|date:"M d, Y" }}</td>
                 </tr>
                 {% empty %}
-                <tr>
-                    <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                <tr id="noLeadsRow">
+                    <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
                         No leads found
                     </td>
                 </tr>
@@ -76,43 +85,305 @@
     </div>
 </div>
 
+<!-- Status suggestions shared with overview/status vocabulary -->
+<datalist id="status-suggestions">
+    <option value="ENQUIRY">
+    <option value="INTERESTED">
+    <option value="NOT_INTERESTED">
+    <option value="WALK_IN">
+    <option value="ON_HOLD">
+    <option value="REGISTERED">
+    <option value="FOLLOW_UP">
+    <option value="CONVERTED">
+    <option value="LOST">
+    <option value="COLD">
+    <option value="WARM">
+    <option value="HOT">
+    <option value="Enquiry">
+    <option value="Interested">
+    <option value="Not Interested">
+    <option value="Walk In">
+    <option value="On Hold">
+    <option value="Registered">
+    <option value="Follow Up">
+    <option value="Converted">
+    <option value="Lost">
+    <option value="Cold">
+    <option value="Warm">
+    <option value="Hot">
+</datalist>
+
 <script>
 function filterLeads() {
     const sourceFilter = document.getElementById('sourceFilter').value;
     const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
     const staffFilter = document.getElementById('staffFilter').value;
-    
-    const rows = document.querySelectorAll('.lead-row');
+
+    const tableBody = document.getElementById('leadsTableBody');
+    const rows = tableBody.querySelectorAll('.lead-row');
+    const noLeadsRow = document.getElementById('noLeadsRow');
     let visibleCount = 0;
-    
-    rows.forEach(row => {
-        const source = row.dataset.source;
-        const status = row.dataset.status;
-        const staff = row.dataset.staff;
-        
+
+    // First, hide the "no leads" row if it exists
+    if (noLeadsRow) {
+        noLeadsRow.style.display = 'none';
+    }
+
+    // Filter each row and update serial numbers
+    rows.forEach((row, index) => {
+        const source = row.dataset.source || '';
+        const status = row.dataset.status || '';
+        const staff = row.dataset.staff || '';
+
         const sourceMatch = !sourceFilter || source === sourceFilter;
         const statusMatch = !statusFilter || status.includes(statusFilter);
         const staffMatch = !staffFilter || staff === staffFilter;
-        
+
         if (sourceMatch && statusMatch && staffMatch) {
             row.style.display = '';
+            // Update the serial number for visible rows
+            const serialCell = row.querySelector('td:first-child');
+            if (serialCell) {
+                serialCell.textContent = visibleCount + 1;
+            }
             visibleCount++;
         } else {
             row.style.display = 'none';
         }
     });
-    
-    // Show message if no results
-    let noResults = document.querySelector('.no-results-message');
-    if (visibleCount === 0) {
-        if (!noResults) {
-            noResults = document.createElement('tr');
-            noResults.className = 'no-results-message';
-            noResults.innerHTML = '<td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No leads match the selected filters</td>';
-            document.querySelector('tbody').appendChild(noResults);
+
+    // Update visible count
+    const totalCount = rows.length;
+    const countEl = document.getElementById('visibleCount');
+    if (countEl) {
+        if (visibleCount === totalCount) {
+            countEl.textContent = `(${totalCount} leads)`;
+        } else {
+            countEl.textContent = `(Showing ${visibleCount} of ${totalCount})`;
         }
-    } else if (noResults) {
-        noResults.remove();
+    }
+
+    // Show appropriate message based on results
+    if (visibleCount === 0) {
+        // Check if we have any leads at all
+        if (totalCount === 0) {
+            // No leads in the system
+            if (noLeadsRow) {
+                noLeadsRow.style.display = '';
+            }
+        } else {
+            // Leads exist but none match filters
+            let noResultsRow = tableBody.querySelector('.no-results-message');
+            if (!noResultsRow) {
+                noResultsRow = document.createElement('tr');
+                noResultsRow.className = 'no-results-message';
+                noResultsRow.innerHTML = '<td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No leads match the selected filters</td>';
+                tableBody.appendChild(noResultsRow);
+            }
+            noResultsRow.style.display = '';
+        }
+    } else {
+        // Remove no results message if it exists
+        const noResultsRow = tableBody.querySelector('.no-results-message');
+        if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
     }
 }
+
+function resetLeadFilters() {
+    document.getElementById('sourceFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('staffFilter').value = '';
+    filterLeads();
+}
+
+// Initialize count on load
+document.addEventListener('DOMContentLoaded', function() {
+    filterLeads();
+    
+    // Add better event listeners with debouncing
+    let filterTimeout;
+    function debouncedFilter() {
+        clearTimeout(filterTimeout);
+        filterTimeout = setTimeout(filterLeads, 150);
+    }
+    
+    document.getElementById('statusFilter').addEventListener('input', debouncedFilter);
+});
 </script>
+
+<style>
+/* Leads table layout improvements */
+.table-scroll-vert {
+    max-height: 65vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+    padding-right: 8px; /* prevent scrollbar overlay */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.table-scroll-vert::-webkit-scrollbar {
+    width: 6px;
+}
+.table-scroll-vert::-webkit-scrollbar-track {
+    background: transparent;
+}
+.table-scroll-vert::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+/* Sticky header for better readability */
+.bc-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Column sizing and text behavior */
+.bc-table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Column width definitions */
+.bc-table th:first-child, 
+.bc-table td:first-child { 
+    width: 60px; 
+    text-align: center; 
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.bc-table th:nth-child(2), 
+.bc-table td:nth-child(2) { 
+    width: 16%; 
+    padding-left: 1rem;
+}
+
+.bc-table th:nth-child(3), 
+.bc-table td:nth-child(3) { 
+    width: 12%; 
+}
+
+.bc-table th:nth-child(4), 
+.bc-table td:nth-child(4) { 
+    width: 10%; 
+}
+
+.bc-table th:nth-child(5), 
+.bc-table td:nth-child(5) { 
+    width: 14%; 
+}
+
+.bc-table th:nth-child(6), 
+.bc-table td:nth-child(6) { 
+    width: 16%; 
+}
+
+.bc-table th:nth-child(7), 
+.bc-table td:nth-child(7) { 
+    width: 16%; 
+}
+
+.bc-table th:nth-child(8), 
+.bc-table td:nth-child(8) { 
+    width: 8%; 
+    text-align: center;
+}
+
+.bc-table th,
+.bc-table td {
+    padding: 0.85rem 0.75rem;
+    vertical-align: middle;
+    border: none;
+}
+
+.bc-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: transparent;
+}
+
+/* Ensure proper text alignment */
+.bc-table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bc-table th:first-child {
+    text-align: center;
+}
+
+/* Badge refinements */
+.bc-table td span[style*="background: rgba(59, 130, 246"] {
+    display: inline-block;
+    border: 1px solid rgba(59,130,246,0.35);
+    min-width: 70px;
+    text-align: center;
+}
+
+.bc-table td span[style*="background: rgba(156, 163, 175"] {
+    display: inline-block;
+    border: 1px solid rgba(156,163,175,0.35);
+    min-width: 80px;
+    text-align: center;
+}
+
+/* Row hover and striping */
+.bc-table-striped tbody tr:nth-child(odd) {
+    background: rgba(255,255,255,0.01);
+}
+
+.bc-table tbody tr:hover td {
+    background: rgba(255,255,255,0.03) !important;
+}
+
+/* Ensure proper alignment for serial numbers */
+.bc-table td:first-child {
+    background: rgba(255, 255, 255, 0.02);
+    border-right: 1px solid var(--border-color);
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    /* Hide Program and Created on medium screens */
+    .bc-table th:nth-child(6), 
+    .bc-table td:nth-child(6),
+    .bc-table th:nth-child(8), 
+    .bc-table td:nth-child(8) { 
+        display: none; 
+    }
+    
+    /* Redistribute widths for remaining columns */
+    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 22%; }
+    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 16%; }
+    .bc-table th:nth-child(4), .bc-table td:nth-child(4) { width: 14%; }
+    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 20%; }
+    .bc-table th:nth-child(7), .bc-table td:nth-child(7) { width: 20%; }
+}
+
+@media (max-width: 768px) {
+    /* Hide Source and Assigned on small screens */
+    .bc-table th:nth-child(4), 
+    .bc-table td:nth-child(4),
+    .bc-table th:nth-child(7), 
+    .bc-table td:nth-child(7) { 
+        display: none; 
+    }
+    
+    /* Further adjust remaining columns */
+    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 30%; }
+    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 25%; }
+    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 35%; }
+}
+</style>

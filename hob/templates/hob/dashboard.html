@@ -402,7 +402,29 @@
             
             axios.get(urls[tabId])
                 .then(response => {
-                    contentArea.innerHTML = response.data;
+                    const html = response.data;
+                    contentArea.innerHTML = html;
+
+                    // Execute any scripts included in the loaded HTML (needed for partials like leads filters)
+                    const wrapper = document.createElement('div');
+                    wrapper.innerHTML = html;
+                    const scripts = wrapper.querySelectorAll('script');
+                    scripts.forEach(oldScript => {
+                        const newScript = document.createElement('script');
+                        // Copy inline script content
+                        if (oldScript.textContent) {
+                            newScript.textContent = oldScript.textContent;
+                        }
+                        // Copy src if present
+                        if (oldScript.src) {
+                            newScript.src = oldScript.src;
+                        }
+                        // Ensure same attributes (type, etc.) if any
+                        if (oldScript.type) newScript.type = oldScript.type;
+                        document.body.appendChild(newScript);
+                        // Clean up to avoid duplicates
+                        setTimeout(() => newScript.remove(), 0);
+                    });
                 })
                 .catch(error => {
                     console.error('Error loading tab content:', error);
