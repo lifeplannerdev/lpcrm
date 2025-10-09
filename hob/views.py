@@ -48,12 +48,24 @@ def leads_tab(request):
     if staff_filter:
         leads = leads.filter(assigned_to_id=staff_filter)
     
+    # Get staff members for assignment dropdown
+    admission_managers = User.objects.filter(
+        role='ADM_MANAGER', 
+        is_active=True
+    )
+    admission_executives = User.objects.filter(
+        role='ADM_EXEC', 
+        is_active=True
+    )
+    
     context = {
         'leads': leads,
         'staff_members': User.objects.filter(
             role__in=['ADM_MANAGER', 'ADM_EXEC'],
             is_active=True
         ),
+        'admission_managers': admission_managers,
+        'admission_executives': admission_executives,
         'source_choices': Lead.SOURCE_CHOICES,
     }
     return render(request, 'hob/partials/leads.html', context)

@@ -1088,15 +1088,15 @@ def update_lead_field(request):
                     
                     # Validate assignment based on user role
                     if assignee.role == 'ADM_MANAGER':
-                        # Only operations or admins can assign to managers
-                        if user.role not in ['OPS', 'ADMIN']:
+                        # Allow OPS, ADMIN, and BUSINESS_HEAD to assign to managers
+                        if user.role not in ['OPS', 'ADMIN', 'BUSINESS_HEAD']:
                             return JsonResponse(
                                 {'status': 'error', 'message': 'Only operations can assign to managers'}, 
                                 status=403
                             )
                     elif assignee.role == 'ADM_EXEC':
-                        # Only managers or operations can assign to executives
-                        if user.role not in ['ADM_MANAGER', 'OPS', 'ADMIN']:
+                        # Allow ADM_MANAGER, OPS, ADMIN, and BUSINESS_HEAD to assign to executives
+                        if user.role not in ['ADM_MANAGER', 'OPS', 'ADMIN', 'BUSINESS_HEAD']:
                             return JsonResponse(
                                 {'status': 'error', 'message': 'Only managers can assign to executives'}, 
                                 status=403
