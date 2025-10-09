@@ -146,7 +146,7 @@ def assign_lead_to_executive(request):
         user = request.user
         
         # Verify permissions
-        if not (user.role in ['ADM_MANAGER', 'OPS', 'ADMIN'] or 
+        if not (user.role in ['ADM_MANAGER', 'OPS', 'ADMIN','BUSINESS_HEAD'] or 
                 lead.assigned_to == user):
             return JsonResponse(
                 {'status': 'error', 'message': 'Permission denied'}, 

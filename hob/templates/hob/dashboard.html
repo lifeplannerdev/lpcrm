@@ -425,6 +425,17 @@
                         // Clean up to avoid duplicates
                         setTimeout(() => newScript.remove(), 0);
                     });
+
+                    // Explicitly initialize tab JS after scripts are injected
+                    try {
+                        if (tabId === 'leads') {
+                            if (window.initializeHOBAssignment) window.initializeHOBAssignment();
+                            if (window.filterLeads) window.filterLeads();
+                            console.log('[HOB] Leads tab initialized');
+                        }
+                    } catch (e) {
+                        console.error('[HOB] Tab init error:', e);
+                    }
                 })
                 .catch(error => {
                     console.error('Error loading tab content:', error);

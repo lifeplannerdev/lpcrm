@@ -44,7 +44,6 @@
                     <th>Status</th>
                     <th>Program</th>
                     <th>Assigned To</th>
-                    <th>Actions</th>
                     <th>Created</th>
                 </tr>
             </thead>
@@ -55,8 +54,7 @@
                     data-status="{{ lead.status|lower }}"
                     data-staff="{{ lead.assigned_to.id|default:'' }}"
                     data-priority="{{ lead.priority|lower }}"
-                    data-program="{{ lead.program|default:''|lower }}"
-                    data-processing-status="{{ lead.processing_status|default:'pending'|lower }}">
+                    data-program="{{ lead.program|default:''|lower }}">
                     <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                     <td>
                         <a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">
@@ -129,27 +127,11 @@
                         </select>
                     </td>
                     
-                    <!-- Actions Column -->
-                    <td>
-                        <button class="btn btn-primary forward-btn hob-assignment" 
-                                data-lead-id="{{ lead.id }}"
-                                {% if lead.status != 'REGISTERED' or lead.processing_status == 'FORWARDED' %}disabled{% endif %}
-                                style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                            {% if lead.processing_status == 'FORWARDED' %}
-                                Forwarded
-                            {% elif lead.processing_status == 'REJECTED' %}
-                                <i class="fas fa-info-circle" style="margin-right: 3px;"></i>Re-Forward
-                            {% else %}
-                                Forward
-                            {% endif %}
-                        </button>
-                    </td>
-                    
                     <td>{{ lead.created_at|date:"M d, Y" }}</td>
                 </tr>
                 {% empty %}
                 <tr id="noLeadsRow">
-                    <td colspan="10" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                    <td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
                         No leads found
                     </td>
                 </tr>
@@ -265,7 +247,7 @@ function filterLeads() {
             if (!noResultsRow) {
                 noResultsRow = document.createElement('tr');
                 noResultsRow.className = 'no-results-message';
-                noResultsRow.innerHTML = '<td colspan="10" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No leads match the selected filters</td>';
+                noResultsRow.innerHTML = '<td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No leads match the selected filters</td>';
                 tableBody.appendChild(noResultsRow);
             }
             noResultsRow.style.display = '';
@@ -295,6 +277,11 @@ function initializeHOBAssignment() {
             element.dataset.previousValue = element.value;
             
             element.addEventListener('change', function() {
+                console.log('[HOB] select changed', {
+                    leadId: this.dataset.leadId,
+                    field: this.dataset.field,
+                    value: this.value
+                });
                 handleHOBFieldUpdate(this);
             });
         }
@@ -321,11 +308,12 @@ function initializeHOBAssignment() {
                     const row = input.closest('tr');
                     if (row) {
                         row.dataset.status = newStatus.toLowerCase();
-                        updateForwardButtonState(row, newStatus);
                     }
+                    showHOBToast('Status updated successfully', 'success');
                 })
-                .catch(() => {
+                .catch((error) => {
                     input.value = input.dataset.originalValue;
+                    showHOBToast('Failed to update status', 'error');
                 });
         };
         
@@ -358,33 +346,11 @@ function initializeHOBAssignment() {
                     if (row) {
                         row.dataset.program = newProgram.toLowerCase();
                     }
+                    showHOBToast('Program updated successfully', 'success');
                 })
-                .catch(() => {
+                .catch((error) => {
                     this.value = this.dataset.originalValue;
-                });
-        });
-    });
-    
-    // Handle forwarding to processing
-    document.querySelectorAll('.forward-btn.hob-assignment').forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.disabled) return;
-            
-            const leadId = this.dataset.leadId;
-            const isRejected = this.innerHTML.includes('Re-Forward');
-            
-            forwardToProcessing(leadId)
-                .then(() => {
-                    this.textContent = 'Forwarded';
-                    this.disabled = true;
-                    
-                    const row = this.closest('tr');
-                    row.dataset.processingStatus = 'forwarded';
-                    
-                    showHOBToast(isRejected ? 'Rejected lead re-forwarded successfully' : 'Lead forwarded successfully', 'success');
-                })
-                .catch(error => {
-                    showHOBToast('Failed to forward lead', 'error');
+                    showHOBToast('Failed to update program', 'error');
                 });
         });
     });
@@ -395,9 +361,11 @@ function handleHOBFieldUpdate(selectElement) {
     const leadId = selectElement.dataset.leadId;
     const field = selectElement.dataset.field;
     const value = selectElement.value;
+    console.log('[HOB] handleHOBFieldUpdate', { leadId, field, value });
     
     updateHOBLeadField(leadId, field, value)
-        .then(() => {
+        .then((response) => {
+            console.log('[HOB] updateHOBLeadField success', response);
             console.log(`${field} updated successfully`);
             
             // Update the data attributes for search functionality
@@ -406,17 +374,37 @@ function handleHOBFieldUpdate(selectElement) {
             
             // Update stored value
             selectElement.dataset.previousValue = value;
+            
+            // Show success message
+            let fieldName = field.replace('_', ' ');
+            fieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+            showHOBToast(`${fieldName} updated successfully`, 'success');
         })
-        .catch(error => {
-            console.error(`Error updating ${field}:`, error);
+        .catch((error) => {
+            console.error(`[HOB] Error updating ${field}:`, error?.response?.data || error);
+            // Show error message
+            if (error.response && error.response.data && error.response.data.message) {
+                showHOBToast(error.response.data.message, 'error');
+            } else {
+                showHOBToast(`Failed to update ${field}`, 'error');
+            }
+            // Revert to previous value
             selectElement.value = selectElement.dataset.previousValue;
         });
 }
 
-// AJAX function to update lead fields
+// CSRF helper for axios
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+// AJAX function to update lead fields - HOB specific
 function updateHOBLeadField(leadId, field, value) {
     return new Promise((resolve, reject) => {
-        axios.post('{% url "accounts:update_lead_field" %}', 
+        console.log('[HOB] POST -> hob_assign_lead', { leadId, field, value });
+        axios.post('{% url "hob:hob_assign_lead" %}', 
             JSON.stringify({
                 lead_id: leadId,
                 field: field,
@@ -425,37 +413,17 @@ function updateHOBLeadField(leadId, field, value) {
             {
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': getCookie('csrftoken')
                 }
             }
         )
         .then(response => {
+            console.log('[HOB] assign response', response?.data);
             resolve(response.data);
         })
         .catch(error => {
-            reject(error);
-        });
-    });
-}
-
-// AJAX function to forward to processing
-function forwardToProcessing(leadId) {
-    return new Promise((resolve, reject) => {
-        axios.post('{% url "accounts:forward_to_processing" %}', 
-            JSON.stringify({
-                lead_id: leadId
-            }),
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            }
-        )
-        .then(response => {
-            resolve(response.data);
-        })
-        .catch(error => {
+            console.error('[HOB] assign error', error?.response?.data || error);
             reject(error);
         });
     });
@@ -475,21 +443,6 @@ function updateHOBRowSearchData(row, field, value) {
     
     // Re-run search if there's an active filter
     filterLeads();
-}
-
-// Update forward button state based on status
-function updateForwardButtonState(row, status) {
-    const forwardBtn = row.querySelector('.forward-btn');
-    if (forwardBtn) {
-        const processingStatus = row.dataset.processingStatus || 'pending';
-        forwardBtn.disabled = status !== 'REGISTERED' || processingStatus === 'forwarded';
-        
-        if (forwardBtn.disabled) {
-            forwardBtn.classList.add('disabled');
-        } else {
-            forwardBtn.classList.remove('disabled');
-        }
-    }
 }
 
 // Toast notification for HOB
@@ -579,7 +532,7 @@ document.addEventListener('DOMContentLoaded', function() {
     border-collapse: collapse;
 }
 
-/* Updated Column width definitions for 10 columns */
+/* Updated Column width definitions for 9 columns */
 .bc-table th:first-child, 
 .bc-table td:first-child { 
     width: 60px; 
@@ -590,46 +543,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .bc-table th:nth-child(2), 
 .bc-table td:nth-child(2) { 
-    width: 12%; 
+    width: 14%; 
 }
 
 .bc-table th:nth-child(3), 
 .bc-table td:nth-child(3) { 
-    width: 10%; 
+    width: 12%; 
 }
 
 .bc-table th:nth-child(4), 
 .bc-table td:nth-child(4) { 
-    width: 8%; 
+    width: 10%; 
 }
 
 .bc-table th:nth-child(5), 
 .bc-table td:nth-child(5) { 
-    width: 10%; 
+    width: 12%; 
 }
 
 .bc-table th:nth-child(6), 
 .bc-table td:nth-child(6) { 
-    width: 12%; 
+    width: 14%; 
 }
 
 .bc-table th:nth-child(7), 
 .bc-table td:nth-child(7) { 
-    width: 16%; 
+    width: 18%; 
 }
 
 .bc-table th:nth-child(8), 
 .bc-table td:nth-child(8) { 
-    width: 12%; 
+    width: 14%; 
 }
 
 .bc-table th:nth-child(9), 
 .bc-table td:nth-child(9) { 
-    width: 8%; 
-}
-
-.bc-table th:nth-child(10), 
-.bc-table td:nth-child(10) { 
     width: 8%; 
     text-align: center;
 }
@@ -710,33 +658,6 @@ document.addEventListener('DOMContentLoaded', function() {
 .priority-medium { color: #fbbf24; font-weight: 600; }
 .priority-low { color: #60a5fa; font-weight: 600; }
 
-.btn {
-    padding: 0.4rem 0.8rem;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.btn-primary {
-    background: var(--accent);
-    color: var(--bg-primary);
-}
-
-.btn-primary:hover:not(:disabled) {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-}
-
-.btn-primary:disabled {
-    background: var(--border-color);
-    color: var(--text-tertiary);
-    cursor: not-allowed;
-    transform: none;
-}
-
 /* Toast animations */
 @keyframes slideIn {
     from { 
@@ -765,19 +686,18 @@ document.addEventListener('DOMContentLoaded', function() {
     /* Hide some columns on medium screens */
     .bc-table th:nth-child(6), 
     .bc-table td:nth-child(6),
-    .bc-table th:nth-child(10), 
-    .bc-table td:nth-child(10) { 
+    .bc-table th:nth-child(9), 
+    .bc-table td:nth-child(9) { 
         display: none; 
     }
     
     /* Redistribute widths for remaining columns */
-    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 15%; }
-    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 12%; }
-    .bc-table th:nth-child(4), .bc-table td:nth-child(4) { width: 10%; }
-    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 12%; }
-    .bc-table th:nth-child(7), .bc-table td:nth-child(7) { width: 18%; }
-    .bc-table th:nth-child(8), .bc-table td:nth-child(8) { width: 15%; }
-    .bc-table th:nth-child(9), .bc-table td:nth-child(9) { width: 10%; }
+    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 18%; }
+    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 14%; }
+    .bc-table th:nth-child(4), .bc-table td:nth-child(4) { width: 12%; }
+    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 14%; }
+    .bc-table th:nth-child(7), .bc-table td:nth-child(7) { width: 22%; }
+    .bc-table th:nth-child(8), .bc-table td:nth-child(8) { width: 18%; }
 }
 
 @media (max-width: 768px) {
@@ -785,16 +705,15 @@ document.addEventListener('DOMContentLoaded', function() {
     .bc-table th:nth-child(4), 
     .bc-table td:nth-child(4),
     .bc-table th:nth-child(7), 
-    .bc-table td:nth-child(7),
-    .bc-table th:nth-child(9), 
-    .bc-table td:nth-child(9) { 
+    .bc-table td:nth-child(7) { 
         display: none; 
     }
     
     /* Further adjust remaining columns */
-    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 20%; }
-    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 15%; }
-    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 20%; }
-    .bc-table th:nth-child(8), .bc-table td:nth-child(8) { width: 25%; }
+    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 25%; }
+    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 20%; }
+    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 25%; }
+    .bc-table th:nth-child(8), .bc-table td:nth-child(8) { width: 28%; }
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>

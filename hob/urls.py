@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.hob_dashboard, name='dashboard'),
     path('overview/', views.overview_tab, name='overview_tab'),
     path('leads/', views.leads_tab, name='leads_tab'),
+    path('assign-lead/', views.hob_assign_lead, name='hob_assign_lead'),
     path('staff/', views.staff_tab, name='staff_tab'),
     path('tasks/', views.tasks_tab, name='tasks_tab'),
     path('reports/', views.reports_tab, name='reports_tab'),

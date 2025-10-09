@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+import logging
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
@@ -11,6 +12,8 @@ from accounts.models import User
 from leads.models import Lead
 from tasks.models import Task
 from .models import DailyReport
+
+logger = logging.getLogger(__name__)
 
 def is_business_head(user):
     """Check if user is business head or higher"""
@@ -86,6 +89,99 @@ def staff_tab(request):
         'staff_members': staff_members,
     }
     return render(request, 'hob/partials/staff.html', context)
+
+
+@login_required
+@user_passes_test(is_business_head)
+@require_POST
+def hob_assign_lead(request):
+    """HOB-specific lead assignment function"""
+    try:
+        data = json.loads(request.body)
+        logger.info('[HOB] assign_lead payload: %s', data)
+        lead_id = data.get('lead_id')
+        field = data.get('field')
+        value = data.get('value')
+        
+        if not lead_id or not field:
+            return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
+            
+        lead = Lead.objects.get(id=lead_id)
+        logger.info('[HOB] assign_lead resolved lead id=%s current assigned_to=%s', lead_id, getattr(lead.assigned_to, 'id', None))
+        
+        # Validate and update fields
+        if field == 'priority':
+            if value in dict(Lead.PRIORITY_CHOICES).keys():
+                lead.priority = value
+            else:
+                return JsonResponse({'status': 'error', 'message': 'Invalid priority'}, status=400)
+                
+        elif field == 'status':
+            # Status is free-text now; accept non-empty values only
+            if not value or not str(value).strip():
+                return JsonResponse({'status': 'error', 'message': 'Status cannot be empty'}, status=400)
+            lead.status = str(value).strip()
+            
+            # Update registration date if status changed to REGISTERED
+            if lead.status == 'REGISTERED' and not lead.registration_date:
+                lead.registration_date = timezone.now()
+            
+        elif field == 'program':
+            lead.program = value if value != '' else None
+            
+        elif field == 'assigned_to':
+            # Handle assignment changes - HOB can assign to anyone
+            if value == '' or value is None:
+                # Unassign the lead
+                lead.assigned_to = None
+                lead.assigned_date = None
+                logger.info('[HOB] Unassigned lead id=%s', lead_id)
+            else:
+                try:
+                    assignee = User.objects.get(id=value, is_active=True)
+                    logger.info('[HOB] Assigning lead id=%s to user id=%s role=%s', lead_id, assignee.id, assignee.role)
+                    
+                    # HOB can assign to both managers and executives
+                    if assignee.role in ['ADM_MANAGER', 'ADM_EXEC']:
+                        lead.assigned_to = assignee
+                        # Set assignment date if not already set
+                        if not lead.assigned_date:
+                            lead.assigned_date = timezone.now()
+                    else:
+                        logger.warning('[HOB] Invalid assignee role for user id=%s role=%s', assignee.id, assignee.role)
+                        return JsonResponse({
+                            'status': 'error', 
+                            'message': 'Can only assign to admission staff'
+                        }, status=400)
+                        
+                except User.DoesNotExist:
+                    logger.exception('[HOB] Assignee does not exist id=%s', value)
+                    return JsonResponse({'status': 'error', 'message': 'Invalid user assignment'}, status=400)
+            
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid field'}, status=400)
+            
+        lead.save()
+        logger.info('[HOB] Saved assignment for lead id=%s assigned_to=%s', lead_id, getattr(lead.assigned_to, 'id', None))
+        
+        # Return additional data if needed
+        response_data = {
+            'status': 'success',
+            'assigned_to': {
+                'id': lead.assigned_to.id if lead.assigned_to else None,
+                'name': lead.assigned_to.get_full_name() if lead.assigned_to else 'Unassigned',
+                'role': lead.assigned_to.role if lead.assigned_to else None
+            } if field == 'assigned_to' else None
+        }
+        
+        return JsonResponse(response_data)
+        
+    except Lead.DoesNotExist:
+        logger.exception('[HOB] Lead not found id=%s', data.get('lead_id') if 'data' in locals() else None)
+        return JsonResponse({'status': 'error', 'message': 'Lead not found'}, status=404)
+    except Exception as e:
+        logger.exception('[HOB] Unexpected error during assign')
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)    
 
 @login_required
 @user_passes_test(is_business_head)
