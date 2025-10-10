@@ -68,26 +68,26 @@
         
         <div class="table-container">
             <div class="table-scroll-wrapper">
-                <table class="bc-table bc-table-striped">
+                <table class="overview-table">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Phone</th>
-                            <th>Program</th>
-                            <th>Status</th>
-                            <th>Assigned To</th>
+                            <th style="width: 22%;">Name</th>
+                            <th style="width: 18%;">Phone</th>
+                            <th style="width: 20%;">Program</th>
+                            <th style="width: 20%;">Status</th>
+                            <th style="width: 20%;">Assigned To</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for lead in recent_leads %}
                         <tr>
-                            <td style="font-weight: 500;">{{ lead.name }}</td>
-                            <td>{{ lead.phone }}</td>
-                            <td>{{ lead.program|default:"-" }}</td>
+                            <td style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ lead.name }}</td>
+                            <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ lead.phone }}</td>
+                            <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ lead.program|default:"-" }}</td>
                             <td>
                                 <span class="status-badge">{{ lead.status }}</span>
                             </td>
-                            <td>{{ lead.assigned_to.get_full_name|default:"Unassigned" }}</td>
+                            <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ lead.assigned_to.get_full_name|default:"Unassigned" }}</td>
                         </tr>
                         {% empty %}
                         <tr>
@@ -195,6 +195,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    border: 1px solid var(--border-color);
 }
 
 .table-scroll-wrapper {
@@ -225,14 +226,61 @@
     background: var(--text-secondary);
 }
 
+/* Fixed Table Styles */
+.overview-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.overview-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.overview-table th {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.75rem 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.overview-table td {
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    background: transparent;
+    transition: background-color 0.2s ease;
+}
+
+.overview-table tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.overview-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
 .status-badge {
-    padding: 0.25rem 0.75rem;
+    padding: 0.25rem 0.5rem;
     border-radius: 12px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
     background: rgba(156, 163, 175, 0.15);
     color: var(--text-secondary);
     border: 1px solid rgba(156, 163, 175, 0.2);
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Responsive Design */
@@ -257,6 +305,22 @@
     .table-scroll-wrapper {
         max-height: 300px;
     }
+    
+    /* Adjust table column widths for tablet */
+    .overview-table th:nth-child(1),
+    .overview-table td:nth-child(1) { width: 20%; }
+    
+    .overview-table th:nth-child(2),
+    .overview-table td:nth-child(2) { width: 18%; }
+    
+    .overview-table th:nth-child(3),
+    .overview-table td:nth-child(3) { width: 22%; }
+    
+    .overview-table th:nth-child(4),
+    .overview-table td:nth-child(4) { width: 20%; }
+    
+    .overview-table th:nth-child(5),
+    .overview-table td:nth-child(5) { width: 20%; }
 }
 
 @media (max-width: 768px) {
@@ -276,6 +340,61 @@
     
     .stat-value {
         font-size: 1.25rem;
+    }
+    
+    /* Stack layout on mobile */
+    .overview-layout {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    /* Hide some columns on mobile */
+    .overview-table th:nth-child(3),
+    .overview-table td:nth-child(3),
+    .overview-table th:nth-child(5),
+    .overview-table td:nth-child(5) {
+        display: none;
+    }
+    
+    /* Adjust remaining columns */
+    .overview-table th:nth-child(1),
+    .overview-table td:nth-child(1) { width: 35%; }
+    
+    .overview-table th:nth-child(2),
+    .overview-table td:nth-child(2) { width: 30%; }
+    
+    .overview-table th:nth-child(4),
+    .overview-table td:nth-child(4) { width: 35%; }
+    
+    .leads-container {
+        padding: 1rem;
+    }
+    
+    .table-scroll-wrapper {
+        max-height: 250px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Further simplify on very small screens */
+    .overview-table th:nth-child(2),
+    .overview-table td:nth-child(2) {
+        display: none;
+    }
+    
+    .overview-table th:nth-child(1),
+    .overview-table td:nth-child(1) { width: 45%; }
+    
+    .overview-table th:nth-child(4),
+    .overview-table td:nth-child(4) { width: 55%; }
+    
+    .stats-container,
+    .leads-container {
+        padding: 1rem;
+    }
+    
+    .table-container {
+        border: none;
     }
 }
 </style>
