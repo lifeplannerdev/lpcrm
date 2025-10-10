@@ -351,11 +351,8 @@ def get_dashboard_context(request):
     
     today = timezone.now().date()
     
-    # Staff statistics
-    total_staff = User.objects.filter(
-        role__in=['ADM_MANAGER', 'ADM_EXEC', 'MEDIA'],
-        is_active=True
-    ).count()
+    # Staff statistics - FIXED: Use same logic as staff.html
+    total_staff = User.objects.filter(is_active=True).count()
     
     # Task statistics
     tasks_today = Task.objects.filter(created_at__date=today)
@@ -371,11 +368,14 @@ def get_dashboard_context(request):
     total_leads = Lead.objects.count()
     today_leads = Lead.objects.filter(created_at__date=today).count()
     
+    # Reports statistics
+    total_reports = DailyReport.objects.filter(report_date__gte=today - timezone.timedelta(days=30)).count()
+    
     # Recent leads for overview
     recent_leads = Lead.objects.all().order_by('-created_at')[:10]
     
     context = {
-        'total_staff': total_staff,
+        'total_staff': total_staff,  # Now this will match staff.html count
         'total_tasks_assigned': total_tasks_assigned,
         'pending_tasks': pending_tasks,
         'completed_tasks': completed_tasks,
@@ -383,6 +383,7 @@ def get_dashboard_context(request):
         'total_leads': total_leads,
         'today_leads': today_leads,
         'recent_leads': recent_leads,
+        'total_reports': total_reports,
     }
     
     return context
