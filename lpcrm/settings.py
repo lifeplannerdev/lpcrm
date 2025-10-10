@@ -49,6 +49,15 @@ INSTALLED_APPS = [
     'trainers',
     'tasks',
     'hob',
+    'django_crontab',
+]
+
+
+CRONJOBS = [
+    # Run every hour to check for overdue tasks
+    ('0 * * * *', 'tasks.cron.update_overdue_tasks', '>> /tmp/overdue_tasks.log 2>&1'),
+    # Or run every 15 minutes for more frequent checks:
+    # ('*/15 * * * *', 'tasks.cron.update_overdue_tasks', '>> /tmp/overdue_tasks.log 2>&1'),
 ]
 
 MIDDLEWARE = [

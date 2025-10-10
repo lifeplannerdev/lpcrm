@@ -6,9 +6,25 @@
         </div>
         <div style="display:flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
             <button class="btn btn-primary" style="background: var(--accent); color: var(--bg-primary); border: none; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.5rem;">
-               
-                Total : {{ tasks|length }}
+                <i class="fas fa-tasks"></i>
+                Total: {{ tasks|length }}
             </button>
+            {% if overdue_count > 0 %}
+            <button class="btn btn-danger" style="background: #ef4444; color: white; border: none; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-exclamation-triangle"></i>
+                Overdue: {{ overdue_count }}
+            </button>
+            {% endif %}
+            <select id="taskFilter" onchange="filterTasks()" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; font-size: 0.9rem;">
+                <option value="">All Tasks</option>
+                <option value="overdue">Overdue Only</option>
+                <option value="pending">Pending</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+                <option value="high">High Priority</option>
+                <option value="urgent">Urgent Priority</option>
+            </select>
             <button class="btn btn-primary" onclick="openCreateTaskModal()" style="background: var(--accent); color: var(--bg-primary); border: none; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.5rem;">
                 <i class="fas fa-plus"></i>
                 Create Task
@@ -24,17 +40,27 @@
                 <div class="task-title-row">
                     <h4 class="task-title">{{ task.title }}</h4>
                     {% if task.is_overdue %}
-                        <span class="overdue-badge">OVERDUE</span>
+                        <span class="overdue-badge">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            OVERDUE ({{ task.overdue_days }}d)
+                        </span>
                     {% endif %}
                 </div>
                 <div class="task-actions">
                     <button class="action-btn view-btn" onclick="openTaskDetails({{ task.id }})" title="View Details">
                         <i class="fas fa-eye"></i>
                     </button>
+                    <button class="action-btn edit-btn" onclick="editTask({{ task.id }})" title="Edit Task">
+                        <i class="fas fa-edit"></i>
+                    </button>
                     <button class="action-btn delete-btn" onclick="deleteTask({{ task.id }})" title="Delete Task">
                         <i class="fas fa-trash"></i>
                     </button>
                 </div>
+            </div>
+            
+            <div class="task-description">
+                <p>{{ task.description|truncatewords:15 }}</p>
             </div>
             
             <div class="task-meta">
@@ -47,6 +73,16 @@
                     <span class="meta-value">{{ task.assigned_to.get_full_name }}</span>
                     <span class="meta-role">{{ task.assigned_to.get_role_display }}</span>
                 </div>
+                <div class="meta-item">
+                    <span class="meta-label">Created:</span>
+                    <span class="meta-value">{{ task.created_at|date:"M d, Y" }}</span>
+                </div>
+                {% if task.completed_at %}
+                <div class="meta-item">
+                    <span class="meta-label">Completed:</span>
+                    <span class="meta-value">{{ task.completed_at|date:"M d, Y H:i" }}</span>
+                </div>
+                {% endif %}
             </div>
             
             <div class="task-footer">
@@ -57,6 +93,9 @@
                 <div class="task-deadline {% if task.is_overdue %}overdue{% endif %}">
                     <i class="fas fa-clock"></i>
                     {{ task.deadline|date:"M d, Y H:i" }}
+                    {% if not task.is_overdue and task.days_until_deadline >= 0 %}
+                        <span class="days-remaining">({{ task.days_until_deadline }}d left)</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -96,7 +135,10 @@
                         <div class="task-title-cell">
                             <strong>{{ task.title }}</strong>
                             {% if task.is_overdue %}
-                                <span class="overdue-badge">OVERDUE</span>
+                                <span class="overdue-badge">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    OVERDUE ({{ task.overdue_days }}d)
+                                </span>
                             {% endif %}
                             <br>
                             <small class="task-desc-small">{{ task.description|truncatewords:8 }}</small>
@@ -116,6 +158,11 @@
                     </td>
                     <td class="{% if task.is_overdue %}overdue{% endif %}">
                         {{ task.deadline|date:"M d, Y H:i" }}
+                        {% if task.is_overdue %}
+                            <br><small class="overdue-text">{{ task.overdue_days }} days overdue</small>
+                        {% elif task.days_until_deadline >= 0 %}
+                            <br><small class="days-left-text">{{ task.days_until_deadline }} days left</small>
+                        {% endif %}
                     </td>
                     <td>
                         <button class="action-btn" onclick="deleteTask({{ task.id }})" title="Delete Task">
@@ -214,6 +261,13 @@ function openCreateTaskModal() {
 function closeCreateTaskModal() {
     document.getElementById('createTaskModal').style.display = 'none';
     document.getElementById('createTaskForm').reset();
+    
+    // Reset modal title and button
+    document.querySelector('#createTaskModal .modal-title').textContent = 'Create New Task';
+    document.querySelector('#createTaskModal button[type="submit"]').innerHTML = '<i class="fas fa-plus mr-1"></i> Create Task';
+    
+    // Remove task ID from form
+    delete document.getElementById('createTaskForm').dataset.taskId;
 }
 
 function openTaskDetails(taskId) {
@@ -305,6 +359,10 @@ function loadTaskDetails(taskId) {
             
             <div class="task-details-actions">
                 <button class="btn btn-secondary" onclick="closeTaskDetails()">Close</button>
+                <button class="btn btn-primary" onclick="editTaskFromDetails(${taskId})">
+                    <i class="fas fa-edit"></i>
+                    Edit Task
+                </button>
                 <button class="btn btn-danger" onclick="deleteTaskFromDetails(${taskId})">
                     <i class="fas fa-trash"></i>
                     Delete Task
@@ -318,6 +376,11 @@ function closeTaskDetails() {
     document.getElementById('taskDetailsModal').style.display = 'none';
 }
 
+function editTaskFromDetails(taskId) {
+    closeTaskDetails();
+    editTask(taskId);
+}
+
 function deleteTaskFromDetails(taskId) {
     if (confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
         deleteTask(taskId);
@@ -329,6 +392,10 @@ function deleteTaskFromDetails(taskId) {
 function createTask(event) {
     event.preventDefault();
     
+    const form = document.getElementById('createTaskForm');
+    const taskId = form.dataset.taskId;
+    const isEdit = !!taskId;
+    
     const formData = {
         title: document.getElementById('taskTitle').value,
         description: document.getElementById('taskDescription').value,
@@ -337,19 +404,53 @@ function createTask(event) {
         deadline: document.getElementById('taskDeadline').value
     };
     
-    axios.post('{% url "hob:create_task" %}', formData)
-        .then(response => {
-            if (response.data.status === 'success') {
-                showToast('Task created successfully!', 'success');
-                closeCreateTaskModal();
-                // Reload the tasks tab
-                loadTabContent('tasks');
-            }
-        })
-        .catch(error => {
-            console.error('Error creating task:', error);
-            showToast('Error creating task. Please try again.', 'error');
-        });
+    const url = isEdit ? `/hob/tasks/${taskId}/update/` : '{% url "hob:create_task" %}';
+    const method = isEdit ? 'PUT' : 'POST';
+    
+    axios({
+        method: method,
+        url: url,
+        data: formData
+    })
+    .then(response => {
+        if (response.data.status === 'success') {
+            showToast(isEdit ? 'Task updated successfully!' : 'Task created successfully!', 'success');
+            closeCreateTaskModal();
+            // Reload the tasks tab
+            loadTabContent('tasks');
+        }
+    })
+    .catch(error => {
+        console.error(`Error ${isEdit ? 'updating' : 'creating'} task:`, error);
+        showToast(`Error ${isEdit ? 'updating' : 'creating'} task. Please try again.`, 'error');
+    });
+}
+
+function editTask(taskId) {
+    // Find the task card to extract data
+    const taskCard = document.querySelector(`.edit-btn[onclick*="${taskId}"]`)?.closest('.task-card');
+    if (!taskCard) return;
+    
+    // Extract task data from the DOM
+    const title = taskCard.querySelector('.task-title').textContent;
+    const description = taskCard.querySelector('.task-description p').textContent;
+    const priority = taskCard.querySelector('.priority-badge').textContent.trim();
+    const status = taskCard.querySelector('.status-badge').textContent.trim();
+    
+    // Open create modal with pre-filled data
+    openCreateTaskModal();
+    
+    // Pre-fill the form
+    document.getElementById('taskTitle').value = title;
+    document.getElementById('taskDescription').value = description;
+    document.getElementById('taskPriority').value = priority.toUpperCase();
+    
+    // Change modal title and submit button
+    document.querySelector('#createTaskModal .modal-title').textContent = 'Edit Task';
+    document.querySelector('#createTaskModal button[type="submit"]').innerHTML = '<i class="fas fa-save mr-1"></i> Update Task';
+    
+    // Store task ID for update
+    document.getElementById('createTaskForm').dataset.taskId = taskId;
 }
 
 function deleteTask(taskId) {
@@ -422,6 +523,53 @@ document.addEventListener('keydown', function(e) {
         closeTaskDetails();
     }
 });
+
+// Task filtering functionality
+function filterTasks() {
+    const filter = document.getElementById('taskFilter').value;
+    const taskCards = document.querySelectorAll('.task-card');
+    
+    taskCards.forEach(card => {
+        let show = true;
+        
+        if (filter === 'overdue') {
+            const statusBadge = card.querySelector('.status-badge');
+            show = statusBadge && statusBadge.textContent.trim() === 'Overdue';
+        } else if (filter === 'pending') {
+            const statusBadge = card.querySelector('.status-badge');
+            show = statusBadge && statusBadge.textContent.trim() === 'Pending';
+        } else if (filter === 'in_progress') {
+            const statusBadge = card.querySelector('.status-badge');
+            show = statusBadge && statusBadge.textContent.trim() === 'In Progress';
+        } else if (filter === 'completed') {
+            const statusBadge = card.querySelector('.status-badge');
+            show = statusBadge && statusBadge.textContent.trim() === 'Completed';
+        } else if (filter === 'cancelled') {
+            const statusBadge = card.querySelector('.status-badge');
+            show = statusBadge && statusBadge.textContent.trim() === 'Cancelled';
+        } else if (filter === 'high') {
+            const priorityBadge = card.querySelector('.priority-badge');
+            show = priorityBadge && priorityBadge.textContent.trim() === 'High';
+        } else if (filter === 'urgent') {
+            const priorityBadge = card.querySelector('.priority-badge');
+            show = priorityBadge && priorityBadge.textContent.trim() === 'Urgent';
+        }
+        
+        card.style.display = show ? 'flex' : 'none';
+    });
+    
+    // Update visible count
+    const visibleCards = document.querySelectorAll('.task-card[style*="flex"], .task-card:not([style*="none"])');
+    const totalCards = document.querySelectorAll('.task-card').length;
+    
+    // Update the total count display
+    const totalButton = document.querySelector('.btn-primary');
+    if (totalButton && filter) {
+        totalButton.innerHTML = `<i class="fas fa-tasks"></i> Showing: ${visibleCards.length} of ${totalCards}`;
+    } else if (totalButton) {
+        totalButton.innerHTML = `<i class="fas fa-tasks"></i> Total: ${totalCards}`;
+    }
+}
 
 // Close task details modal when clicking outside
 document.getElementById('taskDetailsModal').addEventListener('click', function(e) {
@@ -500,6 +648,41 @@ document.getElementById('taskDetailsModal').addEventListener('click', function(e
   font-size: 0.7rem;
   font-weight: 600;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.task-description {
+  margin-bottom: 0.75rem;
+}
+
+.task-description p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.days-remaining {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.overdue-text {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.days-left-text {
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.edit-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
 }
 
 .task-actions {
@@ -898,5 +1081,32 @@ body {
   overflow-x: hidden;
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Status badge styles */
+.status-overdue {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-pending {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.status-in_progress {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+}
+
+.status-completed {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+.status-cancelled {
+  background: rgba(107, 114, 128, 0.2);
+  color: #9ca3af;
 }
 </style>

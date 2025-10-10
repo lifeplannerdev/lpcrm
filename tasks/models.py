@@ -8,6 +8,7 @@ class Task(models.Model):
         ('IN_PROGRESS', 'In Progress'),
         ('COMPLETED', 'Completed'),
         ('CANCELLED', 'Cancelled'),
+        ('OVERDUE', 'Overdue'),
     ]
     
     PRIORITY_CHOICES = [
@@ -57,16 +58,62 @@ class Task(models.Model):
         elif self.status != 'COMPLETED' and self.completed_at:
             self.completed_at = None
         
+        
+        
         super().save(*args, **kwargs)
     
     @property
     def is_overdue(self):
-        return timezone.now() > self.deadline and self.status != 'COMPLETED'
+        """Check if task is overdue considering timezone"""
+        if self.status in ['COMPLETED', 'CANCELLED']:
+            return False
+        return self.status == 'OVERDUE' or timezone.now() > self.deadline
+    
+    @property
+    def overdue_days(self):
+        """Calculate how many days overdue"""
+        if self.status in ['COMPLETED', 'CANCELLED']:
+            return 0
+        if timezone.now() <= self.deadline:
+            return 0
+        delta = timezone.now() - self.deadline
+        return delta.days
     
     @property
     def days_until_deadline(self):
+        if timezone.now() >= self.deadline:
+            return 0
         delta = self.deadline - timezone.now()
         return delta.days
+    
+    @classmethod
+    def update_overdue_tasks(cls):
+        """Update tasks that are past their deadline to OVERDUE status"""
+        now = timezone.now()
+        
+        # Find tasks that are overdue but not already marked as OVERDUE, COMPLETED, or CANCELLED
+        overdue_tasks = cls.objects.filter(
+            deadline__lt=now,
+            status__in=['PENDING', 'IN_PROGRESS']
+        )
+        
+        updated_count = 0
+        for task in overdue_tasks:
+            # Create a TaskUpdate record to track the status change
+            TaskUpdate.objects.create(
+                task=task,
+                updated_by=task.assigned_by,  # Use assigned_by as the system updater
+                previous_status=task.status,
+                new_status='OVERDUE',
+                notes='Automatically marked as overdue due to deadline'
+            )
+            
+            # Update the task status
+            task.status = 'OVERDUE'
+            task.save(update_fields=['status', 'updated_at'])
+            updated_count += 1
+        
+        return updated_count
 
 class TaskUpdate(models.Model):
     """Model to track task status updates and notes"""

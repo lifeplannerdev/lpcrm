@@ -23,10 +23,7 @@ def my_tasks(request):
     my_pending_tasks = tasks.filter(status='PENDING').count()
     my_in_progress_tasks = tasks.filter(status='IN_PROGRESS').count()
     my_completed_tasks = tasks.filter(status='COMPLETED').count()
-    my_overdue_tasks = tasks.filter(
-        deadline__lt=timezone.now(),
-        status__in=['PENDING', 'IN_PROGRESS']
-    ).count()
+    my_overdue_tasks = tasks.filter(status='OVERDUE').count()
     
     context = {
         'tasks': tasks,
@@ -37,6 +34,39 @@ def my_tasks(request):
         'my_overdue_tasks': my_overdue_tasks,
     }
     return render(request, 'tasks/my_tasks.html', context)
+
+@login_required
+def my_tasks_ajax(request):
+    """AJAX endpoint for task sidebar to get user's tasks"""
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+    
+    try:
+        tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
+        
+        # Convert tasks to JSON-serializable format
+        tasks_data = []
+        for task in tasks:
+            tasks_data.append({
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'status': task.status,
+                'priority': task.priority,
+                'deadline': task.deadline.strftime('%b %d, %Y %I:%M %p'),
+                'overdue_days': task.overdue_days if task.status == 'OVERDUE' else 0,
+                'assigned_by': task.assigned_by.get_full_name() or task.assigned_by.username,
+                'created_at': task.created_at.strftime('%b %d, %Y'),
+            })
+        
+        return JsonResponse({
+            'status': 'success',
+            'tasks': tasks_data,
+            'total_tasks': len(tasks_data)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
 @require_POST

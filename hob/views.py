@@ -30,6 +30,7 @@ def hob_dashboard(request):
 @user_passes_test(is_business_head)
 def overview_tab(request):
     """Overview tab data"""
+    Task.update_overdue_tasks()
     context = get_dashboard_context(request)
     return render(request, 'hob/partials/overview.html', context)
 
@@ -186,7 +187,13 @@ def hob_assign_lead(request):
 @user_passes_test(is_business_head)
 def tasks_tab(request):
     """Tasks tab data"""
+    # ← ADD THIS LINE - Check and update overdue tasks
+    Task.update_overdue_tasks()
+    
     tasks = Task.objects.all().order_by('-created_at')
+    
+    # Count overdue tasks
+    overdue_count = Task.objects.filter(status='OVERDUE').count()
     
     # Get all active users for task assignment
     staff_members = User.objects.filter(is_active=True)
@@ -194,6 +201,7 @@ def tasks_tab(request):
     context = {
         'tasks': tasks,
         'staff_members': staff_members,
+        'overdue_count': overdue_count,
     }
     return render(request, 'hob/partials/tasks.html', context)
 
@@ -334,6 +342,8 @@ def delete_task(request, task_id):
 
 def get_dashboard_context(request):
     """Get common dashboard context data"""
+    Task.update_overdue_tasks()
+    
     today = timezone.now().date()
     
     # Staff statistics
