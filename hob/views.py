@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 import logging
+from accounts.models import DailyReport, User
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
@@ -11,7 +12,7 @@ import json
 from accounts.models import User
 from leads.models import Lead
 from tasks.models import Task, TaskUpdate
-from .models import DailyReport
+
 
 logger = logging.getLogger(__name__)
 
@@ -208,16 +209,20 @@ def tasks_tab(request):
 @login_required
 @user_passes_test(is_business_head)
 def reports_tab(request):
-    """Reports tab data"""
+    """Reports tab data - Show all team daily reports grouped by date"""
     today = timezone.now().date()
-    daily_reports = DailyReport.objects.filter(date=today)
+    
+    # Get recent reports (last 30 days) grouped by date
+    recent_reports = DailyReport.objects.filter(
+        report_date__gte=today - timezone.timedelta(days=30)
+    ).select_related('user').order_by('-report_date', '-created_at')
     
     context = {
-        'daily_reports': daily_reports,
+        'recent_reports': recent_reports,
         'today': today,
     }
     return render(request, 'hob/partials/reports.html', context)
-
+    
 @login_required
 @user_passes_test(is_business_head)
 def search_data(request):

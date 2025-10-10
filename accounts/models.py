@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
+from django.utils import timezone
+from django.db import models
 
 class User(AbstractUser):
     ROLE_CHOICES = [
@@ -39,3 +41,43 @@ class User(AbstractUser):
     @property
     def is_business_head(self):
         return self.role == 'BUSINESS_HEAD'    
+
+
+
+
+class DailyReport(models.Model):
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='daily_reports'
+    )
+    name = models.CharField(
+        max_length=200,
+        verbose_name="Report Name",
+        help_text="Give a title to your daily report"
+    )
+    heading = models.CharField(
+        max_length=300,
+        verbose_name="Report Heading", 
+        help_text="Brief summary of your daily report"
+    )
+    report_text = models.TextField(
+        verbose_name="Daily Update",
+        help_text="Share your daily progress and updates"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    report_date = models.DateField(default=timezone.now)
+    
+    class Meta:
+        ordering = ['-report_date', '-created_at']
+        unique_together = ['user', 'report_date']
+        verbose_name = "Daily Report"
+        verbose_name_plural = "Daily Reports"
+    
+    def __str__(self):
+        return f"{self.name} - {self.user.get_full_name()} - {self.report_date}"
+    
+    @property
+    def is_today_report(self):
+        return self.report_date == timezone.now().date()

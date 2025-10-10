@@ -24,6 +24,10 @@ from django.views.decorators.csrf import csrf_exempt
 import io
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
+from django.contrib import messages
+from django.utils import timezone
+from .models import DailyReport
+from .forms import DailyReportForm
 
 
 
@@ -1157,3 +1161,52 @@ def lead_details(request, lead_id):
         'remarks_history': lead.remark_history.all(),
     }
     return render(request, 'accounts/leaddetails.html', context)
+
+
+
+
+
+
+
+@login_required
+def submit_daily_report(request):
+    """Submit or update daily report"""
+    today = timezone.now().date()
+    
+    # Get or create today's report
+    daily_report, created = DailyReport.objects.get_or_create(
+        user=request.user,
+        report_date=today,
+        defaults={'report_text': ''}
+    )
+    
+    if request.method == 'POST':
+        form = DailyReportForm(request.POST, instance=daily_report)
+        if form.is_valid():
+            form.save()
+            action = "created" if created else "updated"
+            messages.success(request, f'Daily report {action} successfully!')
+            return redirect('accounts:daily_report')
+    else:
+        form = DailyReportForm(instance=daily_report)
+    
+    # Get user's recent reports
+    recent_reports = DailyReport.objects.filter(user=request.user).order_by('-report_date')[:5]
+    
+    context = {
+        'form': form,
+        'daily_report': daily_report,
+        'recent_reports': recent_reports,
+        'today': today,
+    }
+    return render(request, 'accounts/daily_report.html', context)
+
+@login_required
+def daily_report_history(request):
+    """View all daily reports by the user"""
+    reports = DailyReport.objects.filter(user=request.user).order_by('-report_date')
+    
+    context = {
+        'reports': reports,
+    }
+    return render(request, 'accounts/report_history.html', context)

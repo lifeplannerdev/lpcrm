@@ -5,6 +5,7 @@ from django.contrib.auth.models import Group
 from django.contrib.admin import AdminSite
 from django.contrib.auth import BACKEND_SESSION_KEY
 from django.conf import settings
+from .models import DailyReport
 
 class CustomUserAdmin(UserAdmin):
     # Makes password field more prominent
@@ -17,6 +18,7 @@ class CustomUserAdmin(UserAdmin):
     )
 
 admin.site.register(User, CustomUserAdmin)
+admin.site.register(DailyReport)
 
 # Unregister the Group model so it does not appear in admin
 admin.site.unregister(Group)
