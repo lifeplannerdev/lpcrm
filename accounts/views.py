@@ -1008,7 +1008,12 @@ def download_excel_template(request):
 def delete_lead(request, lead_id):
     lead = get_object_or_404(Lead, id=lead_id)
     lead.delete()
-    return redirect('/dashboard') 
+    
+    # Check if user is a Business Head (HOB) and redirect accordingly
+    if hasattr(request.user, 'profile') and request.user.profile.role == 'BUSINESS_HEAD':
+        return redirect('hob:hob_dashboard')
+    else:
+        return redirect('/dashboard')
 @login_required
 @require_POST
 def update_lead_field(request):
