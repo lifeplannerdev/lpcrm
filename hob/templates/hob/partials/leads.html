@@ -665,8 +665,12 @@ async function handleAddLead() {
             showHOBToast('Lead added successfully!', 'success');
             setTimeout(() => {
                 closeAddLeadModal();
-                // Reload the page to show new lead
-                window.location.reload();
+                // Reload only the Leads tab if tab loader is available
+                if (typeof window.loadTabContent === 'function') {
+                    window.loadTabContent('leads');
+                } else {
+                    window.location.reload();
+                }
             }, 1500);
         } else {
             showHOBToast(`Failed to add lead: ${data.message}`, 'error');
