@@ -71,7 +71,7 @@ class DailyReport(models.Model):
     
     class Meta:
         ordering = ['-report_date', '-created_at']
-        unique_together = ['user', 'report_date']
+
         verbose_name = "Daily Report"
         verbose_name_plural = "Daily Reports"
     
