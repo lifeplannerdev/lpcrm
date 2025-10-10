@@ -7,8 +7,15 @@
         
         <!-- Add Lead and Filters -->
         <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-            <!-- Add Lead Button -->
-           
+            <!-- Search Bar -->
+            <div style="position: relative;">
+                <input type="text" id="nameSearch" oninput="filterLeads()" placeholder="Search by name..." 
+                       style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 2.5rem 0.5rem 2.5rem; font-size: 0.9rem; min-width: 200px;">
+                <i class="fas fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.9rem;"></i>
+                <button type="button" onclick="clearSearch()" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.25rem; border-radius: 4px; display: none;" id="clearSearchBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
             
             <!-- Source Filter -->
             <select id="sourceFilter" onchange="filterLeads()" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; font-size: 0.9rem;">
@@ -33,8 +40,6 @@
                 <i class="fas fa-plus"></i>
                 <span>Add Lead</span>
             </button>
-            <!-- Reset Filters -->
-            <!-- <button type="button" onclick="resetLeadFilters()" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.85rem; cursor: pointer;">Reset</button> -->
         </div>
     </div>
     
@@ -60,7 +65,8 @@
                     data-status="{{ lead.status|lower }}"
                     data-staff="{{ lead.assigned_to.id|default:'' }}"
                     data-priority="{{ lead.priority|lower }}"
-                    data-program="{{ lead.program|default:''|lower }}">
+                    data-program="{{ lead.program|default:''|lower }}"
+                    data-name="{{ lead.name|lower }}">
                     <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                     <td>
                         <a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">
@@ -299,11 +305,18 @@ function filterLeads() {
     const sourceFilter = document.getElementById('sourceFilter').value;
     const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
     const staffFilter = document.getElementById('staffFilter').value;
+    const nameSearch = document.getElementById('nameSearch').value.toLowerCase();
 
     const tableBody = document.getElementById('leadsTableBody');
     const rows = tableBody.querySelectorAll('.lead-row');
     const noLeadsRow = document.getElementById('noLeadsRow');
     let visibleCount = 0;
+
+    // Show/hide clear search button
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    if (clearSearchBtn) {
+        clearSearchBtn.style.display = nameSearch ? 'block' : 'none';
+    }
 
     // First, hide the "no leads" row if it exists
     if (noLeadsRow) {
@@ -317,12 +330,14 @@ function filterLeads() {
         const staff = row.dataset.staff || '';
         const priority = row.dataset.priority || '';
         const program = row.dataset.program || '';
+        const name = row.dataset.name || '';
 
         const sourceMatch = !sourceFilter || source === sourceFilter;
         const statusMatch = !statusFilter || status.includes(statusFilter);
         const staffMatch = !staffFilter || staff === staffFilter;
+        const nameMatch = !nameSearch || name.includes(nameSearch);
 
-        if (sourceMatch && statusMatch && staffMatch) {
+        if (sourceMatch && statusMatch && staffMatch && nameMatch) {
             row.style.display = '';
             // Update the serial number for visible rows
             const serialCell = row.querySelector('td:first-child');
@@ -374,10 +389,16 @@ function filterLeads() {
     }
 }
 
+function clearSearch() {
+    document.getElementById('nameSearch').value = '';
+    filterLeads();
+}
+
 function resetLeadFilters() {
     document.getElementById('sourceFilter').value = '';
     document.getElementById('statusFilter').value = '';
     document.getElementById('staffFilter').value = '';
+    document.getElementById('nameSearch').value = '';
     filterLeads();
 }
 
@@ -504,13 +525,6 @@ function handleHOBFieldUpdate(selectElement) {
             // Revert to previous value
             selectElement.value = selectElement.dataset.previousValue;
         });
-}
-
-// CSRF helper for axios
-function getCookie(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
 }
 
 // AJAX function to update lead fields - HOB specific
@@ -698,6 +712,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     document.getElementById('statusFilter').addEventListener('input', debouncedFilter);
+    document.getElementById('nameSearch').addEventListener('input', debouncedFilter);
     
     // Close modal when clicking outside
     if (addLeadModal) {
@@ -718,6 +733,22 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+/* Search bar styles */
+#nameSearch {
+    transition: all 0.2s ease;
+}
+
+#nameSearch:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+#clearSearchBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
 /* Leads table layout improvements */
 .table-scroll-vert {
     max-height: 65vh;
