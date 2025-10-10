@@ -1,87 +1,125 @@
 <div class="table-container">
-    <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">All Tasks</h3>
-        <button class="btn btn-primary" onclick="openCreateTaskModal()">
-            <i class="fas fa-plus"></i>
-            Create Task
-        </button>
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <div style="display: flex; align-items: baseline; gap: 0.75rem;">
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: 0.2px;">All Tasks</h3>
+            <span style="color: var(--text-secondary); font-size: 0.9rem;">Manage and track team tasks</span>
+        </div>
+        <div style="display:flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <button class="btn btn-primary" style="background: var(--accent); color: var(--bg-primary); border: none; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.5rem;">
+               
+                Total : {{ tasks|length }}
+            </button>
+            <button class="btn btn-primary" onclick="openCreateTaskModal()" style="background: var(--accent); color: var(--bg-primary); border: none; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fas fa-plus"></i>
+                Create Task
+            </button>
+        </div>
     </div>
-    
-    <div class="table-scroll-vert">
+
+    <!-- Task Cards Grid -->
+    <div class="task-cards">
+        {% for task in tasks %}
+        <div class="task-card {% if task.is_overdue %}overdue{% endif %}">
+            <div class="task-header">
+                <div class="task-title-row">
+                    <h4 class="task-title">{{ task.title }}</h4>
+                    {% if task.is_overdue %}
+                        <span class="overdue-badge">OVERDUE</span>
+                    {% endif %}
+                </div>
+                <div class="task-actions">
+                    <button class="action-btn" onclick="deleteTask({{ task.id }})" title="Delete Task">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <p class="task-description">{{ task.description|truncatewords:15 }}</p>
+            
+            <div class="task-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Assigned by:</span>
+                    <span class="meta-value">{{ task.assigned_by.get_full_name }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Assigned to:</span>
+                    <span class="meta-value">{{ task.assigned_to.get_full_name }}</span>
+                    <span class="meta-role">{{ task.assigned_to.get_role_display }}</span>
+                </div>
+            </div>
+            
+            <div class="task-footer">
+                <div class="task-badges">
+                    <span class="priority-badge priority-{{ task.priority|lower }}">{{ task.get_priority_display }}</span>
+                    <span class="status-badge status-{{ task.status|lower }}">{{ task.get_status_display }}</span>
+                </div>
+                <div class="task-deadline {% if task.is_overdue %}overdue{% endif %}">
+                    <i class="fas fa-clock"></i>
+                    {{ task.deadline|date:"M d, Y H:i" }}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-tasks"></i>
+            </div>
+            <h3>No tasks found</h3>
+            <p>Create your first task to get started with task management.</p>
+            <button class="btn btn-primary" onclick="openCreateTaskModal()">
+                <i class="fas fa-plus"></i>
+                Create Task
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Table View (Hidden by default, can be toggled) -->
+    <div class="table-scroll-vert" style="margin-top: 1rem; display: none;" id="tableView">
         <table class="bc-table bc-table-striped">
             <thead>
                 <tr>
-                    <th>Title</th>
-                    <th>Assigned By</th>
-                    <th>Assigned To</th>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Deadline</th>
-                    <th>Actions</th>
+                    <th style="width: 25%;">Title</th>
+                    <th style="width: 15%;">Assigned By</th>
+                    <th style="width: 15%;">Assigned To</th>
+                    <th style="width: 12%;">Priority</th>
+                    <th style="width: 12%;">Status</th>
+                    <th style="width: 15%;">Deadline</th>
+                    <th style="width: 6%;">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for task in tasks %}
                 <tr>
                     <td>
-                        <strong>{{ task.title }}</strong>
-                        {% if task.is_overdue %}
-                            <span style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 600; margin-left: 0.5rem;">
-                                OVERDUE
-                            </span>
-                        {% endif %}
-                        <br>
-                        <small style="color: var(--text-secondary);">{{ task.description|truncatewords:10 }}</small>
+                        <div class="task-title-cell">
+                            <strong>{{ task.title }}</strong>
+                            {% if task.is_overdue %}
+                                <span class="overdue-badge">OVERDUE</span>
+                            {% endif %}
+                            <br>
+                            <small class="task-desc-small">{{ task.description|truncatewords:8 }}</small>
+                        </div>
                     </td>
                     <td>{{ task.assigned_by.get_full_name }}</td>
                     <td>
                         {{ task.assigned_to.get_full_name }}
                         <br>
-                        <small style="color: var(--text-secondary);">{{ task.assigned_to.get_role_display }}</small>
+                        <small class="role-small">{{ task.assigned_to.get_role_display }}</small>
                     </td>
                     <td>
-                        <span style="padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600; 
-                            {% if task.priority == 'LOW' %}background: rgba(16, 185, 129, 0.2); color: #86efac;
-                            {% elif task.priority == 'MEDIUM' %}background: rgba(245, 158, 11, 0.2); color: #fcd34d;
-                            {% elif task.priority == 'HIGH' %}background: rgba(239, 68, 68, 0.2); color: #fca5a5;
-                            {% else %}background: rgba(239, 68, 68, 0.4); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.6);
-                            {% endif %}">
-                            {{ task.get_priority_display }}
-                        </span>
+                        <span class="priority-badge priority-{{ task.priority|lower }}">{{ task.get_priority_display }}</span>
                     </td>
                     <td>
-                        <span style="padding: 0.25rem 0.75rem; border-radius: 50px; font-size: 0.8rem; font-weight: 600; 
-                            {% if task.status == 'PENDING' %}background: rgba(245, 158, 11, 0.2); color: #fcd34d;
-                            {% elif task.status == 'IN_PROGRESS' %}background: rgba(59, 130, 246, 0.2); color: #93c5fd;
-                            {% elif task.status == 'COMPLETED' %}background: rgba(16, 185, 129, 0.2); color: #86efac;
-                            {% else %}background: rgba(107, 114, 128, 0.2); color: #9ca3af;
-                            {% endif %}">
-                            {{ task.get_status_display }}
-                        </span>
+                        <span class="status-badge status-{{ task.status|lower }}">{{ task.get_status_display }}</span>
+                    </td>
+                    <td class="{% if task.is_overdue %}overdue{% endif %}">
+                        {{ task.deadline|date:"M d, Y H:i" }}
                     </td>
                     <td>
-                        {% if task.is_overdue %}
-                            <span style="color: #ef4444; font-weight: 600;">{{ task.deadline|date:"M d, Y H:i" }}</span>
-                        {% else %}
-                            {{ task.deadline|date:"M d, Y H:i" }}
-                        {% endif %}
-                    </td>
-                    <td>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease;" 
-                                    onmouseover="this.style.background='var(--bg-secondary)'; this.style.color='var(--text-primary)'"
-                                    onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)'"
-                                    onclick="deleteTask({{ task.id }})" 
-                                    title="Delete Task">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
-                        No tasks found
+                        <button class="action-btn" onclick="deleteTask({{ task.id }})" title="Delete Task">
+                            <i class="fas fa-trash"></i>
+                        </button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -256,3 +294,262 @@ document.addEventListener('keydown', function(e) {
     }
 });
 </script>
+
+<style>
+/* Task Cards Layout */
+.task-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+}
+
+.task-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.task-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.task-card.overdue {
+  border-left: 4px solid #ef4444;
+  background: rgba(239, 68, 68, 0.02);
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.task-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.task-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.overdue-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.task-actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.task-description {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0 0 1rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.task-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.meta-label {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.meta-value {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.meta-role {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+}
+
+.task-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.task-badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.priority-badge, .status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.priority-low { background: rgba(16, 185, 129, 0.2); color: #86efac; }
+.priority-medium { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+.priority-high { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+.priority-urgent { background: rgba(239, 68, 68, 0.4); color: #fca5a5; border-color: rgba(239, 68, 68, 0.6); }
+
+.status-pending { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
+.status-in_progress { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+.status-completed { background: rgba(16, 185, 129, 0.2); color: #86efac; }
+.status-cancelled { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+
+.task-deadline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.task-deadline.overdue {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.task-deadline i {
+  font-size: 0.7rem;
+}
+
+/* Empty State */
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--text-secondary);
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.empty-state h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  margin-bottom: 1.5rem;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Table View Styles */
+.task-title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.task-desc-small {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.role-small {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .task-cards {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+  }
+  
+  .task-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .task-badges {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .task-deadline {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .task-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .task-actions {
+    align-self: flex-end;
+  }
+}
+</style>

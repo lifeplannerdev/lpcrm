@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 import logging
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -10,7 +10,7 @@ import json
 
 from accounts.models import User
 from leads.models import Lead
-from tasks.models import Task
+from tasks.models import Task, TaskUpdate
 from .models import DailyReport
 
 logger = logging.getLogger(__name__)
@@ -78,7 +78,6 @@ def leads_tab(request):
 def staff_tab(request):
     """Staff tab data"""
     staff_members = User.objects.filter(
-        role__in=['ADM_MANAGER', 'ADM_EXEC', 'MEDIA'],
         is_active=True
     ).annotate(
         total_leads=Count('assigned_leads'),
@@ -189,8 +188,12 @@ def tasks_tab(request):
     """Tasks tab data"""
     tasks = Task.objects.all().order_by('-created_at')
     
+    # Get all active users for task assignment
+    staff_members = User.objects.filter(is_active=True)
+    
     context = {
         'tasks': tasks,
+        'staff_members': staff_members,
     }
     return render(request, 'hob/partials/tasks.html', context)
 
@@ -276,11 +279,14 @@ def create_task(request):
     try:
         data = json.loads(request.body)
         
+        # Get the assigned user
+        assigned_to_user = User.objects.get(id=data.get('assigned_to'))
+        
         task = Task.objects.create(
             title=data.get('title'),
             description=data.get('description', ''),
             assigned_by=request.user,
-            assigned_to_id=data.get('assigned_to'),
+            assigned_to=assigned_to_user,
             priority=data.get('priority', 'MEDIUM'),
             deadline=data.get('deadline')
         )
