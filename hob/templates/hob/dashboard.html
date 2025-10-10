@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <title>HOB Dashboard - LP CRM</title>
     <!-- Basecoat CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.2.8/dist/basecoat.cdn.min.css">
@@ -357,11 +358,17 @@
     </div>
 
     <script>
-        // CSRF helper for axios
+        // CSRF helper for axios and fetch
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
+            
+            // Fallback to meta tag
+            const metaTag = document.querySelector('meta[name="csrf-token"]');
+            if (metaTag) return metaTag.getAttribute('content');
+            
+            return null;
         }
         
         axios.defaults.headers.common['X-CSRFToken'] = getCookie('csrftoken');

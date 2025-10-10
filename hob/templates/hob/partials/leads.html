@@ -5,8 +5,14 @@
             <span id="visibleCount" style="color: var(--text-secondary); font-size: 0.9rem;">&nbsp;</span>
         </div>
         
-        <!-- Filters -->
+        <!-- Add Lead and Filters -->
         <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <!-- Add Lead Button -->
+            <button class="add-leads-btn" id="addLeadBtn" style="background: var(--accent); color: var(--bg-primary); border-color: var(--accent);">
+                <i class="fas fa-plus"></i>
+                <span>Add Lead</span>
+            </button>
+            
             <!-- Source Filter -->
             <select id="sourceFilter" onchange="filterLeads()" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; font-size: 0.9rem;">
                 <option value="">All Sources</option>
@@ -141,6 +147,80 @@
     </div>
 </div>
 
+<!-- Add Lead Modal -->
+<div id="addLeadModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Add New Lead</h2>
+            <button class="modal-close" onclick="closeAddLeadModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="addLeadForm" style="display: flex; flex-direction: column; flex: 1;">
+            <div style="padding: 1.5rem; flex: 1; overflow-y: auto; min-height: 0;">
+                <div class="form-field">
+                    <label for="leadName">Name *</label>
+                    <input type="text" id="leadName" name="name" class="form-input" required placeholder="Enter lead name">
+                </div>
+                
+                <div class="form-field">
+                    <label for="leadPhone">Phone *</label>
+                    <input type="tel" id="leadPhone" name="phone" class="form-input" required placeholder="Enter phone number">
+                </div>
+                
+                <div class="form-field">
+                    <label for="leadEmail">Email</label>
+                    <input type="email" id="leadEmail" name="email" class="form-input" placeholder="Enter email address">
+                </div>
+                
+                <div class="form-field">
+                    <label for="leadLocation">Location</label>
+                    <input type="text" id="leadLocation" name="location" class="form-input" placeholder="Enter location">
+                </div>
+                
+                <div class="form-field">
+                    <label for="leadProgram">Program</label>
+                    <input type="text" id="leadProgram" name="program" class="form-input" placeholder="Enter program/course">
+                </div>
+                
+                <div class="form-field">
+                    <label for="leadPriority">Priority</label>
+                    <select id="leadPriority" name="priority" class="form-select">
+                        <option value="MEDIUM">Medium</option>
+                        <option value="HIGH">High</option>
+                        <option value="LOW">Low</option>
+                    </select>
+                </div>
+                
+                <div class="form-field">
+                    <label for="leadStatus">Status</label>
+                    <input type="text" id="leadStatus" name="status" class="form-input" placeholder="Enter status" list="status-suggestions" value="ENQUIRY">
+                </div>
+                
+                <div class="form-field">
+                    <label for="leadSource">Source</label>
+                    <select id="leadSource" name="source" class="form-select">
+                        {% for value, label in source_choices %}
+                            <option value="{{ value }}" {% if value == 'WHATSAPP' %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-field">
+                    <label for="leadRemarks">Remarks</label>
+                    <textarea id="leadRemarks" name="remarks" class="form-textarea" placeholder="Enter any additional remarks"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-notes" onclick="closeAddLeadModal()">Cancel</button>
+                <button type="submit" class="btn btn-contact" id="addLeadButton">
+                    <i class="fas fa-plus mr-1"></i> Add Lead
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <!-- Status suggestions shared with overview/status vocabulary -->
 <datalist id="status-suggestions">
     <option value="ENQUIRY">
@@ -181,6 +261,39 @@ function getCookie(name) {
 axios.defaults.headers.common['X-CSRFToken'] = getCookie('csrftoken');
 axios.defaults.xsrfCookieName = 'csrftoken';
 axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+
+// Add Lead Modal functionality
+const addLeadBtn = document.getElementById('addLeadBtn');
+const addLeadModal = document.getElementById('addLeadModal');
+const addLeadForm = document.getElementById('addLeadForm');
+
+// Open add lead modal
+if (addLeadBtn) {
+    addLeadBtn.addEventListener('click', function() {
+        console.log('Add lead button clicked');
+        addLeadModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        resetAddLeadForm();
+    });
+}
+
+// Close add lead modal
+function closeAddLeadModal() {
+    console.log('Closing add lead modal');
+    addLeadModal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    resetAddLeadForm();
+}
+
+function resetAddLeadForm() {
+    const form = document.getElementById('addLeadForm');
+    if (form) {
+        form.reset();
+        // Set default values
+        document.getElementById('leadStatus').value = 'ENQUIRY';
+        document.getElementById('leadPriority').value = 'MEDIUM';
+    }
+}
 
 function filterLeads() {
     const sourceFilter = document.getElementById('sourceFilter').value;
@@ -476,6 +589,98 @@ function showHOBToast(message, type) {
     }, 3000);
 }
 
+// Handle add lead form submission
+if (addLeadForm) {
+    addLeadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        console.log('Add lead form submitted');
+        handleAddLead();
+    });
+}
+
+// Handle add lead
+async function handleAddLead() {
+    console.log('Handling add lead');
+    
+    const form = document.getElementById('addLeadForm');
+    const addButton = document.getElementById('addLeadButton');
+    
+    if (!form || !addButton) {
+        console.error('Form elements not found');
+        showHOBToast('Form error - please refresh the page', 'error');
+        return;
+    }
+    
+    // Get form data
+    const formData = new FormData(form);
+    const leadData = {
+        name: formData.get('name'),
+        phone: formData.get('phone'),
+        email: formData.get('email') || '',
+        location: formData.get('location') || '',
+        program: formData.get('program') || '',
+        priority: formData.get('priority'),
+        status: formData.get('status'),
+        source: formData.get('source'),
+        remarks: formData.get('remarks') || ''
+    };
+    
+    // Validate required fields
+    if (!leadData.name || !leadData.phone) {
+        showHOBToast('Name and phone are required', 'error');
+        return;
+    }
+    
+    if (leadData.phone.length < 10) {
+        showHOBToast('Phone number must be at least 10 digits', 'error');
+        return;
+    }
+    
+    addButton.disabled = true;
+    addButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Adding...';
+    
+    try {
+        const csrfToken = getCookie('csrftoken');
+        console.log('Add lead CSRF Token:', csrfToken);
+        console.log('Lead data:', leadData);
+
+        const response = await fetch("{% url 'accounts:add_lead' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(leadData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Add lead response:', data);
+        
+        if (data.status === 'success') {
+            showHOBToast('Lead added successfully!', 'success');
+            setTimeout(() => {
+                closeAddLeadModal();
+                // Reload the page to show new lead
+                window.location.reload();
+            }, 1500);
+        } else {
+            showHOBToast(`Failed to add lead: ${data.message}`, 'error');
+            addButton.disabled = false;
+            addButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Add Lead';
+        }
+    } catch (error) {
+        console.error('Add lead error:', error);
+        showHOBToast(`Error adding lead: ${error.message}`, 'error');
+        addButton.disabled = false;
+        addButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Add Lead';
+    }
+}
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     filterLeads();
@@ -489,6 +694,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     document.getElementById('statusFilter').addEventListener('input', debouncedFilter);
+    
+    // Close modal when clicking outside
+    if (addLeadModal) {
+        addLeadModal.addEventListener('click', function(e) {
+            if (e.target === addLeadModal) {
+                closeAddLeadModal();
+            }
+        });
+    }
+
+    // Close modal with escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && addLeadModal.style.display === 'flex') {
+            closeAddLeadModal();
+        }
+    });
 });
 </script>
 
@@ -657,6 +878,184 @@ document.addEventListener('DOMContentLoaded', function() {
 .priority-high { color: #f87171; font-weight: 600; }
 .priority-medium { color: #fbbf24; font-weight: 600; }
 .priority-low { color: #60a5fa; font-weight: 600; }
+
+/* Add Lead Modal Styles */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-large);
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.modal-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-title {
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.modal-close {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.form-field label {
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-input, .form-select, .form-textarea {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    transition: border 0.2s ease;
+}
+
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.add-leads-btn {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-color: var(--border-color);
+}
+
+.add-leads-btn:hover {
+    background: var(--border-hover);
+    border-color: var(--border-hover);
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-notes {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-notes:hover {
+    background: var(--border-hover);
+    color: var(--text-primary);
+}
+
+.btn-contact {
+    background: var(--accent);
+    color: var(--bg-primary);
+    border: 1px solid var(--accent);
+}
+
+.btn-contact:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+}
+
+.btn-contact:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
 
 /* Toast animations */
 @keyframes slideIn {
