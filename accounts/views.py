@@ -1010,8 +1010,8 @@ def delete_lead(request, lead_id):
     lead.delete()
     
     # Check if user is a Business Head (HOB) and redirect accordingly
-    if hasattr(request.user, 'profile') and request.user.profile.role == 'BUSINESS_HEAD':
-        return redirect('hob:hob_dashboard')
+    if request.user.role == 'BUSINESS_HEAD':
+        return redirect('hob:dashboard')
     else:
         return redirect('/dashboard')
 @login_required
