@@ -1165,48 +1165,117 @@ def lead_details(request, lead_id):
 
 
 
-
-
-
 @login_required
-def submit_daily_report(request):
-    """Submit or update daily report"""
-    today = timezone.now().date()
+def staff_reports_page(request):
+    """Main staff reports page view - handles both display and report creation"""
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Handle AJAX report creation
+        try:
+            name = request.POST.get('name')
+            heading = request.POST.get('heading')
+            report_text = request.POST.get('report_text')
+            report_date = request.POST.get('report_date')
+            
+            # Create the report
+            report = DailyReport.objects.create(
+                user=request.user,
+                name=name,
+                heading=heading,
+                report_text=report_text,
+                report_date=report_date
+            )
+            
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'Report created successfully',
+                'report_id': report.id
+            })
+            
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
-    # Get or create today's report
-    daily_report, created = DailyReport.objects.get_or_create(
-        user=request.user,
-        report_date=today,
-        defaults={'report_text': ''}
-    )
-    
-    if request.method == 'POST':
-        form = DailyReportForm(request.POST, instance=daily_report)
-        if form.is_valid():
-            form.save()
-            action = "created" if created else "updated"
-            messages.success(request, f'Daily report {action} successfully!')
-            return redirect('accounts:daily_report')
-    else:
-        form = DailyReportForm(instance=daily_report)
-    
-    # Get user's recent reports
-    recent_reports = DailyReport.objects.filter(user=request.user).order_by('-report_date')[:5]
-    
-    context = {
-        'form': form,
-        'daily_report': daily_report,
-        'recent_reports': recent_reports,
-        'today': today,
-    }
-    return render(request, 'accounts/daily_report.html', context)
-
-@login_required
-def daily_report_history(request):
-    """View all daily reports by the user"""
+    # GET request - show the reports page
     reports = DailyReport.objects.filter(user=request.user).order_by('-report_date')
     
     context = {
         'reports': reports,
     }
-    return render(request, 'accounts/report_history.html', context)
+    return render(request, 'accounts/staffreports.html', context)
+
+@login_required
+@require_http_methods(["GET"])
+def get_report_details(request, report_id):
+    """Get detailed information for a specific report"""
+    try:
+        report = get_object_or_404(DailyReport, id=report_id, user=request.user)
+        
+        report_data = {
+            'id': report.id,
+            'name': report.name,
+            'heading': report.heading,
+            'report_text': report.report_text,
+            'report_date': report.report_date.isoformat(),
+            'created_at': report.created_at.isoformat(),
+            'updated_at': report.updated_at.isoformat(),
+        }
+        
+        return JsonResponse(report_data)
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@require_http_methods(["PUT"])
+def update_report(request, report_id):
+    """Update an existing report"""
+    try:
+        report = get_object_or_404(DailyReport, id=report_id, user=request.user)
+        
+        # For PUT requests with form data
+        name = request.POST.get('name')
+        heading = request.POST.get('heading')
+        report_text = request.POST.get('report_text')
+        report_date = request.POST.get('report_date')
+        
+        # Update report fields
+        if name:
+            report.name = name
+        if heading:
+            report.heading = heading
+        if report_text:
+            report.report_text = report_text
+        if report_date:
+            report.report_date = report_date
+        
+        report.save()
+        
+        return JsonResponse({
+            'status': 'success', 
+            'message': 'Report updated successfully',
+            'report_id': report.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@require_http_methods(["DELETE"])
+def delete_report(request, report_id):
+    """Delete a report"""
+    try:
+        report = get_object_or_404(DailyReport, id=report_id, user=request.user)
+        report.delete()
+        
+        return JsonResponse({
+            'status': 'success', 
+            'message': 'Report deleted successfully'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500) 
+
+
+
+
+
+

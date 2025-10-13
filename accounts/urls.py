@@ -28,7 +28,9 @@ urlpatterns = [
     path('leads/assign-to-executive/', views.assign_lead_to_executive, name='assign_to_executive'),
     path('add-lead/', views.add_lead, name='add_lead'),
     path('lead-details/<int:lead_id>/', views.lead_details, name='lead_details'),
-    path('daily-report/', views.submit_daily_report, name='daily_report'),
-    path('report-history/', views.daily_report_history, name='report_history'),
-    
+    path('staff-reports/', views.staff_reports_page, name='staff_reports'),
+    path('reports/<int:report_id>/', views.get_report_details, name='get_report_details'),
+    path('reports/<int:report_id>/update/', views.update_report, name='update_report'),
+    path('reports/<int:report_id>/delete/', views.delete_report, name='delete_report'),
+
 ]
