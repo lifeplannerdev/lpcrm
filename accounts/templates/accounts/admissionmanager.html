@@ -204,7 +204,8 @@
       border-radius: 8px;
       padding: 0.5rem;
       transition: border 0.18s;
-      min-width: 300px;
+      min-width: 350px;
+      margin-left: 50px;
     }
     .search-box:focus-within {
       border-color: var(--accent);
@@ -899,6 +900,10 @@
             <i class="fas fa-table"></i>
             <span>View Leads</span>
           </a></button>
+          <button class="add-leads-btn" ><a href="{% url 'accounts:staff_reports' %}"  style="margin-left: 0.5rem;">
+            <i class="fas fa-table"></i>
+            <span>Reports</span>
+          </a></button>
           <button class="add-leads-btn" id="addLeadBtn" style="margin-left: 0.5rem;">
             <i class="fas fa-plus"></i>
             <span>Add Lead</span>
@@ -907,6 +912,7 @@
             <i class="fas fa-file-excel"></i>
             <span>Import Excel</span>
           </button>
+
           <button class="add-leads-btn" id="tasksBtn" style="margin-left: 0.5rem;">
             <i class="fas fa-tasks"></i>
             <span>My Tasks</span>
