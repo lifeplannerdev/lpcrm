@@ -1016,8 +1016,10 @@ def delete_lead(request, lead_id):
     # Check if user is a Business Head (HOB) and redirect accordingly
     if request.user.role == 'BUSINESS_HEAD':
         return redirect('hob:dashboard')
-    else:
+    elif request.user.role == 'ADM_MANAGER':
         return redirect('/dashboard')
+    else:
+        return redirect('/operations')    
 @login_required
 @require_POST
 def update_lead_field(request):
@@ -1273,7 +1275,6 @@ def delete_report(request, report_id):
         
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500) 
-
 
 
 
