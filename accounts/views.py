@@ -1018,8 +1018,12 @@ def delete_lead(request, lead_id):
         return redirect('hob:dashboard')
     elif request.user.role == 'ADM_MANAGER':
         return redirect('/dashboard')
+    elif request.user.role == 'OPS':
+        return redirect('/operations')  
+    elif request.user.role == 'ADM_EXEC':
+        return redirect('/executive-dashboard')      
     else:
-        return redirect('/operations')    
+        return redirect('/all-leads')    
 @login_required
 @require_POST
 def update_lead_field(request):
