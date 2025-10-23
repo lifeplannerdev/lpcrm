@@ -119,17 +119,31 @@ WSGI_APPLICATION = 'lpcrm.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'neondb',
+#         'USER': 'neondb_owner',
+#         'PASSWORD': 'npg_iP5dyZgpaL2R',
+#         'HOST': 'ep-floral-haze-adtwv5ke-pooler.c-2.us-east-1.aws.neon.tech',
+#         'PORT': '5432',
+#         'OPTIONS': {'sslmode': 'require'},
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'neondb',
-        'USER': 'neondb_owner',
-        'PASSWORD': 'npg_iP5dyZgpaL2R',
-        'HOST': 'ep-floral-haze-adtwv5ke-pooler.c-2.us-east-1.aws.neon.tech',
+        'NAME': 'lpcrm_db:main', 
+        'USER': 'vq4bef',
+        'PASSWORD': 'xau_FGDjCGoNexppnqwhuTMi5w0ktoW2HkcA1',
+        'HOST': 'eu-central-1.sql.xata.sh',
         'PORT': '5432',
         'OPTIONS': {'sslmode': 'require'},
     }
 }
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
