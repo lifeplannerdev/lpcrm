@@ -163,6 +163,7 @@
             </button>
         </div>
         <form id="addLeadForm" style="display: flex; flex-direction: column; flex: 1;">
+            {% csrf_token %}
             <div style="padding: 1.5rem; flex: 1; overflow-y: auto; min-height: 0;">
                 <div class="form-field">
                     <label for="leadName">Name *</label>
@@ -660,6 +661,7 @@ async function handleAddLead() {
 
         const response = await fetch("{% url 'accounts:add_lead' %}", {
             method: 'POST',
+            credentials: 'same-origin',
             headers: {
                 'X-CSRFToken': csrfToken,
                 'X-Requested-With': 'XMLHttpRequest',
