@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import dj_database_url
+from decouple import config
 
 load_dotenv()
 
@@ -119,14 +120,26 @@ WSGI_APPLICATION = 'lpcrm.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'neondb',
+#         'USER': 'neondb_owner',
+#         'PASSWORD': 'npg_iP5dyZgpaL2R',
+#         'HOST': 'ep-floral-haze-adtwv5ke-pooler.c-2.us-east-1.aws.neon.tech',
+#         'PORT': '5432',
+#         'OPTIONS': {'sslmode': 'require'},
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'neondb',
-        'USER': 'neondb_owner',
-        'PASSWORD': 'npg_iP5dyZgpaL2R',
-        'HOST': 'ep-floral-haze-adtwv5ke-pooler.c-2.us-east-1.aws.neon.tech',
-        'PORT': '5432',
+        'NAME': config('AIVEN_NAME'),
+        'USER': config('AIVEN_USER'),
+        'PASSWORD': config('AIVEN_PASSWORD'),
+        'HOST': config('AIVEN_HOST'),
+        'PORT': config('AIVEN_PORT'),
         'OPTIONS': {'sslmode': 'require'},
     }
 }
