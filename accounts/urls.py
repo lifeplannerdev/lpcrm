@@ -32,5 +32,9 @@ urlpatterns = [
     path('reports/<int:report_id>/', views.get_report_details, name='get_report_details'),
     path('reports/<int:report_id>/update/', views.update_report, name='update_report'),
     path('reports/<int:report_id>/delete/', views.delete_report, name='delete_report'),
+    path('micro-works/create/', views.create_micro_work, name='create_micro_work'),
+    path('micro-works/<int:work_id>/complete/', views.mark_micro_work_completed, name='mark_micro_work_completed'),
+    path('micro-works/<int:work_id>/delete/', views.delete_micro_work, name='delete_micro_work'),
+    path('micro-works/', views.get_micro_works, name='get_micro_works'),
 
 ]

@@ -6,6 +6,7 @@ from .models import User
 from django.contrib import messages
 from leads.models import Lead
 from leads.models import RemarkHistory
+from .models import MicroWork
 from leads.forms import LeadForm
 from django.conf import settings
 import json
@@ -1349,3 +1350,109 @@ def delete_report(request, report_id):
 
 
 
+@login_required
+@require_http_methods(["POST"])
+def create_micro_work(request):
+    """Create a new micro work"""
+    try:
+        job_title = request.POST.get('job_title')
+        description = request.POST.get('description')
+        time_required = request.POST.get('time_required')
+        
+        # Validate required fields
+        if not all([job_title, description, time_required]):
+            return JsonResponse({
+                'status': 'error', 
+                'message': 'All fields are required'
+            }, status=400)
+        
+        # Create the micro work
+        micro_work = MicroWork(
+            user=request.user,
+            job_title=job_title,
+            description=description,
+            time_required=time_required
+        )
+        micro_work.save()
+        
+        return JsonResponse({
+            'status': 'success', 
+            'message': 'Micro work added successfully',
+            'work_id': micro_work.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error', 
+            'message': f'Failed to add micro work: {str(e)}'
+        }, status=500)
+
+@login_required
+@require_http_methods(["POST"])
+def mark_micro_work_completed(request, work_id):
+    """Mark a micro work as completed"""
+    try:
+        micro_work = get_object_or_404(MicroWork, id=work_id, user=request.user)
+        micro_work.mark_completed()
+        
+        return JsonResponse({
+            'status': 'success', 
+            'message': 'Micro work marked as completed',
+            'work_id': micro_work.id
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error', 
+            'message': str(e)
+        }, status=500)
+
+@login_required
+@require_http_methods(["GET"])
+def get_micro_works(request):
+    """Get all micro works for the current user"""
+    try:
+        micro_works = MicroWork.objects.filter(user=request.user).order_by('-created_at')
+        
+        works_data = []
+        for work in micro_works:
+            works_data.append({
+                'id': work.id,
+                'job_title': work.job_title,
+                'description': work.description,
+                'time_required': work.time_required,
+                'status': work.status,
+                'created_at': work.created_at.isoformat(),
+                'completed_at': work.completed_at.isoformat() if work.completed_at else None,
+                'is_completed': work.is_completed
+            })
+        
+        return JsonResponse({
+            'status': 'success',
+            'micro_works': works_data
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error', 
+            'message': str(e)
+        }, status=500)
+
+@login_required
+@require_http_methods(["DELETE"])
+def delete_micro_work(request, work_id):
+    """Delete a micro work"""
+    try:
+        micro_work = get_object_or_404(MicroWork, id=work_id, user=request.user)
+        micro_work.delete()
+        
+        return JsonResponse({
+            'status': 'success', 
+            'message': 'Micro work deleted successfully'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error', 
+            'message': str(e)
+        }, status=500)

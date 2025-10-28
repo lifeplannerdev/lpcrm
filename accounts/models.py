@@ -108,3 +108,63 @@ class DailyReport(models.Model):
                 url = url.replace('http://', 'https://')
             return url
         return None    
+
+
+class MicroWork(models.Model):
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('COMPLETED', 'Completed'),
+    ]
+    
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='micro_works'
+    )
+    job_title = models.CharField(
+        max_length=200,
+        verbose_name="Job Title",
+        help_text="Title of the micro work"
+    )
+    description = models.TextField(
+        verbose_name="Description",
+        help_text="Detailed description of the work"
+    )
+    time_required = models.CharField(
+        max_length=100,
+        verbose_name="Time Required",
+        help_text="Estimated time required (e.g., 2 hours, 30 minutes)"
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='PENDING'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Micro Work"
+        verbose_name_plural = "Micro Works"
+    
+    def __str__(self):
+        return f"{self.job_title} - {self.user.get_full_name()}"
+    
+    def mark_completed(self):
+        """Mark the micro work as completed"""
+        self.status = 'COMPLETED'
+        self.completed_at = timezone.now()
+        self.save()
+    
+    @property
+    def is_completed(self):
+        return self.status == 'COMPLETED'
+    
+    @property
+    def completion_time(self):
+        """Calculate time taken to complete"""
+        if self.completed_at and self.created_at:
+            return self.completed_at - self.created_at
+        return None        
