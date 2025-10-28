@@ -45,26 +45,26 @@
                         
                         <!-- File Download Section -->
                         {% if report.attached_file %}
-<div class="file-attachment-section">
-    <div class="file-attachment">
-        <i class="fas fa-paperclip file-icon"></i>
-        <div class="file-info">
-            <span class="file-name">{{ report.get_file_name|default:"Attached File" }}</span>
-            <span class="file-size">
-                {% if report.attached_file.size %}
-                ({{ report.attached_file.size|filesizeformat }})
-                {% endif %}
-            </span>
-        </div>
-        <button type="button" 
-                class="download-btn"
-                onclick="downloadFile('{{ report.attached_file.url|escapejs }}', '{{ report.get_file_name|default:"download"|escapejs }}')">
-            <i class="fas fa-download"></i>
-            Download
-        </button>
-    </div>
-</div>
-{% endif %}
+                        <div class="file-attachment-section">
+                            <div class="file-attachment">
+                                <i class="fas fa-paperclip file-icon"></i>
+                                <div class="file-info">
+                                    <span class="file-name">{{ report.get_file_name|default:"Attached File" }}</span>
+                                    <span class="file-size">
+                                        {% if report.attached_file.size %}
+                                        ({{ report.attached_file.size|filesizeformat }})
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <button type="button" 
+                                        class="download-btn"
+                                        onclick="downloadFile('{{ report.attached_file.url|escapejs }}', '{{ report.get_file_name|default:"download"|escapejs }}')">
+                                    <i class="fas fa-download"></i>
+                                    Download
+                                </button>
+                            </div>
+                        </div>
+                        {% endif %}
                     </div>
                     
                     <div class="report-footer">
@@ -231,19 +231,27 @@
     gap: 0.4rem;
     background: var(--accent);
     color: var(--bg-primary);
-    text-decoration: none;
+    border: none;
     padding: 0.5rem 0.8rem;
     border-radius: 6px;
     font-size: 0.8rem;
     font-weight: 500;
     transition: all 0.2s ease;
     flex-shrink: 0;
+    cursor: pointer;
 }
 
-.download-btn:hover {
+.download-btn:hover:not(:disabled) {
     background: var(--accent-hover);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.download-btn:disabled {
+    background: var(--border-color);
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+    transform: none;
 }
 
 .report-footer {
@@ -375,3 +383,117 @@
     }
 }
 </style>
+
+<script>
+// Enhanced download function with multiple fallbacks
+function downloadFile(fileUrl, fileName) {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Show loading state
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+    button.disabled = true;
+    
+    // Method 1: Try fetch + blob approach first
+    fetch(fileUrl)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.blob();
+        })
+        .then(blob => {
+            // Check if blob is valid
+            if (blob.size === 0) throw new Error('Empty file');
+            
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+            
+            showToast('Download started successfully', 'success');
+        })
+        .catch(error => {
+            console.log('Fetch method failed, trying alternative...', error);
+            
+            // Method 2: Try Cloudinary attachment flag
+            const attachmentUrl = fileUrl + (fileUrl.includes('?') ? '&' : '?') + 'fl_attachment';
+            window.open(attachmentUrl, '_blank');
+            
+            showToast('Opening file in new tab', 'warning');
+        })
+        .finally(() => {
+            // Restore button after delay
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 1500);
+        });
+}
+
+// Toast notification function (make sure this exists)
+function showToast(message, type) {
+    // Create toast element if it doesn't exist
+    let toast = document.querySelector('.toast-notification');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        document.body.appendChild(toast);
+    } else {
+        toast.className = `toast-notification ${type}`;
+    }
+    
+    toast.textContent = message;
+    toast.style.display = 'block';
+    
+    // Add toast styles if they don't exist
+    if (!document.querySelector('#toast-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'toast-styles';
+        styles.textContent = `
+            .toast-notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                display: none;
+            }
+            .toast-notification.success {
+                background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%);
+            }
+            .toast-notification.error {
+                background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%);
+            }
+            .toast-notification.warning {
+                background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(245, 158, 11, 0.8) 100%);
+            }
+            @keyframes slideIn {
+                from { 
+                    transform: translateX(100%) scale(0.95); 
+                    opacity: 0; 
+                }
+                to { 
+                    transform: translateX(0) scale(1); 
+                    opacity: 1; 
+                }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 3000);
+}
+</script>
