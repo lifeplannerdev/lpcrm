@@ -2,6 +2,7 @@ asgiref==3.9.1
 cachetools==4.2.4
 certifi==2025.10.5
 charset-normalizer==3.4.4
+cloudinary==1.44.1
 dj-database-url==2.1.0
 Django==5.2.4
 django-crontab==0.7.1
