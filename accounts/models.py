@@ -98,3 +98,13 @@ class DailyReport(models.Model):
             # Cloudinary stores original filename in metadata
             return os.path.basename(self.attached_file.public_id)
         return None
+
+    def get_secure_file_url(self):
+        """Returns HTTPS URL for Cloudinary files"""
+        if self.attached_file:
+            # Force HTTPS by replacing http:// with https://
+            url = self.attached_file.url
+            if url.startswith('http://'):
+                url = url.replace('http://', 'https://')
+            return url
+        return None    

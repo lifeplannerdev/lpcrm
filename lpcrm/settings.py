@@ -194,7 +194,8 @@ import cloudinary.api
 cloudinary.config( 
     cloud_name = "dzmvrjvfs",
     api_key = "529255454263344", 
-    api_secret = "TwM8oZiBNiLwdYwDjnPekSvSEXU"  # Keep this secret!
+    api_secret = "TwM8oZiBNiLwdYwDjnPekSvSEXU",  # Keep this secret!
+    secure = True
 )
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

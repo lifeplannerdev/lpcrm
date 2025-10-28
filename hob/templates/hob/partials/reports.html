@@ -45,26 +45,26 @@
                         
                         <!-- File Download Section -->
                         {% if report.attached_file %}
-                        <div class="file-attachment-section">
-                            <div class="file-attachment">
-                                <i class="fas fa-paperclip file-icon"></i>
-                                <div class="file-info">
-                                    <span class="file-name">{{ report.get_file_name|default:"Attached File" }}</span>
-                                    <span class="file-size">
-                                        {% if report.attached_file.size %}
-                                        ({{ report.attached_file.size|filesizeformat }})
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <button type="button" 
-                                        class="download-btn"
-                                        onclick="downloadFile('{{ report.attached_file.url|escapejs }}', '{{ report.get_file_name|default:"download"|escapejs }}')">
-                                    <i class="fas fa-download"></i>
-                                    Download
-                                </button>
-                            </div>
-                        </div>
-                        {% endif %}
+<div class="file-attachment-section">
+    <div class="file-attachment">
+        <i class="fas fa-paperclip file-icon"></i>
+        <div class="file-info">
+            <span class="file-name">{{ report.get_file_name|default:"Attached File" }}</span>
+            <span class="file-size">
+                {% if report.attached_file.size %}
+                ({{ report.attached_file.size|filesizeformat }})
+                {% endif %}
+            </span>
+        </div>
+        <button type="button" 
+                class="download-btn"
+                onclick="downloadFile('{{ report.get_secure_file_url|escapejs }}', '{{ report.get_file_name|default:"download"|escapejs }}')">
+            <i class="fas fa-download"></i>
+            Download
+        </button>
+    </div>
+</div>
+{% endif %}
                     </div>
                     
                     <div class="report-footer">
@@ -390,12 +390,18 @@ function downloadFile(fileUrl, fileName) {
     const button = event.target;
     const originalText = button.innerHTML;
     
+    // Ensure HTTPS URL
+    let secureUrl = fileUrl;
+    if (fileUrl.startsWith('http://')) {
+        secureUrl = fileUrl.replace('http://', 'https://');
+    }
+    
     // Show loading state
     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
     button.disabled = true;
     
     // Method 1: Try fetch + blob approach first
-    fetch(fileUrl)
+    fetch(secureUrl)
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');
             return response.blob();
@@ -418,8 +424,8 @@ function downloadFile(fileUrl, fileName) {
         .catch(error => {
             console.log('Fetch method failed, trying alternative...', error);
             
-            // Method 2: Try Cloudinary attachment flag
-            const attachmentUrl = fileUrl + (fileUrl.includes('?') ? '&' : '?') + 'fl_attachment';
+            // Method 2: Try Cloudinary attachment flag with HTTPS
+            const attachmentUrl = secureUrl + (secureUrl.includes('?') ? '&' : '?') + 'fl_attachment';
             window.open(attachmentUrl, '_blank');
             
             showToast('Opening file in new tab', 'warning');
