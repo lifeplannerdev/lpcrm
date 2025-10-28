@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'tasks',
     'hob',
     'django_crontab',
+    'cloudinary',
 ]
 
 
@@ -181,6 +182,23 @@ STATIC_ROOT = os.path.join(BASE_DIR,'assets')
 # STATIC_ROOT = BASE_DIR / "static"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+
+
+
+# Import and configure Cloudinary
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+# Configure with your credentials from the Cloudinary Dashboard
+cloudinary.config( 
+    cloud_name = "dzmvrjvfs",
+    api_key = "529255454263344", 
+    api_secret = "TwM8oZiBNiLwdYwDjnPekSvSEXU"  # Keep this secret!
+)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

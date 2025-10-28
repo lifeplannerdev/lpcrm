@@ -2,6 +2,8 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.db import models
 from django.utils import timezone
 from django.db import models
+from cloudinary.models import CloudinaryField
+import os
 
 class User(AbstractUser):
     ROLE_CHOICES = [
@@ -65,13 +67,21 @@ class DailyReport(models.Model):
         verbose_name="Daily Update",
         help_text="Share your daily progress and updates"
     )
+    # Cloudinary field for file uploads
+    attached_file = CloudinaryField(
+        resource_type='auto',  # Handles any file type
+        folder='daily_reports/attachments',
+        null=True,
+        blank=True,
+        verbose_name="Attached File",
+        help_text="Upload any relevant file (optional)"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     report_date = models.DateField(default=timezone.now)
     
     class Meta:
         ordering = ['-report_date', '-created_at']
-
         verbose_name = "Daily Report"
         verbose_name_plural = "Daily Reports"
     
@@ -81,3 +91,10 @@ class DailyReport(models.Model):
     @property
     def is_today_report(self):
         return self.report_date == timezone.now().date()
+    
+    def get_file_name(self):
+        """Returns the original file name"""
+        if self.attached_file:
+            # Cloudinary stores original filename in metadata
+            return os.path.basename(self.attached_file.public_id)
+        return None

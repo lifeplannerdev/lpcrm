@@ -27,6 +27,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.utils import timezone
 from .models import DailyReport
+import traceback
 from .forms import DailyReportForm
 
 
@@ -1181,9 +1182,44 @@ def staff_reports_page(request):
             heading = request.POST.get('heading')
             report_text = request.POST.get('report_text')
             report_date = request.POST.get('report_date')
+            attached_file = request.FILES.get('attached_file')
+            
+            # Validate required fields
+            if not all([name, heading, report_text, report_date]):
+                return JsonResponse({
+                    'status': 'error', 
+                    'message': 'All fields are required'
+                }, status=400)
+            
+            # Validate file size if provided (10MB limit)
+            if attached_file:
+                if attached_file.size > 10 * 1024 * 1024:  # 10MB
+                    return JsonResponse({
+                        'status': 'error', 
+                        'message': 'File size too large. Maximum 10MB allowed.'
+                    }, status=400)
+                
+                # Validate file types
+                allowed_types = [
+                    'application/pdf',
+                    'application/msword',
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'application/vnd.ms-excel',
+                    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'image/jpeg',
+                    'image/jpg',
+                    'image/png',
+                    'text/plain'
+                ]
+                
+                if attached_file.content_type not in allowed_types:
+                    return JsonResponse({
+                        'status': 'error', 
+                        'message': 'File type not allowed. Please upload PDF, Word, Excel, Image, or Text files.'
+                    }, status=400)
             
             # Create the report
-            report = DailyReport.objects.create(
+            report = DailyReport(
                 user=request.user,
                 name=name,
                 heading=heading,
@@ -1191,14 +1227,27 @@ def staff_reports_page(request):
                 report_date=report_date
             )
             
+            # Handle file upload - Cloudinary will process this automatically
+            if attached_file:
+                report.attached_file = attached_file
+            
+            report.save()
+            
             return JsonResponse({
                 'status': 'success', 
                 'message': 'Report created successfully',
-                'report_id': report.id
+                'report_id': report.id,
+                'has_file': bool(attached_file)
             })
             
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+            import traceback
+            error_details = traceback.format_exc()
+            print("Error creating report:", error_details)
+            return JsonResponse({
+                'status': 'error', 
+                'message': f'Failed to create report: {str(e)}'
+            }, status=500)
     
     # GET request - show the reports page
     reports = DailyReport.objects.filter(user=request.user).order_by('-report_date')
@@ -1223,6 +1272,9 @@ def get_report_details(request, report_id):
             'report_date': report.report_date.isoformat(),
             'created_at': report.created_at.isoformat(),
             'updated_at': report.updated_at.isoformat(),
+            'attached_file': bool(report.attached_file),  # Add file info
+            'file_url': report.attached_file.url if report.attached_file else None,
+            'file_name': report.get_file_name() if report.attached_file else None,
         }
         
         return JsonResponse(report_data)
@@ -1242,6 +1294,8 @@ def update_report(request, report_id):
         heading = request.POST.get('heading')
         report_text = request.POST.get('report_text')
         report_date = request.POST.get('report_date')
+        attached_file = request.FILES.get('attached_file')
+        remove_existing_file = request.POST.get('remove_existing_file') == 'true'
         
         # Update report fields
         if name:
@@ -1252,6 +1306,17 @@ def update_report(request, report_id):
             report.report_text = report_text
         if report_date:
             report.report_date = report_date
+        
+        # Handle file operations
+        if remove_existing_file:
+            report.attached_file.delete(save=False)  # Remove current file
+            report.attached_file = None
+        
+        if attached_file:
+            # Remove old file if exists
+            if report.attached_file:
+                report.attached_file.delete(save=False)
+            report.attached_file = attached_file
         
         report.save()
         
