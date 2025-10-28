@@ -45,27 +45,26 @@
                         
                         <!-- File Download Section -->
                         {% if report.attached_file %}
-                        <div class="file-attachment-section">
-                            <div class="file-attachment">
-                                <i class="fas fa-paperclip file-icon"></i>
-                                <div class="file-info">
-                                    <span class="file-name">{{ report.get_file_name|default:"Attached File" }}</span>
-                                    <span class="file-size">
-                                        {% if report.attached_file.size %}
-                                        ({{ report.attached_file.size|filesizeformat }})
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                <a href="{{ report.attached_file.url }}" 
-                                   target="_blank" 
-                                   class="download-btn"
-                                   download>
-                                    <i class="fas fa-download"></i>
-                                    Download
-                                </a>
-                            </div>
-                        </div>
-                        {% endif %}
+<div class="file-attachment-section">
+    <div class="file-attachment">
+        <i class="fas fa-paperclip file-icon"></i>
+        <div class="file-info">
+            <span class="file-name">{{ report.get_file_name|default:"Attached File" }}</span>
+            <span class="file-size">
+                {% if report.attached_file.size %}
+                ({{ report.attached_file.size|filesizeformat }})
+                {% endif %}
+            </span>
+        </div>
+        <button type="button" 
+                class="download-btn"
+                onclick="downloadFile('{{ report.attached_file.url|escapejs }}', '{{ report.get_file_name|default:"download"|escapejs }}')">
+            <i class="fas fa-download"></i>
+            Download
+        </button>
+    </div>
+</div>
+{% endif %}
                     </div>
                     
                     <div class="report-footer">
