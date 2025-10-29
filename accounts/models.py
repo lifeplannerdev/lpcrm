@@ -109,7 +109,6 @@ class DailyReport(models.Model):
             return url
         return None    
 
-
 class MicroWork(models.Model):
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
@@ -167,4 +166,28 @@ class MicroWork(models.Model):
         """Calculate time taken to complete"""
         if self.completed_at and self.created_at:
             return self.completed_at - self.created_at
-        return None        
+        return None
+    
+    @property
+    def created_date_display(self):
+        """Formatted created date for display"""
+        return self.created_at.strftime('%b %d, %Y')
+    
+    @property
+    def created_time_display(self):
+        """Formatted created time for display"""
+        return self.created_at.strftime('%I:%M %p')
+    
+    @property
+    def completed_date_display(self):
+        """Formatted completed date for display"""
+        if self.completed_at:
+            return self.completed_at.strftime('%b %d, %Y')
+        return None
+    
+    @property
+    def completed_time_display(self):
+        """Formatted completed time for display"""
+        if self.completed_at:
+            return self.completed_at.strftime('%I:%M %p')
+        return None

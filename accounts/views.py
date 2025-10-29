@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import User
+import pytz
 from django.contrib import messages
 from leads.models import Lead
 from leads.models import RemarkHistory
@@ -1414,8 +1415,15 @@ def get_micro_works(request):
     try:
         micro_works = MicroWork.objects.filter(user=request.user).order_by('-created_at')
         
+        # India timezone
+        ist = pytz.timezone('Asia/Kolkata')
+        
         works_data = []
         for work in micro_works:
+            # Convert UTC times to IST
+            created_at_ist = work.created_at.astimezone(ist) if work.created_at else None
+            completed_at_ist = work.completed_at.astimezone(ist) if work.completed_at else None
+            
             works_data.append({
                 'id': work.id,
                 'job_title': work.job_title,
@@ -1423,7 +1431,11 @@ def get_micro_works(request):
                 'time_required': work.time_required,
                 'status': work.status,
                 'created_at': work.created_at.isoformat(),
+                'created_date_display': created_at_ist.strftime('%b %d, %Y') if created_at_ist else '',
+                'created_time_display': created_at_ist.strftime('%I:%M %p') if created_at_ist else '',
                 'completed_at': work.completed_at.isoformat() if work.completed_at else None,
+                'completed_date_display': completed_at_ist.strftime('%b %d, %Y') if completed_at_ist else None,
+                'completed_time_display': completed_at_ist.strftime('%I:%M %p') if completed_at_ist else None,
                 'is_completed': work.is_completed
             })
         
