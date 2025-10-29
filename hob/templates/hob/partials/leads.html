@@ -1,8 +1,8 @@
 <div class="table-container">
     <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">All Leads</h3>
-            <span id="visibleCount" style="color: var(--text-secondary); font-size: 0.9rem;">&nbsp;</span>
+           
+            <span id="visibleCount" style="font-size: 1.25rem;color: white;font-weight: 600;">&nbsp;</span>
         </div>
         
         <!-- Add Lead and Filters -->
@@ -36,6 +36,10 @@
                     <option value="{{ staff.id }}">{{ staff.get_full_name }}</option>
                 {% endfor %}
             </select>
+            <button class="add-leads-btn" id="importExcelBtn" style="background: var(--accent); color: var(--bg-primary); border-color: var(--accent);">
+                <i class="fas fa-file-excel"></i>
+                <span>Import Excel</span>
+            </button>
             <button class="add-leads-btn" id="addLeadBtn" style="background: var(--accent); color: var(--bg-primary); border-color: var(--accent);">
                 <i class="fas fa-plus"></i>
                 <span>Add Lead</span>
@@ -228,6 +232,68 @@
     </div>
 </div>
 
+<!-- Import Excel Modal -->
+<div id="importExcelModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Import Leads from Excel</h2>
+            <button class="modal-close" onclick="closeImportModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="importExcelForm" enctype="multipart/form-data" style="display: flex; flex-direction: column; flex: 1;">
+            {% csrf_token %}
+            <div style="padding: 1.5rem; flex: 1; overflow-y: auto; min-height: 0;">
+                <div class="form-field" style="margin-bottom: 1rem;">
+                    <div style="display: inline-flex; gap: 0.5rem; background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 0.25rem; border-radius: 0.5rem;">
+                        <button type="button" id="tabUpload" class="btn btn-notes" style="padding: 0.35rem 0.75rem;">Upload Excel</button>
+                        <button type="button" id="tabPaste" class="btn" style="padding: 0.35rem 0.75rem;">Paste Rows</button>
+                    </div>
+                </div>
+                <div class="form-field" id="uploadSection">
+                    <label for="excel_file">Select Excel File</label>
+                    <input type="file" id="excel_file" name="excel_file" accept=".xlsx, .xls" class="form-input" required>
+                    <div class="field-info" style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">
+                        <p>✅ Supported formats: .xlsx, .xls</p>
+                        <p>📝 Leads will be automatically assigned to you</p>
+                        <p>📥 Download <a href="{% url 'accounts:download_excel_template' %}" style="color: var(--accent); text-decoration: underline;">Excel template</a> for reference</p>
+                    </div>
+                </div>
+                <div class="form-field" id="pasteSection" style="display: none;">
+                    <label for="pasted_rows">Paste table rows (CSV/TSV)</label>
+                    <textarea id="pasted_rows" name="pasted_rows" class="form-textarea" placeholder="Paste rows with headers here (CSV or tab-separated)"></textarea>
+                    <div class="field-info" style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">
+                        <p>🧩 Required columns: name, phone (case-insensitive). Optional: email, location, program, priority, status, source, remarks</p>
+                        <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                            <button type="button" id="previewPasteBtn" class="btn btn-notes">Preview Pasted Rows</button>
+                            <button type="button" id="clearPasteBtn" class="btn">Clear</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="previewSection" style="display: none; margin-top: 1rem; margin-bottom: 1rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.5rem; color: var(--text-secondary);">Preview (First 5 rows)</h3>
+                    <div id="previewTable" class="table-scroll-vert" style="max-height: 200px; font-size: 0.75rem; background: var(--bg-secondary); border-radius: 8px; padding: 0.5rem; overflow-y: auto;"></div>
+                    <div id="previewStats" style="margin-top: 0.5rem; color: var(--text-secondary); font-size: 0.75rem;"></div>
+                </div>
+                <div id="importProgress" style="display: none; margin-top: 1rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: var(--text-secondary);">Importing...</span>
+                        <span id="progressText" style="color: var(--accent); font-weight: 600;">0%</span>
+                    </div>
+                    <div style="background: var(--bg-secondary); border-radius: 4px; height: 8px;">
+                        <div id="progressBar" style="background: var(--accent); height: 100%; width: 0%; border-radius: 4px; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-notes" onclick="closeImportModal()">Cancel</button>
+                <button type="submit" class="btn btn-contact" id="importButton">
+                    <i class="fas fa-upload mr-1"></i> Import Leads
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 <!-- Status suggestions shared with overview/status vocabulary -->
 <datalist id="status-suggestions">
     <option value="ENQUIRY">
@@ -731,6 +797,292 @@ document.addEventListener('DOMContentLoaded', function() {
             closeAddLeadModal();
         }
     });
+
+    // Import Excel setup
+    const importExcelBtn = document.getElementById('importExcelBtn');
+    const importExcelModal = document.getElementById('importExcelModal');
+    const importExcelForm = document.getElementById('importExcelForm');
+
+    function resetImportForm() {
+        const excelFileInput = document.getElementById('excel_file');
+        const pastedTextarea = document.getElementById('pasted_rows');
+        const previewSection = document.getElementById('previewSection');
+        const importProgress = document.getElementById('importProgress');
+        const importButton = document.getElementById('importButton');
+        if (excelFileInput) excelFileInput.value = '';
+        if (pastedTextarea) pastedTextarea.value = '';
+        if (previewSection) previewSection.style.display = 'none';
+        if (importProgress) importProgress.style.display = 'none';
+        if (importButton) {
+            importButton.disabled = false;
+            importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+        }
+    }
+
+    function closeImportModal() {
+        if (importExcelModal) {
+            importExcelModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            resetImportForm();
+        }
+    }
+
+    if (importExcelBtn) {
+        importExcelBtn.addEventListener('click', function() {
+            if (importExcelModal) {
+                importExcelModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                resetImportForm();
+            }
+        });
+    }
+
+    if (importExcelModal) {
+        importExcelModal.addEventListener('click', function(e) {
+            if (e.target === importExcelModal) {
+                closeImportModal();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && importExcelModal && importExcelModal.style.display === 'flex') {
+            closeImportModal();
+        }
+    });
+
+    if (importExcelForm) {
+        importExcelForm.addEventListener('submit', handleExcelImport);
+    }
+
+    // Tabs
+    const tabUpload = document.getElementById('tabUpload');
+    const tabPaste = document.getElementById('tabPaste');
+    const uploadSection = document.getElementById('uploadSection');
+    const pasteSection = document.getElementById('pasteSection');
+    function activateUploadTab() {
+        if (tabUpload) tabUpload.classList.add('active-tab');
+        if (tabPaste) tabPaste.classList.remove('active-tab');
+        if (uploadSection) uploadSection.style.display = 'block';
+        if (pasteSection) pasteSection.style.display = 'none';
+        const fileInput = document.getElementById('excel_file');
+        if (fileInput) fileInput.required = true;
+    }
+    function activatePasteTab() {
+        if (tabPaste) tabPaste.classList.add('active-tab');
+        if (tabUpload) tabUpload.classList.remove('active-tab');
+        if (uploadSection) uploadSection.style.display = 'none';
+        if (pasteSection) pasteSection.style.display = 'block';
+        const fileInput = document.getElementById('excel_file');
+        if (fileInput) fileInput.required = false;
+    }
+    if (tabUpload && tabPaste) {
+        tabUpload.addEventListener('click', activateUploadTab);
+        tabPaste.addEventListener('click', activatePasteTab);
+        activateUploadTab();
+    }
+
+    // Preview file
+    const excelFileInput = document.getElementById('excel_file');
+    if (excelFileInput) {
+        excelFileInput.addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                previewExcelFile(this.files[0]);
+            }
+        });
+    }
+
+    // Preview pasted data
+    const previewPasteBtn = document.getElementById('previewPasteBtn');
+    const clearPasteBtn = document.getElementById('clearPasteBtn');
+    const pastedTextarea = document.getElementById('pasted_rows');
+    if (previewPasteBtn) {
+        previewPasteBtn.addEventListener('click', function() {
+            const pastedData = pastedTextarea ? pastedTextarea.value : '';
+            previewPastedData(pastedData);
+        });
+    }
+    if (clearPasteBtn) {
+        clearPasteBtn.addEventListener('click', function() {
+            if (pastedTextarea) pastedTextarea.value = '';
+            const previewSection = document.getElementById('previewSection');
+            if (previewSection) previewSection.style.display = 'none';
+        });
+    }
+
+    // Helpers
+    function displayPreview(previewData, stats) {
+        const previewTable = document.getElementById('previewTable');
+        const previewStats = document.getElementById('previewStats');
+        if (!previewTable) return;
+        let tableHTML = `
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem;">
+                <thead>
+                    <tr style="background: var(--bg-secondary);">
+                        ${previewData.headers.map(header => `<th style="padding: 0.5rem; border: 1px solid var(--border-color); text-align: left;">${header}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    ${previewData.rows.map(row => `
+                        <tr>
+                            ${row.map(cell => `<td style="padding: 0.5rem; border: 1px solid var(--border-color);">${cell || ''}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        previewTable.innerHTML = tableHTML;
+        if (previewStats) {
+            let statsHTML = `
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <div><strong>Total rows:</strong> ${stats.total_rows}</div>
+                    <div style="color: #22c55e;"><strong>Valid rows:</strong> ${stats.valid_rows}</div>
+                    ${stats.invalid_rows > 0 ? `<div style="color: #f59e0b;"><strong>Invalid rows:</strong> ${stats.invalid_rows}</div>` : ''}
+                </div>
+            `;
+            previewStats.innerHTML = statsHTML;
+        }
+    }
+
+    function previewExcelFile(file) {
+        const previewSection = document.getElementById('previewSection');
+        const previewTable = document.getElementById('previewTable');
+        const previewStats = document.getElementById('previewStats');
+        if (!previewSection || !previewTable) return;
+        previewSection.style.display = 'block';
+        previewTable.innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-secondary);">Loading preview...</div>';
+        if (previewStats) previewStats.innerHTML = '';
+        const formData = new FormData();
+        formData.append('excel_file', file);
+        formData.append('preview_only', 'true');
+        fetch("{% url 'accounts:import_leads_excel' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        }).then(r => {
+            if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+            return r.json();
+        }).then(data => {
+            if (data.status === 'success') {
+                displayPreview(data.preview_data, data.stats);
+            } else {
+                previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error: ${data.message}</div>`;
+            }
+        }).catch(error => {
+            previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error loading preview: ${error.message}</div>`;
+        });
+    }
+
+    function previewPastedData(text) {
+        const previewSection = document.getElementById('previewSection');
+        const previewTable = document.getElementById('previewTable');
+        const previewStats = document.getElementById('previewStats');
+        if (!text || !text.trim()) {
+            showHOBToast('Please paste some rows first', 'error');
+            return;
+        }
+        if (!previewSection || !previewTable) return;
+        previewSection.style.display = 'block';
+        previewTable.innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-secondary);">Parsing preview...</div>';
+        if (previewStats) previewStats.innerHTML = '';
+        const formData = new FormData();
+        formData.append('pasted_data', text);
+        formData.append('preview_only', 'true');
+        fetch("{% url 'accounts:import_leads_excel' %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        }).then(r => {
+            if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+            return r.json();
+        }).then(data => {
+            if (data.status === 'success') {
+                displayPreview(data.preview_data, data.stats);
+            } else {
+                previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error: ${data.message}</div>`;
+            }
+        }).catch(error => {
+            previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error loading preview: ${error.message}</div>`;
+        });
+    }
+
+    async function handleExcelImport(e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('excel_file');
+        const importButton = document.getElementById('importButton');
+        const importProgress = document.getElementById('importProgress');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const pastedTextarea = document.getElementById('pasted_rows');
+        const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+        const hasPasted = pastedTextarea && pastedTextarea.value.trim().length > 0;
+        if (!hasFile && !hasPasted) {
+            showHOBToast('Please select a file or paste rows to import', 'error');
+            return;
+        }
+        const formData = new FormData();
+        if (hasFile) {
+            formData.append('excel_file', fileInput.files[0]);
+        } else {
+            formData.append('pasted_data', pastedTextarea.value);
+        }
+        if (!importButton || !importProgress || !progressBar || !progressText) {
+            showHOBToast('Import system error - please refresh the page', 'error');
+            return;
+        }
+        importButton.disabled = true;
+        importButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Importing...';
+        importProgress.style.display = 'block';
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 5;
+            if (progress <= 90) {
+                progressBar.style.width = `${progress}%`;
+                progressText.textContent = `${progress}%`;
+            }
+        }, 200);
+        try {
+            const response = await fetch("{% url 'accounts:import_leads_excel' %}", {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            });
+            clearInterval(interval);
+            progressBar.style.width = '100%';
+            progressText.textContent = '100%';
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            if (data.status === 'success') {
+                showHOBToast(`Successfully imported ${data.imported_count} leads! They are now assigned to you.`, 'success');
+                setTimeout(() => {
+                    closeImportModal();
+                    if (typeof window.loadTabContent === 'function') {
+                        window.loadTabContent('leads');
+                    } else {
+                        window.location.reload();
+                    }
+                }, 1500);
+            } else {
+                showHOBToast(`Import failed: ${data.message}`, 'error');
+                importButton.disabled = false;
+                importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+            }
+        } catch (error) {
+            clearInterval(interval);
+            showHOBToast(`Import error: ${error.message}`, 'error');
+            importButton.disabled = false;
+            importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+        }
+    }
 });
 </script>
 
