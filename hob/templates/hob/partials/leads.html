@@ -36,7 +36,7 @@
                     <option value="{{ staff.id }}">{{ staff.get_full_name }}</option>
                 {% endfor %}
             </select>
-            <button class="add-leads-btn" id="importExcelBtn" style="background: var(--accent); color: var(--bg-primary); border-color: var(--accent);">
+            <button class="add-leads-btn" id="importExcelBtn" onclick="openImportModal()" style="background: var(--accent); color: var(--bg-primary); border-color: var(--accent);">
                 <i class="fas fa-file-excel"></i>
                 <span>Import Excel</span>
             </button>
@@ -287,7 +287,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-notes" onclick="closeImportModal()">Cancel</button>
-                <button type="submit" class="btn btn-contact" id="importButton">
+                <button type="button" class="btn btn-contact" id="importButton" onclick="globalHandleExcelImport(event)">
                     <i class="fas fa-upload mr-1"></i> Import Leads
                 </button>
             </div>
@@ -767,6 +767,41 @@ async function handleAddLead() {
     }
 }
 
+// Global Import Excel helpers for dynamic tab content
+function resetImportForm() {
+    const excelFileInput = document.getElementById('excel_file');
+    const pastedTextarea = document.getElementById('pasted_rows');
+    const previewSection = document.getElementById('previewSection');
+    const importProgress = document.getElementById('importProgress');
+    const importButton = document.getElementById('importButton');
+    if (excelFileInput) excelFileInput.value = '';
+    if (pastedTextarea) pastedTextarea.value = '';
+    if (previewSection) previewSection.style.display = 'none';
+    if (importProgress) importProgress.style.display = 'none';
+    if (importButton) {
+        importButton.disabled = false;
+        importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+    }
+}
+
+function openImportModal() {
+    const importExcelModal = document.getElementById('importExcelModal');
+    if (importExcelModal) {
+        importExcelModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        resetImportForm();
+    }
+}
+
+function closeImportModal() {
+    const importExcelModal = document.getElementById('importExcelModal');
+    if (importExcelModal) {
+        importExcelModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        resetImportForm();
+    }
+}
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     filterLeads();
@@ -1084,6 +1119,76 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 });
+function globalHandleExcelImport(e) {
+    e && e.preventDefault && e.preventDefault();
+    const fileInput = document.getElementById('excel_file');
+    const importButton = document.getElementById('importButton');
+    const importProgress = document.getElementById('importProgress');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const pastedTextarea = document.getElementById('pasted_rows');
+    const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+    const hasPasted = pastedTextarea && pastedTextarea.value.trim().length > 0;
+    if (!hasFile && !hasPasted) {
+        showHOBToast('Please select a file or paste rows to import', 'error');
+        return;
+    }
+    const formData = new FormData();
+    if (hasFile) {
+        formData.append('excel_file', fileInput.files[0]);
+    } else {
+        formData.append('pasted_data', pastedTextarea.value);
+    }
+    if (!importButton || !importProgress || !progressBar || !progressText) {
+        showHOBToast('Import system error - please refresh the page', 'error');
+        return;
+    }
+    importButton.disabled = true;
+    importButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Importing...';
+    importProgress.style.display = 'block';
+    let progress = 0;
+    const interval = setInterval(() => {
+        progress += 5;
+        if (progress <= 90) {
+            progressBar.style.width = `${progress}%`;
+            progressText.textContent = `${progress}%`;
+        }
+    }, 200);
+    fetch("{% url 'accounts:import_leads_excel' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    }).then(async (response) => {
+        clearInterval(interval);
+        progressBar.style.width = '100%';
+        progressText.textContent = '100%';
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        if (data.status === 'success') {
+            showHOBToast(`Successfully imported ${data.imported_count} leads! They are now assigned to you.`, 'success');
+            setTimeout(() => {
+                closeImportModal();
+                if (typeof window.loadTabContent === 'function') {
+                    window.loadTabContent('leads');
+                } else {
+                    window.location.reload();
+                }
+            }, 1500);
+        } else {
+            showHOBToast(`Import failed: ${data.message}`, 'error');
+            importButton.disabled = false;
+            importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+        }
+    }).catch(error => {
+        clearInterval(interval);
+        showHOBToast(`Import error: ${error.message}`, 'error');
+        importButton.disabled = false;
+        importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
+    });
+}
 </script>
 
 <style>
