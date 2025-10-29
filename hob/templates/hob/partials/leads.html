@@ -233,7 +233,7 @@
 </div>
 
 <!-- Import Excel Modal -->
-<div id="importExcelModal" class="modal" style="display: none;">
+<div id="importExcelModal" class="modal">
     <div class="modal-content">
         <div class="modal-header">
             <h2 class="modal-title">Import Leads from Excel</h2>
@@ -265,8 +265,8 @@
                     <div class="field-info" style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 0.5rem;">
                         <p>🧩 Required columns: name, phone (case-insensitive). Optional: email, location, program, priority, status, source, remarks</p>
                         <div style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
-                            <button type="button" id="previewPasteBtn" class="btn btn-notes">Preview Pasted Rows</button>
-                            <button type="button" id="clearPasteBtn" class="btn">Clear</button>
+                            <button type="button" id="previewPasteBtn" class="btn btn-notes" onclick="previewPastedRowsGlobal()">Preview Pasted Rows</button>
+                            <button type="button" id="clearPasteBtn" class="btn" onclick="globalClearPaste()">Clear</button>
                         </div>
                     </div>
                 </div>
@@ -787,7 +787,7 @@ function resetImportForm() {
 function openImportModal() {
     const importExcelModal = document.getElementById('importExcelModal');
     if (importExcelModal) {
-        importExcelModal.style.display = 'flex';
+        importExcelModal.classList.add('show');
         document.body.style.overflow = 'hidden';
         resetImportForm();
     }
@@ -796,7 +796,7 @@ function openImportModal() {
 function closeImportModal() {
     const importExcelModal = document.getElementById('importExcelModal');
     if (importExcelModal) {
-        importExcelModal.style.display = 'none';
+        importExcelModal.classList.remove('show');
         document.body.style.overflow = 'auto';
         resetImportForm();
     }
@@ -881,7 +881,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && importExcelModal && importExcelModal.style.display === 'flex') {
+        if (e.key === 'Escape' && importExcelModal && importExcelModal.classList.contains('show')) {
             closeImportModal();
         }
     });
@@ -1189,6 +1189,81 @@ function globalHandleExcelImport(e) {
         importButton.innerHTML = '<i class="fas fa-upload mr-1"></i> Import Leads';
     });
 }
+function previewPastedRowsGlobal() {
+    const previewSection = document.getElementById('previewSection');
+    const previewTable = document.getElementById('previewTable');
+    const previewStats = document.getElementById('previewStats');
+    const pastedTextarea = document.getElementById('pasted_rows');
+    const text = pastedTextarea ? pastedTextarea.value : '';
+    if (!text || !text.trim()) {
+        showHOBToast('Please paste some rows first', 'error');
+        return;
+    }
+    if (!previewSection || !previewTable) return;
+    previewSection.style.display = 'block';
+    previewTable.innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-secondary);">Parsing preview...</div>';
+    if (previewStats) previewStats.innerHTML = '';
+    const formData = new FormData();
+    formData.append('pasted_data', text);
+    formData.append('preview_only', 'true');
+    fetch("{% url 'accounts:import_leads_excel' %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    }).then(r => {
+        if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+        return r.json();
+    }).then(data => {
+        if (data.status === 'success') {
+            // Reuse local helper if available, else build table here
+            const headers = data.preview_data.headers || [];
+            const rows = data.preview_data.rows || [];
+            let tableHTML = `
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem;">
+                    <thead>
+                        <tr style="background: var(--bg-secondary);">
+                            ${headers.map(h => `<th style="padding: 0.5rem; border: 1px solid var(--border-color); text-align: left;">${h}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows.map(row => `
+                            <tr>
+                                ${row.map(cell => `<td style=\"padding: 0.5rem; border: 1px solid var(--border-color);\">${cell || ''}</td>`).join('')}
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            previewTable.innerHTML = tableHTML;
+            if (previewStats) {
+                const stats = data.stats || { total_rows: 0, valid_rows: 0, invalid_rows: 0 };
+                let statsHTML = `
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <div><strong>Total rows:</strong> ${stats.total_rows}</div>
+                        <div style="color: #22c55e;"><strong>Valid rows:</strong> ${stats.valid_rows}</div>
+                        ${stats.invalid_rows > 0 ? `<div style="color: #f59e0b;"><strong>Invalid rows:</strong> ${stats.invalid_rows}</div>` : ''}
+                    </div>
+                `;
+                previewStats.innerHTML = statsHTML;
+            }
+        } else {
+            previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error: ${data.message}</div>`;
+        }
+    }).catch(error => {
+        previewTable.innerHTML = `<div style="color: #ef4444; text-align: center; padding: 1rem;">Error loading preview: ${error.message}</div>`;
+    });
+}
+
+function globalClearPaste() {
+    const pastedTextarea = document.getElementById('pasted_rows');
+    const previewSection = document.getElementById('previewSection');
+    if (pastedTextarea) pastedTextarea.value = '';
+    if (previewSection) previewSection.style.display = 'none';
+}
+
 </script>
 
 <style>
@@ -1382,10 +1457,14 @@ function globalHandleExcelImport(e) {
     height: 100%;
     background: rgba(0, 0, 0, 0.8);
     z-index: 10000;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(10px);
+}
+
+.modal.show {
+    display: flex;
 }
 
 .modal-content {
