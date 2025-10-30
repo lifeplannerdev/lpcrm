@@ -1046,7 +1046,7 @@ def delete_lead(request, lead_id):
     
     # Check if user is a Business Head (HOB) and redirect accordingly
     if request.user.role == 'BUSINESS_HEAD':
-        return redirect('hob:hob/partials/leads.html')
+        return redirect('hob:dashboard')
     elif request.user.role == 'ADM_MANAGER':
         return redirect('/dashboard')
     elif request.user.role == 'OPS':
