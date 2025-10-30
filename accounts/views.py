@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import User
 import pytz
+from tasks.models import Task
 from django.db.models import Q, Count
 from django.contrib import messages
 from leads.models import Lead
