@@ -731,7 +731,7 @@ def all_leads(request):
             Q(program__icontains=query) |
             Q(status__icontains=query) |
             Q(priority__icontains=query) |
-            Q(source__icontains=query)
+            Q(source__icontains=query)    
         ).order_by('-created_at')
     else:
         leads = Lead.objects.all().order_by('-created_at')
@@ -1046,7 +1046,7 @@ def delete_lead(request, lead_id):
     
     # Check if user is a Business Head (HOB) and redirect accordingly
     if request.user.role == 'BUSINESS_HEAD':
-        return redirect('hob:dashboard')
+        return redirect('hob:hob/partials/leads.html')
     elif request.user.role == 'ADM_MANAGER':
         return redirect('/dashboard')
     elif request.user.role == 'OPS':
