@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from .models import User
 import pytz
 from tasks.models import Task
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.contrib import messages
 from leads.models import Lead
 from leads.models import RemarkHistory
@@ -98,21 +98,26 @@ def is_cm(user):
     """Check if user has cm role"""
     return user.role == 'CM'
 
-
 @login_required
 @user_passes_test(lambda u: u.is_cm)
 def cm_dashboard(request):
     """CM dashboard view"""
     staff_members = User.objects.filter(is_active=True).annotate(
         total_leads=Count('assigned_leads'),
-        active_tasks=Count('tasks', filter=Q(tasks__status__in=['PENDING', 'COMPLETED']))
+        active_tasks=Count('tasks', filter=Q(tasks__status__in=['PENDING', 'IN_PROGRESS']))
     )
     tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
+    
+    # Calculate totals
+    total_leads = sum(staff.total_leads for staff in staff_members)
+    total_active_tasks = sum(staff.active_tasks for staff in staff_members)
+    
     return render(request, 'accounts/cm_dashboard.html', {
         'staff_members': staff_members, 
-        'tasks': tasks
+        'tasks': tasks,
+        'total_leads': total_leads,
+        'total_active_tasks': total_active_tasks,
     })
-    
    
 
 
