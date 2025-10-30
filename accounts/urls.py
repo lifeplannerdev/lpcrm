@@ -10,6 +10,7 @@ urlpatterns = [
     path('executive-dashboard/', views.admission_executive_dashboard, name='admission_executive_dashboard'),
     path('media/', views.media_dashboard, name='media_dashboard'),
     path('operations/', views.operations_dashboard, name='operations_dashboard'),
+    path('cm-dashboard/', views.cm_dashboard, name='cm_dashboard'),
     path('assign-lead/', views.assign_lead, name='assign_lead'),
     path('forward-to-processing/', views.forward_to_processing, name='forward_to_processing'),
     path('update-lead-field/', views.update_lead_field, name='update_lead_field'),
