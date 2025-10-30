@@ -14,7 +14,8 @@ class User(AbstractUser):
         ('PROCESSING', 'Processing Executive'),
         ('MEDIA', 'Media Team'),
         ('TRAINER', 'Trainer'),  
-        ('BUSINESS_HEAD', 'Business Head')
+        ('BUSINESS_HEAD', 'Business Head'),
+        ('CM','Center Manager')
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     team = models.CharField(max_length=50, blank=True)
@@ -43,6 +44,10 @@ class User(AbstractUser):
     @property
     def is_business_head(self):
         return self.role == 'BUSINESS_HEAD'    
+
+    @property 
+    def is_cm(self):   
+        return self.role == 'CM'
 
 
 

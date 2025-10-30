@@ -1,3 +1,4 @@
+from asyncio import tasks
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.views.decorators.http import require_POST
@@ -80,6 +81,8 @@ def quick_login(request):
             return redirect('trainers:dashboard')
         elif role == 'BUSINESS_HEAD':
             return redirect('hob:dashboard')
+        elif role == 'CM':
+            return redirect('accounts:cm_dashboard')    
 
         # Fallback
         return redirect('accounts:landing')
@@ -89,8 +92,26 @@ def quick_login(request):
         return redirect('accounts:landing')
 
 
+def is_cm(user):
+    """Check if user has cm role"""
+    return user.role == 'CM'
 
 
+@login_required
+@user_passes_test(lambda u: u.is_cm)
+def cm_dashboard(request):
+    """CM dashboard view"""
+    staff_members = User.objects.filter(is_active=True).annotate(
+        total_leads=Count('assigned_leads'),
+        active_tasks=Count('tasks', filter=Q(tasks__status__in=['PENDING', 'COMPLETED']))
+    )
+    tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
+    return render(request, 'accounts/cm_dashboard.html', {
+        'staff_members': staff_members, 
+        'tasks': tasks
+    })
+    
+   
 
 
 def is_admission_manager(user):
