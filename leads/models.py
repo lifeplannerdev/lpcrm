@@ -61,7 +61,7 @@ class Lead(models.Model):
     )
     
     program = models.CharField(
-        max_length=100, 
+        max_length=2000, 
         blank=True, 
         null=True,
         help_text="Enter the program name"
