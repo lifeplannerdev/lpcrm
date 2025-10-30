@@ -109,7 +109,7 @@ def cm_dashboard(request):
     tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
     
     # Calculate totals
-    total_leads = sum(staff.total_leads for staff in staff_members)
+    total_leads = Lead.objects.count()
     total_active_tasks = sum(staff.active_tasks for staff in staff_members)
     
     return render(request, 'accounts/cm_dashboard.html', {

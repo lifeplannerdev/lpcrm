@@ -100,8 +100,24 @@
       gap: 0.5rem;
       text-decoration: none;
     }
-    .action-btn:hover {
-      background: var(--border-hover);
+
+    .action-btn2 {
+      background: rgb(241, 242, 245);
+      color: black;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+    }
+    .action-btn2:hover {
+      background: rgb(98, 132, 224);
       border-color: var(--border-hover);
       transform: translateY(-1px);
       text-decoration: none;
@@ -373,6 +389,65 @@
       gap: 2rem;
       margin-bottom: 2rem;
     }
+    .task-status-select {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .task-status-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .toast-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .toast-notification.success {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%);
+    }
+    .toast-notification.error {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%);
+    }
+    .toast-notification.warning {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(245, 158, 11, 0.8) 100%);
+    }
+    .toast-notification.fade-out {
+      animation: slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    @keyframes slideIn {
+      from { 
+        transform: translateX(100%) scale(0.95); 
+        opacity: 0; 
+      }
+      to { 
+        transform: translateX(0) scale(1); 
+        opacity: 1; 
+      }
+    }
+    @keyframes slideOut {
+      from { 
+        transform: translateX(0) scale(1); 
+        opacity: 1; 
+      }
+      to { 
+        transform: translateX(100%) scale(0.95); 
+        opacity: 0; 
+      }
+    }
     @media (max-width: 1200px) {
       .dashboard-container { padding: 1rem; }
       .dashboard-header { flex-direction: column; align-items: flex-start; }
@@ -397,61 +472,20 @@
       <div class="header-controls">
         <a href="#" class="action-btn">
           <i class="fas fa-users"></i>
-          <span>Staff Management</span>
+          <span>{{ staff_members.count }} Staffs</span>
         </a>
-        <a href="#" class="action-btn">
-          <i class="fas fa-tasks"></i>
-          <span>Create Task</span>
+        <a href="{% url 'accounts:all_leads' %}" class="action-btn2">
+          <i class="fas fa-bullseye"></i>
+          <span>{{ total_leads }} Leads</span>
         </a>
-        <a href="#" class="action-btn">
+        <a href="{% url 'accounts:staff_reports' %}" class="action-btn2">
           <i class="fas fa-chart-bar"></i>
-          <span>Reports</span>
+          <span class="text-black">Reports</span>
         </a>
       </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon">
-            <i class="fas fa-users"></i>
-          </div>
-        </div>
-        <div class="stat-value">{{ staff_members.count }}</div>
-        <div class="stat-label">Total Staff Members</div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon">
-            <i class="fas fa-bullseye"></i>
-          </div>
-        </div>
-        <div class="stat-value">{{ total_leads }}</div>
-        <div class="stat-label">Total Leads</div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon">
-            <i class="fas fa-tasks"></i>
-          </div>
-        </div>
-        <div class="stat-value">{{ total_active_tasks }}</div>
-        <div class="stat-label">Active Tasks</div>
-      </div>
-      
-      <div class="stat-card">
-        <div class="stat-header">
-          <div class="stat-icon">
-            <i class="fas fa-clipboard-list"></i>
-          </div>
-        </div>
-        <div class="stat-value">{{ tasks.count }}</div>
-        <div class="stat-label">My Tasks</div>
-      </div>
-    </div>
+   
 
     <div class="dashboard-grid">
       <!-- Staff Overview -->
@@ -526,7 +560,10 @@
           {% if tasks %}
           <div style="padding: 1.5rem;">
             {% for task in tasks %}
-            <div class="task-item {% if task.priority == 'HIGH' %}task-priority-high{% elif task.priority == 'MEDIUM' %}task-priority-medium{% else %}task-priority-low{% endif %}">
+            <div class="task-item {% if task.priority == 'HIGH' %}task-priority-high{% elif task.priority == 'MEDIUM' %}task-priority-medium{% else %}task-priority-low{% endif %}" 
+                 data-task-id="{{ task.id }}" 
+                 data-status="{{ task.status }}" 
+                 data-priority="{{ task.priority }}">
               <div class="task-header">
                 <div class="task-title">{{ task.title }}</div>
                 <div class="task-badges">
@@ -545,6 +582,13 @@
                   • Due: {{ task.due_date|date:"M d, Y" }}
                   {% endif %}
                 </div>
+                <div class="task-actions">
+                  <select class="task-status-select" onchange="updateTaskStatus('{{ task.id }}', this.value)">
+                    <option value="PENDING" {% if task.status == 'PENDING' %}selected{% endif %}>Pending</option>
+                    <option value="IN_PROGRESS" {% if task.status == 'IN_PROGRESS' %}selected{% endif %}>In Progress</option>
+                    <option value="COMPLETED" {% if task.status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+                  </select>
+                </div>
               </div>
             </div>
             {% endfor %}
@@ -558,11 +602,86 @@
         </div>
       </div>
     </div>
-
-    
   </div>
 
   <script>
+    // CSRF helper function
+    function getCookie(name) {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    // Configure axios
+    axios.defaults.xsrfCookieName = 'csrftoken';
+    axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+    axios.defaults.headers.common['X-CSRFToken'] = getCookie('csrftoken');
+
+    // Task status update function
+    function updateTaskStatus(taskId, newStatus) {
+      console.log(`Updating task ${taskId} to status: ${newStatus}`);
+      
+      axios.post(`/tasks/${taskId}/update-status/`, 
+        JSON.stringify({ 
+          status: newStatus, 
+          notes: '' 
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        }
+      )
+      .then(response => {
+        if (response.data.status === 'success') {
+          showToast('Task status updated successfully', 'success');
+          
+          // Update the task status badge visually
+          const taskItem = document.querySelector(`[data-task-id="${taskId}"]`);
+          if (taskItem) {
+            const statusBadge = taskItem.querySelector('.task-status');
+            const statusSelect = taskItem.querySelector('.task-status-select');
+            
+            // Update badge
+            statusBadge.textContent = newStatus.replace('_', ' ');
+            statusBadge.className = `task-status ${newStatus.toLowerCase()}`;
+            
+            // Update data attribute
+            taskItem.dataset.status = newStatus;
+            
+            // Update select value
+            statusSelect.value = newStatus;
+            
+            // Update priority border if task is completed
+            if (newStatus === 'COMPLETED') {
+              taskItem.classList.remove('task-priority-high', 'task-priority-medium', 'task-priority-low');
+              taskItem.style.borderLeftColor = '#22c55e';
+            }
+          }
+        } else {
+          showToast('Error updating task: ' + response.data.message, 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error updating task:', error);
+        showToast('Failed to update task status', 'error');
+      });
+    }
+
+    // Toast notification function
+    function showToast(message, type) {
+      const toast = document.createElement('div');
+      toast.className = `toast-notification ${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
     // Add interactive effects
     document.addEventListener('DOMContentLoaded', function() {
       // Add click effects to staff rows
@@ -579,9 +698,12 @@
       const taskItems = document.querySelectorAll('.task-item');
       taskItems.forEach(item => {
         item.style.cursor = 'pointer';
-        item.addEventListener('click', function() {
-          // Add task detail navigation logic here
-          console.log('Task item clicked');
+        item.addEventListener('click', function(e) {
+          // Don't trigger if clicking on the status select
+          if (!e.target.classList.contains('task-status-select')) {
+            // Add task detail navigation logic here
+            console.log('Task item clicked');
+          }
         });
       });
 
@@ -595,7 +717,26 @@
           this.style.transform = 'translateY(0)';
         });
       });
+
+      // Add visual feedback for task status changes
+      const statusSelects = document.querySelectorAll('.task-status-select');
+      statusSelects.forEach(select => {
+        select.addEventListener('change', function() {
+          // Visual feedback that change is being processed
+          const originalColor = this.style.backgroundColor;
+          this.style.backgroundColor = 'rgba(59, 130, 246, 0.3)';
+          setTimeout(() => {
+            this.style.backgroundColor = originalColor;
+          }, 500);
+        });
+      });
     });
+
+    // Auto-refresh tasks every 30 seconds (optional)
+    setInterval(() => {
+      // You can implement auto-refresh here if needed
+      // location.reload(); or make an AJAX call to refresh tasks
+    }, 30000);
   </script>
 </body>
 </html>
