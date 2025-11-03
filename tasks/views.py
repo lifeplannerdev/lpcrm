@@ -10,6 +10,11 @@ from .forms import TaskForm, TaskUpdateForm
 from accounts.models import User
 
 
+def is_business_head(user):
+    """Check if user is business head or higher"""
+    return user.role in ['BUSINESS_HEAD', 'ADMIN', 'OPS']
+
+
 
 
 
@@ -124,4 +129,87 @@ def task_detail(request, task_id):
         'updates': updates,
     }
     return render(request, 'tasks/task_detail.html', context)
+
+@login_required
+def all_assigned_tasks_ajax(request):
+    """AJAX endpoint to get all tasks assigned by the current user (for Operations/Business Head)"""
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+    
+    try:
+        # Get tasks assigned by the current user (for managers/ops to see tasks they created)
+        tasks = Task.objects.filter(assigned_by=request.user).order_by('-priority', '-created_at')
+        
+        # Convert tasks to JSON-serializable format
+        tasks_data = []
+        for task in tasks:
+            tasks_data.append({
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'status': task.status,
+                'priority': task.priority,
+                'deadline': task.deadline.strftime('%b %d, %Y %I:%M %p'),
+                'overdue_days': task.overdue_days if task.status == 'OVERDUE' else 0,
+                'is_overdue': task.status == 'OVERDUE',
+                'assigned_to_name': task.assigned_to.get_full_name() or task.assigned_to.username,
+                'assigned_by': task.assigned_by.get_full_name() or task.assigned_by.username,
+                'created_at': task.created_at.strftime('%b %d, %Y'),
+            })
+        
+        return JsonResponse({
+            'status': 'success',
+            'tasks': tasks_data,
+            'total_tasks': len(tasks_data)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@require_POST
+def create_task_ajax(request):
+    """Create a new task via AJAX"""
+    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+        return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+    
+    try:
+        data = json.loads(request.body)
+        
+        # Get the assigned user
+        assigned_to_user = User.objects.get(id=data.get('assigned_to'))
+        
+        # Create the task
+        task = Task.objects.create(
+            title=data.get('title'),
+            description=data.get('description', ''),
+            assigned_by=request.user,
+            assigned_to=assigned_to_user,
+            priority=data.get('priority', 'MEDIUM'),
+            deadline=data.get('deadline')
+        )
+        
+        # Create initial task update
+        TaskUpdate.objects.create(
+            task=task,
+            updated_by=request.user,
+            previous_status='PENDING',
+            new_status='PENDING',
+            notes=f'Task created by {request.user.get_full_name()}'
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Task created successfully!',
+            'task_id': task.id
+        })
+        
+    except User.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Assigned user not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+def is_business_head(user):
+    """Check if user is business head or higher"""
+    return user.role in ['BUSINESS_HEAD', 'ADMIN', 'OPS']
 

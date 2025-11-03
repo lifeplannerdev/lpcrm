@@ -585,6 +585,57 @@
     .task-error { color: #ef4444; }
     .task-count { background: var(--accent); color: var(--bg-primary); border-radius: 50%; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem; }
     @media (max-width: 768px) { .task-sidebar { width: 100%; right: -100%; } }
+
+    /* Task Assignment Sidebar (slides from left) */
+    .task-assignment-sidebar {
+      position: fixed;
+      top: 0;
+      left: -400px;
+      width: 400px;
+      height: 100vh;
+      background: var(--card-bg);
+      border-right: 1px solid var(--border-color);
+      z-index: 10000;
+      transition: left 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .task-assignment-sidebar.active { left: 0; }
+
+    .task-assignment-sidebar .task-sidebar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      gap: 1rem;
+    }
+
+    .add-task-btn {
+      background: var(--accent);
+      color: var(--bg-primary);
+      border: none;
+      border-radius: 6px;
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      width: 36px;
+      height: 36px;
+    }
+
+    .add-task-btn:hover {
+      background: var(--accent-hover);
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 768px) { .task-assignment-sidebar { width: 100%; left: -100%; } }
     
   </style>
 </head>
@@ -599,9 +650,13 @@
             <span>View Leads</span>
           </a></button>
           <button class="add-leads-btn" id="tasksBtn" style="margin-left: 0.5rem;">
-            <i class="fas fa-tasks"></i>
+            <i class="fa-solid fa-circle-user"></i>
             <span>My Tasks</span>
-            <span id="taskCount" class="task-count" style="display: none;">0</span>
+            
+          </button>
+          <button class="add-leads-btn" id="assignTasksBtn" style="margin-left: 0.5rem;">
+            <i class="fas fa-tasks"></i>
+            <span>Assign Tasks</span>
           </button>
           <button class="add-leads-btn" ><a href="{% url 'accounts:staff_reports' %}"  style="margin-left: 0.5rem;">
             <i class="fas fa-table"></i>
@@ -666,7 +721,7 @@
       </div>
     </div>
 
-  <!-- Task Sidebar -->
+  <!-- Task Sidebar (My Tasks) -->
   <div id="taskSidebar" class="task-sidebar">
     <div class="task-sidebar-header">
       <h3>My Tasks</h3>
@@ -694,6 +749,101 @@
       <div class="task-list" id="taskList">
         <!-- Tasks will be loaded here -->
       </div>
+    </div>
+  </div>
+
+  <!-- Task Assignment Sidebar -->
+  <div id="taskAssignmentSidebar" class="task-assignment-sidebar">
+    <div class="task-sidebar-header">
+      <h3>Task Assignment</h3>
+      <button class="add-task-btn" onclick="openCreateTaskModal()" title="Create New Task">
+        <i class="fas fa-plus"></i>
+      </button>
+      <button class="task-close-btn" onclick="closeTaskAssignmentSidebar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="task-sidebar-content">
+      <div class="task-filters">
+        <select id="assignmentStatusFilter" class="task-filter" onchange="filterAssignedTasks()">
+          <option value="">All Tasks</option>
+          <option value="PENDING">Pending</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="COMPLETED">Completed</option>
+          <option value="OVERDUE">Overdue</option>
+        </select>
+        <select id="assignmentPriorityFilter" class="task-filter" onchange="filterAssignedTasks()">
+          <option value="">All Priorities</option>
+          <option value="LOW">Low</option>
+          <option value="MEDIUM">Medium</option>
+          <option value="HIGH">High</option>
+          <option value="URGENT">Urgent</option>
+        </select>
+      </div>
+      <div class="task-list" id="assignedTaskList">
+        <!-- Assigned tasks will be loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Task Modal -->
+  <div id="createTaskModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 10001; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+    <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+        <h2 class="modal-title" style="font-size: 1.5rem; font-weight: 600; margin: 0;">Create New Task</h2>
+        <button class="modal-close" onclick="closeCreateTaskModal()" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 8px;">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <form id="createTaskForm" onsubmit="handleCreateTask(event)">
+        <div class="modal-body" style="padding: 1.5rem;">
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label class="form-label" for="taskTitle" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Title *</label>
+            <input type="text" id="taskTitle" class="form-control" required placeholder="Enter task title" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); font-size: 1rem; transition: border 0.2s ease;">
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label class="form-label" for="taskDescription" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Description *</label>
+            <textarea id="taskDescription" class="form-control form-textarea" required placeholder="Enter task description" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); font-size: 1rem; resize: vertical; min-height: 100px;"></textarea>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label class="form-label" for="taskAssignedTo" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Assign To *</label>
+            <select id="taskAssignedTo" class="form-control" required style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); font-size: 1rem;">
+              <option value="">Select team member</option>
+              {% for exec in admission_executives %}
+                <option value="{{ exec.id }}">
+                  {{ exec.get_full_name }} - {{ exec.get_role_display }}
+                </option>
+              {% endfor %}
+              {% for mgr in admission_managers %}
+                <option value="{{ mgr.id }}">
+                  {{ mgr.get_full_name }} - {{ mgr.get_role_display }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label class="form-label" for="taskPriority" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Priority</label>
+            <select id="taskPriority" class="form-control" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); font-size: 1rem;">
+              <option value="LOW">Low</option>
+              <option value="MEDIUM" selected>Medium</option>
+              <option value="HIGH">High</option>
+              <option value="URGENT">Urgent</option>
+            </select>
+          </div>
+          
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label class="form-label" for="taskDeadline" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Deadline *</label>
+            <input type="datetime-local" id="taskDeadline" class="form-control" required style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); font-size: 1rem;">
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 1rem; padding: 1.5rem; border-top: 1px solid var(--border-color);">
+          <button type="button" class="btn btn-secondary" onclick="closeCreateTaskModal()" style="padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; border: none; cursor: pointer; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; border: none; cursor: pointer; background: var(--accent); color: var(--bg-primary);">Create Task</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1388,6 +1538,193 @@
       .then(data => { if (data.status === 'success') { loadTasks(); } else { alert('Error updating task: ' + data.message); } })
       .catch(() => alert('Error updating task'));
     }
+
+    // Task Assignment Sidebar functionality
+    const assignTasksBtn = document.getElementById('assignTasksBtn');
+    const taskAssignmentSidebar = document.getElementById('taskAssignmentSidebar');
+    const assignedTaskList = document.getElementById('assignedTaskList');
+
+    if (assignTasksBtn) {
+      assignTasksBtn.addEventListener('click', function() {
+        taskAssignmentSidebar.classList.add('active');
+        loadAssignedTasks();
+      });
+    }
+
+    function closeTaskAssignmentSidebar() {
+      taskAssignmentSidebar.classList.remove('active');
+    }
+
+    function loadAssignedTasks() {
+      assignedTaskList.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-secondary);"><i class="fas fa-spinner fa-spin"></i> Loading tasks...</div>';
+
+      fetch('/tasks/all-assigned-tasks/', {
+        method: 'GET',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': getCookie('csrftoken')
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          displayAssignedTasks(data.tasks);
+        } else {
+          assignedTaskList.innerHTML = '<div class="task-error">Error loading tasks</div>';
+        }
+      })
+      .catch(error => {
+        console.error('Error loading assigned tasks:', error);
+        assignedTaskList.innerHTML = '<div class="task-error">Error loading tasks</div>';
+      });
+    }
+
+    function displayAssignedTasks(tasks) {
+      if (!tasks || tasks.length === 0) {
+        assignedTaskList.innerHTML = '<div class="task-empty">No tasks assigned yet</div>';
+        return;
+      }
+
+      let html = '';
+      tasks.forEach(task => {
+        const priorityClass = task.priority.toLowerCase();
+        const statusClass = task.status.toLowerCase().replace('_', '-');
+        const isOverdue = task.status === 'OVERDUE' || task.is_overdue;
+        const daysOverdue = task.overdue_days || 0;
+
+        html += `
+          <div class="task-item ${statusClass} ${isOverdue ? 'overdue' : ''}" 
+               data-task-id="${task.id}" 
+               data-status="${task.status}" 
+               data-priority="${task.priority}">
+            <div class="task-header">
+              <h4 class="task-title">${task.title}</h4>
+              <div class="task-badges">
+                <span class="task-priority ${priorityClass}">${task.priority}</span>
+                <span class="task-status ${statusClass}">${task.status.replace('_', ' ')}</span>
+              </div>
+            </div>
+            <div class="task-description">${task.description || 'No description'}</div>
+            <div class="task-meta">
+              <div style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem;">
+                <div><strong>Assigned to:</strong> ${task.assigned_to_name}</div>
+                <div class="task-deadline">
+                  <i class="fas fa-clock"></i> ${task.deadline}
+                  ${isOverdue ? `<span class="overdue-text">(${daysOverdue} days overdue)</span>` : ''}
+                </div>
+              </div>
+            </div>
+          </div>`;
+      });
+
+      assignedTaskList.innerHTML = html;
+    }
+
+    function filterAssignedTasks() {
+      const statusFilter = document.getElementById('assignmentStatusFilter').value;
+      const priorityFilter = document.getElementById('assignmentPriorityFilter').value;
+      const taskItems = document.querySelectorAll('#assignedTaskList .task-item');
+
+      taskItems.forEach(item => {
+        const taskStatus = item.dataset.status || '';
+        const taskPriority = item.dataset.priority || '';
+
+        const statusMatch = !statusFilter || taskStatus === statusFilter;
+        const priorityMatch = !priorityFilter || taskPriority === priorityFilter;
+
+        if (statusMatch && priorityMatch) {
+          item.style.display = 'block';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    // Create/Edit Task Modal functions
+    function openCreateTaskModal() {
+      document.getElementById('createTaskModal').style.display = 'flex';
+      // Set min datetime to current time
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById('taskDeadline').min = now.toISOString().slice(0, 16);
+    }
+
+    function closeCreateTaskModal() {
+      document.getElementById('createTaskModal').style.display = 'none';
+      document.getElementById('createTaskForm').reset();
+    }
+
+    function handleCreateTask(event) {
+      event.preventDefault();
+
+      const formData = {
+        title: document.getElementById('taskTitle').value,
+        description: document.getElementById('taskDescription').value,
+        assigned_to: document.getElementById('taskAssignedTo').value,
+        priority: document.getElementById('taskPriority').value,
+        deadline: document.getElementById('taskDeadline').value
+      };
+
+      fetch('/tasks/create/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(formData)
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          showToast('Task created successfully!', 'success');
+          closeCreateTaskModal();
+          loadAssignedTasks(); // Reload tasks in assignment sidebar
+        } else {
+          showToast('Error creating task: ' + (data.message || 'Unknown error'), 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error creating task:', error);
+        showToast('Error creating task', 'error');
+      });
+    }
+
+    // Close modals when clicking outside
+    const createTaskModal = document.getElementById('createTaskModal');
+    if (createTaskModal) {
+      createTaskModal.addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeCreateTaskModal();
+        }
+      });
+    }
+
+    // Close modal with escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeCreateTaskModal();
+        closeTaskSidebar();
+        closeTaskAssignmentSidebar();
+      }
+    });
+
+    // Close sidebars when clicking outside
+    document.addEventListener('click', function(e) {
+      // Close My Tasks sidebar
+      if (taskSidebar && taskSidebar.classList.contains('active') &&
+          !taskSidebar.contains(e.target) &&
+          !tasksBtn.contains(e.target)) {
+        closeTaskSidebar();
+      }
+
+      // Close Task Assignment sidebar
+      if (taskAssignmentSidebar && taskAssignmentSidebar.classList.contains('active') &&
+          !taskAssignmentSidebar.contains(e.target) &&
+          !assignTasksBtn.contains(e.target)) {
+        closeTaskAssignmentSidebar();
+      }
+    });
     
     document.addEventListener('DOMContentLoaded', function() { loadTasks(); });
 </script>
