@@ -635,6 +635,16 @@
       transform: scale(1.05);
     }
 
+    .action-btn.edit-btn:hover {
+      background: rgba(59, 130, 246, 0.2);
+      color: #93c5fd;
+    }
+
+    .action-btn.delete-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
+      color: #fca5a5;
+    }
+
     @media (max-width: 768px) { .task-assignment-sidebar { width: 100%; left: -100%; } }
     
   </style>
@@ -1596,7 +1606,11 @@
           <div class="task-item ${statusClass} ${isOverdue ? 'overdue' : ''}" 
                data-task-id="${task.id}" 
                data-status="${task.status}" 
-               data-priority="${task.priority}">
+               data-priority="${task.priority}"
+               data-title="${task.title}"
+               data-description="${task.description || ''}"
+               data-assigned-to="${task.assigned_to_id}"
+               data-deadline="${task.deadline_raw}">
             <div class="task-header">
               <h4 class="task-title">${task.title}</h4>
               <div class="task-badges">
@@ -1612,6 +1626,14 @@
                   <i class="fas fa-clock"></i> ${task.deadline}
                   ${isOverdue ? `<span class="overdue-text">(${daysOverdue} days overdue)</span>` : ''}
                 </div>
+              </div>
+              <div class="task-actions" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                <button class="action-btn edit-btn" onclick="editAssignedTask(${task.id})" title="Edit Task" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="action-btn delete-btn" onclick="deleteAssignedTask(${task.id})" title="Delete Task" style="background: transparent; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.5rem; border-radius: 6px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">
+                  <i class="fas fa-trash"></i>
+                </button>
               </div>
             </div>
           </div>`;
@@ -1643,6 +1665,10 @@
     // Create/Edit Task Modal functions
     function openCreateTaskModal() {
       document.getElementById('createTaskModal').style.display = 'flex';
+      document.querySelector('#createTaskModal .modal-title').textContent = 'Create New Task';
+      document.querySelector('#createTaskModal button[type="submit"]').textContent = 'Create Task';
+      delete document.getElementById('createTaskForm').dataset.taskId;
+      
       // Set min datetime to current time
       const now = new Date();
       now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -1652,10 +1678,71 @@
     function closeCreateTaskModal() {
       document.getElementById('createTaskModal').style.display = 'none';
       document.getElementById('createTaskForm').reset();
+      delete document.getElementById('createTaskForm').dataset.taskId;
+    }
+
+    function editAssignedTask(taskId) {
+      // Find the task item in the sidebar
+      const taskItem = document.querySelector(`#assignedTaskList .task-item[data-task-id="${taskId}"]`);
+      if (!taskItem) return;
+
+      // Extract task data from data attributes
+      const title = taskItem.dataset.title;
+      const description = taskItem.dataset.description;
+      const priority = taskItem.dataset.priority;
+      const assignedTo = taskItem.dataset.assignedTo;
+      const deadline = taskItem.dataset.deadline;
+
+      // Open modal and populate with existing data
+      document.getElementById('createTaskModal').style.display = 'flex';
+      document.querySelector('#createTaskModal .modal-title').textContent = 'Edit Task';
+      document.querySelector('#createTaskModal button[type="submit"]').textContent = 'Update Task';
+      
+      // Fill form fields
+      document.getElementById('taskTitle').value = title;
+      document.getElementById('taskDescription').value = description;
+      document.getElementById('taskPriority').value = priority;
+      document.getElementById('taskAssignedTo').value = assignedTo;
+      document.getElementById('taskDeadline').value = deadline;
+      
+      // Store task ID for update
+      document.getElementById('createTaskForm').dataset.taskId = taskId;
+    }
+
+    function deleteAssignedTask(taskId) {
+      if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
+        return;
+      }
+
+      fetch(`/tasks/${taskId}/delete/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRFToken': getCookie('csrftoken')
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === 'success') {
+          showToast('Task deleted successfully!', 'success');
+          loadAssignedTasks(); // Reload tasks in assignment sidebar
+        } else {
+          showToast('Error deleting task: ' + (data.message || 'Unknown error'), 'error');
+        }
+      })
+      .catch(error => {
+        console.error('Error deleting task:', error);
+        showToast('Error deleting task', 'error');
+      });
     }
 
     function handleCreateTask(event) {
       event.preventDefault();
+
+      const form = document.getElementById('createTaskForm');
+      const taskId = form.dataset.taskId;
+      const isEdit = !!taskId;
 
       const formData = {
         title: document.getElementById('taskTitle').value,
@@ -1665,8 +1752,11 @@
         deadline: document.getElementById('taskDeadline').value
       };
 
-      fetch('/tasks/create/', {
-        method: 'POST',
+      const url = isEdit ? `/tasks/${taskId}/update/` : '/tasks/create/';
+      const method = 'POST';
+
+      fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'X-Requested-With': 'XMLHttpRequest',
@@ -1677,16 +1767,16 @@
       .then(response => response.json())
       .then(data => {
         if (data.status === 'success') {
-          showToast('Task created successfully!', 'success');
+          showToast(isEdit ? 'Task updated successfully!' : 'Task created successfully!', 'success');
           closeCreateTaskModal();
           loadAssignedTasks(); // Reload tasks in assignment sidebar
         } else {
-          showToast('Error creating task: ' + (data.message || 'Unknown error'), 'error');
+          showToast('Error ' + (isEdit ? 'updating' : 'creating') + ' task: ' + (data.message || 'Unknown error'), 'error');
         }
       })
       .catch(error => {
-        console.error('Error creating task:', error);
-        showToast('Error creating task', 'error');
+        console.error('Error ' + (isEdit ? 'updating' : 'creating') + ' task:', error);
+        showToast('Error ' + (isEdit ? 'updating' : 'creating') + ' task', 'error');
       });
     }
 
