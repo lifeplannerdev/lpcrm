@@ -75,21 +75,21 @@ def leads_tab(request):
     }
     return render(request, 'hob/partials/leads.html', context)
 
-@login_required
 @user_passes_test(is_business_head)
 def staff_tab(request):
     """Staff tab data"""
     staff_members = User.objects.filter(
         is_active=True
     ).annotate(
-        total_leads=Count('assigned_leads'),
-        active_tasks=Count('tasks', filter=Q(tasks__status__in=['PENDING', 'IN_PROGRESS']))
+        total_leads=Count('assigned_leads', distinct=True),  # ← Add this
+        active_tasks=Count('tasks', filter=Q(tasks__status__in=['PENDING', 'IN_PROGRESS']), distinct=True)
     )
     
     context = {
         'staff_members': staff_members,
     }
     return render(request, 'hob/partials/staff.html', context)
+
 
 
 @login_required
