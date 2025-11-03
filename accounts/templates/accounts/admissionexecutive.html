@@ -328,13 +328,13 @@
       border-bottom: none;
     }
     /* Column width definitions */
-    .bc-table th:nth-child(1), .bc-table td:nth-child(1) { width: 15%; } /* Name */
-    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 16%; } /* Phone */
-    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 18%; } /* Email */
-    .bc-table th:nth-child(4), .bc-table td:nth-child(4) { width: 12%; } /* Location */
-    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 10%; } /* Source */
-    .bc-table th:nth-child(6), .bc-table td:nth-child(6) { width: 12%; } /* Status */
-    .bc-table th:nth-child(7), .bc-table td:nth-child(7) { width: 12%; } /* Program */
+    .bc-table th:nth-child(1), .bc-table td:nth-child(1) { width: 60px; } /* Serial # */
+    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 18%; } /* Name */
+    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 15%; } /* Phone */
+    .bc-table th:nth-child(4), .bc-table td:nth-child(4) { width: 20%; } /* Remarks */
+    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 12%; } /* Source */
+    .bc-table th:nth-child(6), .bc-table td:nth-child(6) { width: 13%; } /* Status */
+    .bc-table th:nth-child(7), .bc-table td:nth-child(7) { width: 13%; } /* Program */
     .bc-table th:nth-child(8), .bc-table td:nth-child(8) { width: 9%; } /* Priority */
     
     .priority-select, .program-select {
@@ -951,7 +951,6 @@
               <th style="width: 60px;">#</th>
               <th>Name</th>
               <th>Phone</th>
-              <th>Email</th>
               <th>Remarks</th>
               <th>Source</th>
               <th>Status</th>
@@ -970,7 +969,6 @@
                 <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                 <td><a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">{{ lead.name }}</a></td>
                 <td>{{ lead.phone }}</td>
-                <td>{{ lead.email|default:"-" }}</td>
                 <td>
   <input type="text" class="remarks-input" 
          data-lead-id="{{ lead.id }}" 
@@ -1022,7 +1020,6 @@
                 <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                 <td><a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">{{ lead.name }}</a></td>
                 <td>{{ lead.phone }}</td>
-                <td>{{ lead.email|default:"-" }}</td>
                 <td>
   <input type="text" class="remarks-input" 
          data-lead-id="{{ lead.id }}" 
@@ -1074,7 +1071,6 @@
                 <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
                 <td><a href="{% url 'accounts:lead_details' lead.id %}" style="color: var(--accent); text-decoration: none; font-weight: 500;">{{ lead.name }}</a></td>
                 <td>{{ lead.phone }}</td>
-                <td>{{ lead.email|default:"-" }}</td>
                 <td>
   <input type="text" class="remarks-input" 
          data-lead-id="{{ lead.id }}" 
