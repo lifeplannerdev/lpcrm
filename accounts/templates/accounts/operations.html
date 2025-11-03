@@ -1049,66 +1049,73 @@
       });
     }
     // Handle free-text status input updates
-    document.querySelectorAll('.status-input').forEach(input => {
-      input.dataset.originalValue = input.value;
-      const commitChange = () => {
-        const leadId = input.dataset.leadId;
-        const newStatus = (input.value || '').trim();
-        if (!newStatus) {
-          alert('Status cannot be empty');
-          input.value = input.dataset.originalValue;
-          return;
-        }
-        axios.post('{% url "accounts:update_lead_field" %}', 
-          JSON.stringify({
-            lead_id: leadId,
-            field: 'status',
-            value: newStatus
-          }),
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest'
+    function setupStatusInputs() {
+      document.querySelectorAll('.status-input').forEach(input => {
+        input.dataset.originalValue = input.value;
+        const commitChange = () => {
+          const leadId = input.dataset.leadId;
+          const newStatus = (input.value || '').trim();
+          if (!newStatus) {
+            alert('Status cannot be empty');
+            input.value = input.dataset.originalValue;
+            return;
+          }
+          axios.post('{% url "accounts:update_lead_field" %}', 
+            JSON.stringify({
+              lead_id: leadId,
+              field: 'status',
+              value: newStatus
+            }),
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              }
             }
-          }
-        )
-        .then(response => {
-          input.dataset.originalValue = newStatus;
-          // Update row dataset for search and forward button state
-          const row = input.closest('tr');
-          if (row) {
-            row.dataset.status = newStatus.toLowerCase();
-            const forwardBtn = row.querySelector('.forward-btn');
-            if (forwardBtn) {
-              const processingStatus = row.dataset.processingStatus || 'pending';
-              forwardBtn.disabled = newStatus !== 'REGISTERED' || processingStatus === 'forwarded';
+          )
+          .then(response => {
+            console.log('Status updated successfully');
+            input.dataset.originalValue = newStatus;
+            // Update row dataset for search and forward button state
+            const row = input.closest('tr');
+            if (row) {
+              row.dataset.status = newStatus.toLowerCase();
+              const forwardBtn = row.querySelector('.forward-btn');
+              if (forwardBtn) {
+                const processingStatus = row.dataset.processingStatus || 'pending';
+                forwardBtn.disabled = newStatus !== 'REGISTERED' || processingStatus === 'forwarded';
+              }
             }
+            if (statsDropdown.classList.contains('active')) {
+              updateStats();
+            }
+            showToast('Status updated successfully', 'success');
+          })
+          .catch(error => {
+            console.error('Error updating status:', error.response?.data || error);
+            alert('Failed to update status. Please try again.');
+            input.value = input.dataset.originalValue;
+          });
+        };
+        // Save on blur
+        input.addEventListener('blur', commitChange);
+        // Save on Enter
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            commitChange();
+            input.blur();
           }
-          if (statsDropdown.classList.contains('active')) {
-            updateStats();
+          if (e.key === 'Escape') {
+            input.value = input.dataset.originalValue;
+            input.blur();
           }
-        })
-        .catch(error => {
-          console.error('Error updating status:', error.response?.data || error);
-          alert('Failed to update status. Please try again.');
-          input.value = input.dataset.originalValue;
         });
-      };
-      // Save on blur
-      input.addEventListener('blur', commitChange);
-      // Save on Enter
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          commitChange();
-          input.blur();
-        }
-        if (e.key === 'Escape') {
-          input.value = input.dataset.originalValue;
-          input.blur();
-        }
       });
-    });
+    }
+    
+    // Call this after DOM is loaded
+    setupStatusInputs();
     
     // Function to update search data attributes when fields change
     function updateRowSearchData(row, field, value) {
@@ -1166,16 +1173,21 @@
     }
 
     // Set up event listeners for all editable selects
-    document.querySelectorAll('.editable-select').forEach(select => {
-      // Store initial value
-      select.dataset.previousValue = select.value;
-      
-      select.addEventListener('change', function() {
-        handleFieldUpdate(this);
-        // Update the stored value
-        this.dataset.previousValue = this.value;
+    function setupEditableSelects() {
+      document.querySelectorAll('.editable-select').forEach(select => {
+        // Store initial value
+        select.dataset.previousValue = select.value;
+        
+        select.addEventListener('change', function() {
+          handleFieldUpdate(this);
+          // Update the stored value
+          this.dataset.previousValue = this.value;
         });
-    });
+      });
+    }
+    
+    // Call this after DOM is loaded
+    setupEditableSelects();
     
     // Handle forwarding to processing
     document.querySelectorAll('.forward-btn').forEach(button => {
@@ -1228,45 +1240,50 @@
     });
 
     // Update program via AJAX (now for text input)
-    document.querySelectorAll('.program-input').forEach(input => {
-      input.dataset.originalValue = input.value;
-      input.addEventListener('change', function() {
-        const leadId = this.dataset.leadId;
-        const newProgram = this.value;
-        
-        // Update the data attribute for search/stats
-        const row = this.closest('tr');
-        row.dataset.program = newProgram.toLowerCase();
-        
-        // Send update to server
-        axios.post('{% url "accounts:update_lead_field" %}', 
-          JSON.stringify({
-            lead_id: leadId,
-            field: 'program',
-            value: newProgram
-          }),
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          }
-        )
-        .then(response => {
-          console.log('Program updated successfully');
-          this.dataset.originalValue = newProgram;
+    function setupProgramInputs() {
+      document.querySelectorAll('.program-input').forEach(input => {
+        input.dataset.originalValue = input.value;
+        input.addEventListener('change', function() {
+          const leadId = this.dataset.leadId;
+          const newProgram = this.value;
           
-          // Update stats if dropdown is open
-          if (statsDropdown.classList.contains('active')) {
-            updateStats();
-          }
-        })
-        .catch(error => {
-          console.error('Error updating program:', error.response?.data || error);
-          this.value = this.dataset.originalValue;
+          // Update the data attribute for search/stats
+          const row = this.closest('tr');
+          row.dataset.program = newProgram.toLowerCase();
+          
+          // Send update to server
+          axios.post('{% url "accounts:update_lead_field" %}', 
+            JSON.stringify({
+              lead_id: leadId,
+              field: 'program',
+              value: newProgram
+            }),
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              }
+            }
+          )
+          .then(response => {
+            console.log('Program updated successfully');
+            this.dataset.originalValue = newProgram;
+            
+            // Update stats if dropdown is open
+            if (statsDropdown.classList.contains('active')) {
+              updateStats();
+            }
+          })
+          .catch(error => {
+            console.error('Error updating program:', error.response?.data || error);
+            this.value = this.dataset.originalValue;
+          });
         });
-        });
-    });
+      });
+    }
+    
+    // Call this after DOM is loaded
+    setupProgramInputs();
 
     // Store initial values for selects
     document.querySelectorAll('select').forEach(select => {
