@@ -469,6 +469,10 @@
                             if (window.filterLeads) window.filterLeads();
                             console.log('[HOB] Leads tab initialized');
                         }
+                        if (tabId === 'tasks') {
+                            if (window.initializeMyTasksSidebar) window.initializeMyTasksSidebar();
+                            console.log('[HOB] Tasks tab initialized');
+                        }
                     } catch (e) {
                         console.error('[HOB] Tab init error:', e);
                     }
