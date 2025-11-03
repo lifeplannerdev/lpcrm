@@ -1,9 +1,13 @@
 <div class="table-container">
-    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
         <div style="display: flex; align-items: baseline; gap: 0.75rem;">
             <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: 0.2px;">Daily Reports</h3>
             <span style="color: var(--text-secondary); font-size: 0.9rem;">Team daily updates</span>
         </div>
+        <button class="btn btn-primary" id="createReportBtn" style="background: var(--accent); color: var(--bg-primary); border: none; border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fas fa-plus"></i>
+            Add Report
+        </button>
     </div>
 
     <div style="padding: 1.5rem;">
@@ -384,7 +388,155 @@
 }
 </style>
 
+<!-- Create Report Modal -->
+<div id="createReportModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
+    <div class="modal-content" style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+            <h2 class="modal-title" style="font-size: 1.5rem; font-weight: 600; margin: 0;">Create Daily Report</h2>
+            <button class="modal-close" id="closeReportModalBtn" style="background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; border-radius: 8px;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="createReportForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="modal-body" style="padding: 1.5rem;">
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="reportName" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Report Name *</label>
+                    <input type="text" id="reportName" name="name" class="form-control" required placeholder="Enter report name" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); font-size: 1rem; transition: border 0.2s ease;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="reportHeading" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Heading *</label>
+                    <input type="text" id="reportHeading" name="heading" class="form-control" required placeholder="Brief summary" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); font-size: 1rem; transition: border 0.2s ease;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="reportText" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Daily Update *</label>
+                    <textarea id="reportText" name="report_text" class="form-control form-textarea" required placeholder="Share your daily progress and updates" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); font-size: 1rem; resize: vertical; min-height: 150px;"></textarea>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="reportDate" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Report Date *</label>
+                    <input type="date" id="reportDate" name="report_date" class="form-control" required style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); font-size: 1rem;">
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 1.5rem;">
+                    <label class="form-label" for="reportFile" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Attach File (Optional)</label>
+                    <input type="file" id="reportFile" name="attached_file" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; color: var(--text-primary); font-size: 1rem;">
+                    <small style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem; display: block;">Supported: PDF, Word, Excel, Images, Text (Max 10MB)</small>
+                </div>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 1rem; padding: 1.5rem; border-top: 1px solid var(--border-color);">
+                <button type="button" class="btn btn-secondary" id="cancelReportBtn" style="padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; border: none; cursor: pointer; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);">Cancel</button>
+                <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; border-radius: 8px; font-size: 0.9rem; font-weight: 500; border: none; cursor: pointer; background: var(--accent); color: var(--bg-primary);">
+                    <i class="fas fa-save"></i>
+                    Submit
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
+// Get CSRF token
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+// Open create report modal
+const createReportBtn = document.getElementById('createReportBtn');
+const createReportModal = document.getElementById('createReportModal');
+const closeReportModalBtn = document.getElementById('closeReportModalBtn');
+const cancelReportBtn = document.getElementById('cancelReportBtn');
+const createReportForm = document.getElementById('createReportForm');
+
+if (createReportBtn) {
+    createReportBtn.addEventListener('click', function() {
+        createReportModal.style.display = 'flex';
+        // Set today's date as default
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('reportDate').value = today;
+    });
+}
+
+function closeReportModal() {
+    createReportModal.style.display = 'none';
+    createReportForm.reset();
+}
+
+if (closeReportModalBtn) {
+    closeReportModalBtn.addEventListener('click', closeReportModal);
+}
+
+if (cancelReportBtn) {
+    cancelReportBtn.addEventListener('click', closeReportModal);
+}
+
+// Close modal when clicking outside
+if (createReportModal) {
+    createReportModal.addEventListener('click', function(e) {
+        if (e.target === createReportModal) {
+            closeReportModal();
+        }
+    });
+}
+
+// Close modal with escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && createReportModal.style.display === 'flex') {
+        closeReportModal();
+    }
+});
+
+// Handle form submission
+if (createReportForm) {
+    createReportForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+        submitBtn.disabled = true;
+        
+        const formData = new FormData(this);
+        
+        fetch('/staff-reports/', {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                showToast('Report created successfully!', 'success');
+                closeReportModal();
+                // Reload the reports tab
+                if (typeof loadTabContent === 'function') {
+                    loadTabContent('reports');
+                } else {
+                    // Fallback: reload the page
+                    window.location.reload();
+                }
+            } else {
+                showToast(data.message || 'Error creating report', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error creating report:', error);
+            showToast('Error creating report. Please try again.', 'error');
+        })
+        .finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+}
+
 // Enhanced download function with multiple fallbacks
 function downloadFile(fileUrl, fileName) {
     const button = event.target;
