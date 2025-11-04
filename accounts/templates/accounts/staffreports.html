@@ -391,126 +391,6 @@
       color: var(--text-secondary);
       font-style: italic;
     }
-
-    /* Micro Works specific styles */
-    .micro-work-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: all 0.2s ease;
-    }
-
-    .micro-work-card:hover {
-        border-color: var(--border-hover);
-        box-shadow: var(--shadow-medium);
-    }
-
-    .micro-work-card.completed {
-        border-left: 4px solid #10b981;
-        opacity: 0.8;
-    }
-
-    .micro-work-card.pending {
-        border-left: 4px solid #f59e0b;
-    }
-
-    .micro-work-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-    }
-
-    .micro-work-title {
-        font-weight: 600;
-        font-size: 1.1rem;
-        color: var(--text-primary);
-        margin-bottom: 0.5rem;
-    }
-
-    .micro-work-time {
-        background: var(--bg-secondary);
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        color: var(--text-secondary);
-        border: 1px solid var(--border-color);
-    }
-
-    .micro-work-description {
-        color: var(--text-secondary);
-        line-height: 1.5;
-        margin-bottom: 1rem;
-    }
-
-    .micro-work-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 1rem;
-        border-top: 1px solid var(--border-color);
-    }
-
-    .micro-work-status {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.85rem;
-    }
-
-    .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-weight: 500;
-        font-size: 0.75rem;
-    }
-
-    .status-pending {
-        background: rgba(245, 158, 11, 0.1);
-        color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-
-    .status-completed {
-        background: rgba(16, 185, 129, 0.1);
-        color: #10b981;
-        border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-
-    .micro-work-actions {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .btn-complete {
-        background: #10b981;
-        color: white;
-    }
-
-    .btn-complete:hover {
-        background: #059669;
-    }
-
-    .btn-complete:disabled {
-        background: var(--border-color);
-        color: var(--text-tertiary);
-        cursor: not-allowed;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 3rem;
-        color: var(--text-secondary);
-    }
-
-    .empty-state i {
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-
     @media (max-width: 1200px) {
       .dashboard-container { padding:1rem }
       .dashboard-header { flex-direction: column; align-items: flex-start }
@@ -540,20 +420,49 @@
           <i class="fas fa-arrow-left"></i>
           <span>Back</span>
         </button>
-        <button class="btn btn-primary" id="addReportBtn">
-          <i class="fas fa-plus"></i>
-          <span>Add Report</span>
-        </button>
       </div>
     </div>
 
     <div class="tabs-container">
-      <button class="tab active" data-tab="report-history">Report History</button>
-      <button class="tab" data-tab="micro-works">Micro Works</button>
+      <button class="tab active" data-tab="new-report">New Report</button>
+      <button class="tab" data-tab="report-history">Report History</button>
+    </div>
+
+    <!-- New Report Tab -->
+    <div id="new-report" class="tab-content active">
+      <div class="form-container">
+        <form id="dailyReportForm">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label" for="reportName">Report Name</label>
+            <input type="text" id="reportName" class="form-input" placeholder="Give a title to your daily report" required>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="reportHeading">Report Heading</label>
+            <input type="text" id="reportHeading" class="form-input" placeholder="Brief summary of your daily report" required>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="reportText">Daily Update</label>
+            <textarea id="reportText" class="form-textarea" placeholder="Share your daily progress and updates" required></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="reportDate">Report Date</label>
+            <input type="date" id="reportDate" class="form-input" required>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i>
+            <span>Submit Report</span>
+          </button>
+        </form>
+      </div>
     </div>
 
     <!-- Report History Tab -->
-    <div id="report-history" class="tab-content active">
+    <div id="report-history" class="tab-content">
       <div class="search-container">
         <div class="search-box">
           <i class="fas fa-search search-icon"></i>
@@ -601,9 +510,17 @@
                   </div>
                 </td>
                 <td>
-                  <button type="button" class="btn btn-secondary view-report" data-report-id="{{ report.id }}" data-url="{% url 'accounts:get_report_details' report.id %}">
+                  <button class="btn btn-secondary view-report" data-report-id="{{ report.id }}">
                     <i class="fas fa-eye"></i>
                     <span>View</span>
+                  </button>
+                  <button class="btn btn-primary edit-report" data-report-id="{{ report.id }}">
+                    <i class="fas fa-edit"></i>
+                    <span>Edit</span>
+                  </button>
+                  <button class="btn btn-secondary delete-report" data-report-id="{{ report.id }}" style="background: #ef4444; color: white;">
+                    <i class="fas fa-trash"></i>
+                    <span>Delete</span>
                   </button>
                 </td>
               </tr>
@@ -617,48 +534,17 @@
         </div>
       </div>
     </div>
-
-    <!-- Micro Works Tab -->
-    <div id="micro-works" class="tab-content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-        <div class="search-container">
-          <div class="search-box">
-            <i class="fas fa-search search-icon"></i>
-            <input type="text" id="searchMicroWorks" placeholder="Search micro works..." class="search-input">
-            <button id="clearSearchMicroWorks" class="clear-search" style="display: none;">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-        </div>
-        <button class="btn btn-primary" id="addMicroWorkBtn">
-          <i class="fas fa-plus"></i>
-          <span>Add Micro Work</span>
-        </button>
-      </div>
-      
-      <div id="microWorksContainer">
-        <div class="empty-state">
-          <i class="fas fa-tasks"></i>
-          <h3>No Micro Works Yet</h3>
-          <p>Get started by adding your first micro work task.</p>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Report Modal -->
-  <div id="reportModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10000; align-items: center; justify-content: center; backdrop-filter: blur(6px);">
-    <div style="background: var(--card-bg); border-radius: 16px; padding: 0; max-width: 800px; width: 92%; max-height: 88vh; overflow: hidden; border: 1px solid var(--border-color); position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
-      <div style="display:flex; align-items:center; justify-content: space-between; padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);">
-        <h2 id="modalTitle" style="color: var(--text-primary); font-size: 1.25rem; font-weight: 700; margin: 0;">Report</h2>
-        <div style="display:flex; gap:0.5rem; align-items:center;">
-          <button id="editReportBtn" class="btn btn-secondary"><i class="fas fa-edit"></i><span>Edit</span></button>
-          <button id="deleteReportBtn" class="btn btn-secondary" style="background:#ef4444; color:#fff"><i class="fas fa-trash"></i><span>Delete</span></button>
-          <button id="closeModal" class="btn btn-secondary" style="padding:0.4rem 0.6rem"><i class="fas fa-times"></i></button>
-        </div>
-      </div>
-      <div id="modalContent" style="padding: 1.25rem 1.25rem 1.5rem 1.25rem; overflow-y:auto; max-height: calc(88vh - 64px);">
-        <!-- Dynamic content here -->
+  <div id="reportModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center;">
+    <div style="background: var(--card-bg); border-radius: 16px; padding: 2rem; max-width: 800px; width: 90%; max-height: 90vh; overflow-y: auto; border: 1px solid var(--border-color); position: relative;">
+      <button id="closeModal" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer;">
+        <i class="fas fa-times"></i>
+      </button>
+      <h2 id="modalTitle" style="margin-bottom: 1.5rem; color: var(--text-primary);">Report Details</h2>
+      <div id="modalContent">
+        <!-- Report content will be loaded here -->
       </div>
     </div>
   </div>
@@ -674,301 +560,71 @@
     axios.defaults.xsrfCookieName = 'csrftoken';
     axios.defaults.xsrfHeaderName = 'X-CSRFToken';
     
-    // Tab switching functionality
+    // Tab functionality
     document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', function() {
-            // Remove active class from all tabs and content
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            
-            // Add active class to clicked tab and corresponding content
-            this.classList.add('active');
-            const tabId = this.getAttribute('data-tab');
-            document.getElementById(tabId).classList.add('active');
-            
-            // Load micro works when tab is activated
-            if (tabId === 'micro-works') {
-                loadMicroWorks();
-            }
-        });
+      tab.addEventListener('click', function() {
+        // Remove active class from all tabs
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        // Add active class to clicked tab
+        this.classList.add('active');
+        
+        // Show corresponding content
+        const tabId = this.getAttribute('data-tab');
+        document.getElementById(tabId).classList.add('active');
+      });
     });
-
-    // Open create modal
-    document.getElementById('addReportBtn').addEventListener('click', function() {
-      openCreateModal();
-    });
-
-    // Micro Works functionality
-    document.getElementById('addMicroWorkBtn').addEventListener('click', function() {
-        openMicroWorkModal();
-    });
-
-    function openCreateModal() {
-      const modal = document.getElementById('reportModal');
-      const title = document.getElementById('modalTitle');
-      const content = document.getElementById('modalContent');
-      title.textContent = 'Add Report';
-      document.getElementById('editReportBtn').style.display = 'none';
-      document.getElementById('deleteReportBtn').style.display = 'none';
-      content.innerHTML = `
-        <form id="modalReportForm" enctype="multipart/form-data">
-          {% csrf_token %}
-          <div class="form-group">
-            <label class="form-label" for="modalReportName">Report Name</label>
-            <input type="text" id="modalReportName" class="form-input" required placeholder="Give a title" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="modalReportHeading">Report Heading</label>
-            <input type="text" id="modalReportHeading" class="form-input" required placeholder="Brief summary" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="modalReportText">Daily Update</label>
-            <textarea id="modalReportText" class="form-textarea" required placeholder="Share your daily progress and updates"></textarea>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="modalReportDate">Report Date</label>
-            <input type="date" id="modalReportDate" class="form-input" required />
-          </div>
-          <!-- Add File Upload Field -->
-          <div class="form-group">
-            <label class="form-label" for="modalAttachedFile">
-              <i class="fas fa-paperclip"></i> Attach File (Optional)
-            </label>
-            <input type="file" id="modalAttachedFile" class="form-input" 
-                   accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt" />
-            <small style="color: var(--text-tertiary); font-size: 0.8rem;">
-              Supported formats: PDF, Word, Excel, Images, Text files
-            </small>
-          </div>
-          <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-            <button type="button" class="btn btn-secondary" id="cancelCreateBtn">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save</button>
-          </div>
-        </form>`;
-      modal.style.display = 'flex';
-
-      // Set default date
-      document.getElementById('modalReportDate').valueAsDate = new Date();
-
-      document.getElementById('cancelCreateBtn').addEventListener('click', () => modal.style.display = 'none');
-      document.getElementById('modalReportForm').addEventListener('submit', submitCreateReport);
-    }
-
-    function submitCreateReport(e) {
+    
+    // Set today's date as default for report date
+    document.getElementById('reportDate').valueAsDate = new Date();
+    
+    // Form submission - CREATE new report
+    document.getElementById('dailyReportForm').addEventListener('submit', function(e) {
       e.preventDefault();
+      
       const formData = new FormData();
-      formData.append('name', document.getElementById('modalReportName').value);
-      formData.append('heading', document.getElementById('modalReportHeading').value);
-      formData.append('report_text', document.getElementById('modalReportText').value);
-      formData.append('report_date', document.getElementById('modalReportDate').value);
-      
-      // Append file if selected
-      const fileInput = document.getElementById('modalAttachedFile');
-      if (fileInput.files[0]) {
-        formData.append('attached_file', fileInput.files[0]);
-      }
-      
+      formData.append('name', document.getElementById('reportName').value);
+      formData.append('heading', document.getElementById('reportHeading').value);
+      formData.append('report_text', document.getElementById('reportText').value);
+      formData.append('report_date', document.getElementById('reportDate').value);
       formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
+      
+      // If we're editing, use PUT, otherwise POST for creation
+      const isEditing = this.dataset.editingId;
+      const url = isEditing ? `/accounts/reports/${this.dataset.editingId}/update/` : '{% url "accounts:staff_reports" %}';
+      const method = isEditing ? 'put' : 'post';
+      
       axios({
-        method: 'post',
-        url: '{% url "accounts:staff_reports" %}',
+        method: method,
+        url: url,
         data: formData,
-        headers: { 
-          'Content-Type': 'multipart/form-data', 
-          'X-Requested-With': 'XMLHttpRequest' 
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'X-Requested-With': 'XMLHttpRequest'
         }
       })
-      .then(() => {
-        showToast('Report created successfully', 'success');
-        document.getElementById('reportModal').style.display = 'none';
-        setTimeout(() => window.location.reload(), 600);
+      .then(response => {
+        showToast(isEditing ? 'Report updated successfully!' : 'Report submitted successfully!', 'success');
+        document.getElementById('dailyReportForm').reset();
+        document.getElementById('reportDate').valueAsDate = new Date();
+        
+        // Remove editing state
+        if (isEditing) {
+          delete this.dataset.editingId;
+          this.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i><span>Submit Report</span>';
+        }
+        
+        // Refresh the page to show updated reports
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       })
-      .catch((error) => {
-        console.error('Error:', error);
-        showToast('Failed to create report', 'error');
+      .catch(error => {
+        console.error('Error submitting report:', error);
+        showToast('Failed to submit report. Please try again.', 'error');
       });
-    }
-    
-    // Micro Works Modal Functions
-    function openMicroWorkModal() {
-        const modal = document.getElementById('reportModal');
-        const title = document.getElementById('modalTitle');
-        const content = document.getElementById('modalContent');
-        
-        title.textContent = 'Add Micro Work';
-        document.getElementById('editReportBtn').style.display = 'none';
-        document.getElementById('deleteReportBtn').style.display = 'none';
-        
-        content.innerHTML = `
-            <form id="microWorkForm">
-                {% csrf_token %}
-                <div class="form-group">
-                    <label class="form-label" for="microWorkTitle">Job Title</label>
-                    <input type="text" id="microWorkTitle" class="form-input" required placeholder="Enter job title" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="microWorkDescription">Description</label>
-                    <textarea id="microWorkDescription" class="form-textarea" required placeholder="Describe the work in detail" rows="4"></textarea>
-                </div>
-                <div class="form-group">
-                    <label class="form-label" for="microWorkTime">Time Required</label>
-                    <input type="text" id="microWorkTime" class="form-input" required placeholder="e.g., 2 hours, 30 minutes" />
-                </div>
-                <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-                    <button type="button" class="btn btn-secondary" id="cancelMicroWorkBtn">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Add Work</button>
-                </div>
-            </form>`;
-        
-        modal.style.display = 'flex';
-
-        document.getElementById('cancelMicroWorkBtn').addEventListener('click', () => modal.style.display = 'none');
-        document.getElementById('microWorkForm').addEventListener('submit', submitMicroWork);
-    }
-
-    function submitMicroWork(e) {
-        e.preventDefault();
-        
-        const formData = new FormData();
-        formData.append('job_title', document.getElementById('microWorkTitle').value);
-        formData.append('description', document.getElementById('microWorkDescription').value);
-        formData.append('time_required', document.getElementById('microWorkTime').value);
-        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-        axios({
-            method: 'post',
-            url: '{% url "accounts:create_micro_work" %}',
-            data: formData,
-            headers: { 
-                'Content-Type': 'multipart/form-data', 
-                'X-Requested-With': 'XMLHttpRequest' 
-            }
-        })
-        .then(() => {
-            showToast('Micro work added successfully', 'success');
-            document.getElementById('reportModal').style.display = 'none';
-            loadMicroWorks(); // Refresh the list
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-            showToast('Failed to add micro work', 'error');
-        });
-    }
-
-    function loadMicroWorks() {
-    axios.get('{% url "accounts:get_micro_works" %}')
-        .then(response => {
-            const container = document.getElementById('microWorksContainer');
-            const works = response.data.micro_works;
-            
-            if (works.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-tasks"></i>
-                        <h3>No Micro Works Yet</h3>
-                        <p>Get started by adding your first micro work task.</p>
-                    </div>`;
-                return;
-            }
-            
-            container.innerHTML = works.map(work => `
-                <div class="micro-work-card ${work.is_completed ? 'completed' : 'pending'}" 
-                     data-title="${work.job_title.toLowerCase()}" 
-                     data-description="${work.description.toLowerCase()}">
-                    <div class="micro-work-header">
-                        <div>
-                            <div class="micro-work-title">${work.job_title}</div>
-                            <div class="micro-work-time">${work.time_required}</div>
-                        </div>
-                    </div>
-                    <div class="micro-work-description">${work.description}</div>
-                    <div class="micro-work-footer">
-                        <div class="micro-work-status">
-                            <span class="status-badge ${work.is_completed ? 'status-completed' : 'status-pending'}">
-                                ${work.is_completed ? 'Completed' : 'Pending'}
-                            </span>
-                            <div style="display: flex; flex-direction: column; gap: 2px; font-size: 0.75rem; color: var(--text-tertiary);">
-                                <div style="display: flex; align-items: center; gap: 4px;">
-                                    <i class="fas fa-plus" style="font-size: 0.6rem; color: #f59e0b;"></i>
-                                    <span>Created: ${work.created_date_display} at ${work.created_time_display}</span>
-                                </div>
-                                ${work.is_completed ? `
-                                    <div style="display: flex; align-items: center; gap: 4px;">
-                                        <i class="fas fa-check" style="font-size: 0.6rem; color: #10b981;"></i>
-                                        <span>Completed: ${work.completed_date_display} at ${work.completed_time_display}</span>
-                                    </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                        <div class="micro-work-actions">
-                            ${!work.is_completed ? `
-                                <button class="btn btn-complete complete-work" data-work-id="${work.id}">
-                                    <i class="fas fa-check"></i>
-                                    <span>Mark Complete</span>
-                                </button>
-                            ` : ''}
-                            <button class="btn btn-secondary delete-work" data-work-id="${work.id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-            
-            // Add event listeners for the new buttons
-            container.querySelectorAll('.complete-work').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const workId = this.getAttribute('data-work-id');
-                    markWorkCompleted(workId);
-                });
-            });
-            
-            container.querySelectorAll('.delete-work').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const workId = this.getAttribute('data-work-id');
-                    deleteMicroWork(workId);
-                });
-            });
-        })
-        .catch(error => {
-            console.error('Error loading micro works:', error);
-            showToast('Failed to load micro works', 'error');
-        });
-}
-
-    function markWorkCompleted(workId) {
-    // Use Django URL template tag or construct URL properly
-    const url = `{% url 'accounts:mark_micro_work_completed' 0 %}`.replace('0', workId);
-    
-    axios.post(url)
-        .then(() => {
-            showToast('Work marked as completed', 'success');
-            loadMicroWorks(); // Refresh the list
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Failed to mark work as completed', 'error');
-        });
-}
-
-function deleteMicroWork(workId) {
-    if (!confirm('Are you sure you want to delete this micro work?')) return;
-    
-    // Use Django URL template tag or construct URL properly
-    const url = `{% url 'accounts:delete_micro_work' 0 %}`.replace('0', workId);
-    
-    axios.delete(url)
-        .then(() => {
-            showToast('Micro work deleted', 'success');
-            loadMicroWorks(); // Refresh the list
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Failed to delete micro work', 'error');
-        });
-}
-
+    });
     
     // Search functionality for reports
     const searchReportsInput = document.getElementById('searchReports');
@@ -1017,54 +673,6 @@ function deleteMicroWork(workId) {
       performReportSearch();
       searchReportsInput.focus();
     });
-
-    // Search functionality for micro works
-    const searchMicroWorksInput = document.getElementById('searchMicroWorks');
-    const clearSearchMicroWorksBtn = document.getElementById('clearSearchMicroWorks');
-
-    function performMicroWorkSearch() {
-        const searchTerm = searchMicroWorksInput.value.toLowerCase().trim();
-        const workCards = document.querySelectorAll('.micro-work-card');
-        let visibleCount = 0;
-        
-        workCards.forEach(card => {
-            const title = card.dataset.title;
-            const description = card.dataset.description;
-            
-            if (title.includes(searchTerm) || description.includes(searchTerm)) {
-                card.style.display = 'block';
-                visibleCount++;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-        
-        clearSearchMicroWorksBtn.style.display = searchTerm ? 'block' : 'none';
-        
-        // Show no results message if needed
-        if (visibleCount === 0 && searchTerm) {
-            document.getElementById('microWorksContainer').innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-search"></i>
-                    <h3>No Micro Works Found</h3>
-                    <p>No micro works match your search criteria.</p>
-                </div>`;
-        } else if (visibleCount === 0) {
-            document.getElementById('microWorksContainer').innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-tasks"></i>
-                    <h3>No Micro Works Yet</h3>
-                    <p>Get started by adding your first micro work task.</p>
-                </div>`;
-        }
-    }
-
-    searchMicroWorksInput.addEventListener('input', performMicroWorkSearch);
-    clearSearchMicroWorksBtn.addEventListener('click', () => {
-        searchMicroWorksInput.value = '';
-        performMicroWorkSearch();
-        searchMicroWorksInput.focus();
-    });
     
     // Read more functionality
     function toggleReadMore(element) {
@@ -1073,131 +681,91 @@ function deleteMicroWork(workId) {
       element.textContent = content.classList.contains('expanded') ? 'Read less' : 'Read more';
     }
     
-    // View/Edit/Delete in modal (delegated on table body for reliability)
-    const reportsTableBody = document.getElementById('reportsTableBody');
-    if (reportsTableBody) {
-      reportsTableBody.addEventListener('click', function(e) {
-        const viewBtn = e.target.closest('.view-report');
-        if (viewBtn) {
-          const reportId = viewBtn.getAttribute('data-report-id');
-          const url = viewBtn.getAttribute('data-url');
-          if (!reportId && !url) {
-            console.error('View button missing identifiers');
-            showToast('Cannot open report: missing id', 'error');
-            return;
-          }
-          openViewModal(reportId, url);
-        }
-      });
-    }
+    // View report functionality
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('.view-report')) {
+        const reportId = e.target.closest('.view-report').getAttribute('data-report-id');
+        viewReport(reportId);
+      }
+      
+      if (e.target.closest('.edit-report')) {
+        const reportId = e.target.closest('.edit-report').getAttribute('data-report-id');
+        editReport(reportId);
+      }
+      
+      if (e.target.closest('.delete-report')) {
+        const reportId = e.target.closest('.delete-report').getAttribute('data-report-id');
+        deleteReport(reportId);
+      }
+    });
     
-    function openViewModal(reportId, urlOverride) {
-      const url = urlOverride || `/accounts/reports/${reportId}/`;
-      axios.get(url)
+    function viewReport(reportId) {
+      axios.get(`/accounts/reports/${reportId}/`)
         .then(response => {
           const report = response.data;
-          const modal = document.getElementById('reportModal');
-          const title = document.getElementById('modalTitle');
-          const content = document.getElementById('modalContent');
-          title.textContent = report.name;
-          document.getElementById('editReportBtn').style.display = '';
-          document.getElementById('deleteReportBtn').style.display = '';
-          document.getElementById('editReportBtn').onclick = () => openEditModal(report);
-          document.getElementById('deleteReportBtn').onclick = () => deleteReport(report.id);
-          content.innerHTML = `
-  <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
-    <div><div style="color:var(--text-tertiary); font-size:0.85rem;">Date</div><div style="font-weight:600;">${new Date(report.report_date).toLocaleDateString()}</div></div>
-    <div><div style="color:var(--text-tertiary); font-size:0.85rem;">Updated</div><div style="font-weight:600;">${new Date(report.updated_at).toLocaleString()}</div></div>
-  </div>
-  <div style="margin-bottom: 0.75rem;">
-    <div style="color:var(--text-tertiary); font-size:0.85rem;">Heading</div>
-    <div style="font-weight:600;">${report.heading}</div>
-  </div>
-  ${report.attached_file ? `
-  <div style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border-color);">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <div>
-        <i class="fas fa-paperclip" style="color: var(--text-secondary);"></i>
-        <span style="margin-left: 0.5rem; font-weight: 500;">Attached File: ${report.file_name}</span>
-      </div>
-      <a href="${report.file_url}" target="_blank" class="btn btn-primary" style="padding: 0.4rem 0.8rem;">
-        <i class="fas fa-download"></i> Download
-      </a>
-    </div>
-  </div>
-  ` : ''}
-  <div>
-    <div style="color:var(--text-tertiary); font-size:0.85rem; margin-bottom:0.35rem;">Report</div>
-    <div style="padding: 1rem; background: var(--bg-secondary); border-radius: 10px; white-space: pre-wrap; border:1px solid var(--border-color)">${report.report_text}</div>
-  </div>`;
-          modal.style.display = 'flex';
+          document.getElementById('modalTitle').textContent = report.name;
+          document.getElementById('modalContent').innerHTML = `
+            <div style="margin-bottom: 1rem;">
+              <strong>Date:</strong> ${new Date(report.report_date).toLocaleDateString()}
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <strong>Heading:</strong> ${report.heading}
+            </div>
+            <div style="margin-bottom: 1rem;">
+              <strong>Report:</strong>
+              <div style="margin-top: 0.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px; white-space: pre-wrap;">${report.report_text}</div>
+            </div>
+          `;
+          document.getElementById('reportModal').style.display = 'flex';
         })
         .catch(error => {
           console.error('Error loading report:', error);
-          showToast(error?.response?.status === 404 ? 'Report not found' : 'Failed to load report details.', 'error');
+          showToast('Failed to load report details.', 'error');
         });
     }
     
-    function openEditModal(report) {
-      const modal = document.getElementById('reportModal');
-      const title = document.getElementById('modalTitle');
-      const content = document.getElementById('modalContent');
-      title.textContent = `Edit: ${report.name}`;
-      document.getElementById('editReportBtn').style.display = 'none';
-      document.getElementById('deleteReportBtn').style.display = 'none';
-      content.innerHTML = `
-        <form id="modalEditForm">
-          {% csrf_token %}
-          <div class="form-group">
-            <label class="form-label" for="editReportName">Report Name</label>
-            <input type="text" id="editReportName" class="form-input" required value="${report.name}" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="editReportHeading">Report Heading</label>
-            <input type="text" id="editReportHeading" class="form-input" required value="${report.heading}" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="editReportText">Daily Update</label>
-            <textarea id="editReportText" class="form-textarea" required>${report.report_text}</textarea>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="editReportDate">Report Date</label>
-            <input type="date" id="editReportDate" class="form-input" required value="${report.report_date.substring(0,10)}" />
-          </div>
-          <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-            <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-          </div>
-        </form>`;
-      modal.style.display = 'flex';
-      document.getElementById('cancelEditBtn').addEventListener('click', () => modal.style.display = 'none');
-      document.getElementById('modalEditForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData();
-        formData.append('name', document.getElementById('editReportName').value);
-        formData.append('heading', document.getElementById('editReportHeading').value);
-        formData.append('report_text', document.getElementById('editReportText').value);
-        formData.append('report_date', document.getElementById('editReportDate').value);
-        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-        axios({ method: 'put', url: `/accounts/reports/${report.id}/update/`, data: formData, headers: { 'Content-Type': 'multipart/form-data', 'X-Requested-With': 'XMLHttpRequest' } })
-          .then(() => {
-            showToast('Report updated', 'success');
-            document.getElementById('reportModal').style.display = 'none';
-            setTimeout(() => window.location.reload(), 600);
-          })
-          .catch(() => showToast('Failed to update', 'error'));
+    function editReport(reportId) {
+      // Switch to new report tab and populate form with existing data
+      document.querySelector('[data-tab="new-report"]').click();
+      
+      axios.get(`/accounts/reports/${reportId}/`)
+        .then(response => {
+          const report = response.data;
+          document.getElementById('reportName').value = report.name;
+          document.getElementById('reportHeading').value = report.heading;
+          document.getElementById('reportText').value = report.report_text;
+          document.getElementById('reportDate').value = report.report_date;
+          
+          // Change form submission to update instead of create
+          const form = document.getElementById('dailyReportForm');
+          form.dataset.editingId = reportId;
+          form.querySelector('button[type="submit"]').innerHTML = '<i class="fas fa-save"></i><span>Update Report</span>';
+          
+          showToast('Report loaded for editing.', 'success');
+        })
+        .catch(error => {
+          console.error('Error loading report for editing:', error);
+          showToast('Failed to load report for editing.', 'error');
         });
     }
     
     function deleteReport(reportId) {
-      if (!confirm('Delete this report? This action cannot be undone.')) return;
+      if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
         axios.delete(`/accounts/reports/${reportId}/delete/`)
-        .then(() => {
+          .then(response => {
             showToast('Report deleted successfully!', 'success');
-          document.getElementById('reportModal').style.display = 'none';
-          setTimeout(() => window.location.reload(), 600);
-        })
-        .catch(() => showToast('Failed to delete report.', 'error'));
+            // Remove the row from the table
+            document.querySelector(`.report-row[data-report-id="${reportId}"]`).remove();
+            // Refresh the table if empty
+            if (document.querySelectorAll('.report-row').length === 0) {
+              window.location.reload();
+            }
+          })
+          .catch(error => {
+            console.error('Error deleting report:', error);
+            showToast('Failed to delete report.', 'error');
+          });
+      }
     }
     
     // Close modal

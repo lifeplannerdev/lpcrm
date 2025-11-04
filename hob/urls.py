@@ -13,5 +13,6 @@ urlpatterns = [
     path('reports/', views.reports_tab, name='reports_tab'),
     path('search/', views.search_data, name='search_data'),
     path('tasks/create/', views.create_task, name='create_task'),
+    path('tasks/<int:task_id>/update/', views.update_task, name='update_task'),
     path('tasks/<int:task_id>/delete/', views.delete_task, name='delete_task'),
 ]

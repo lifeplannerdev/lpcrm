@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 import logging
 from accounts.models import DailyReport, User
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.http import JsonResponse
 from django.db.models import Q, Count
@@ -324,6 +324,50 @@ def create_task(request):
             'status': 'error', 
             'message': f'Error creating task: {str(e)}'
         }, status=400)
+
+@login_required
+@user_passes_test(is_business_head)
+@require_http_methods(["POST", "PUT"])
+def update_task(request, task_id):
+    """Update a task from HOB dashboard (Business Head/OPS/Admin allowed)"""
+    try:
+        data = json.loads(request.body or '{}')
+        
+        # Fetch and permission check: allow creator or any business head/admin/ops
+        task = get_object_or_404(Task, id=task_id)
+        if not (task.assigned_by == request.user or is_business_head(request.user)):
+            return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+        
+        # Apply updates
+        if 'assigned_to' in data and data['assigned_to']:
+            assignee = User.objects.get(id=data.get('assigned_to'))
+            task.assigned_to = assignee
+        if 'title' in data:
+            task.title = data['title']
+        if 'description' in data:
+            task.description = data['description']
+        if 'priority' in data:
+            task.priority = data['priority']
+        if 'deadline' in data:
+            task.deadline = data['deadline']
+        
+        task.save()
+        
+        TaskUpdate.objects.create(
+            task=task,
+            updated_by=request.user,
+            previous_status=task.status,
+            new_status=task.status,
+            notes=f'Task updated by {request.user.get_full_name() or request.user.username}'
+        )
+        
+        return JsonResponse({'status': 'success', 'message': 'Task updated successfully!', 'task_id': task.id})
+    except User.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Assigned user not found'}, status=404)
+    except Task.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Task not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
 @user_passes_test(is_business_head)
