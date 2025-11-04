@@ -1524,7 +1524,8 @@
             <div class="task-meta">
               <div style="display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.85rem;">
                 <div><strong>Assigned by:</strong> ${task.assigned_by}</div>
-                <div class="task-deadline"><i class="fas fa-clock"></i>${task.deadline} ${isOverdue ? `<span class=\"overdue-text\">(${daysOverdue} days overdue)</span>` : ''}</div>
+                <div class="task-deadline"><i class="fas fa-clock"></i>Deadline:
+              ${task.deadline}</div>
               </div>
               <div class="task-actions">
                 <select class="task-status-select" onchange="updateTaskStatus(${task.id}, this.value)">
