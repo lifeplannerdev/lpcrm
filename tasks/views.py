@@ -40,6 +40,9 @@ def my_tasks(request):
     }
     return render(request, 'tasks/my_tasks.html', context)
 
+from django.utils import timezone
+import pytz
+
 @login_required
 def my_tasks_ajax(request):
     """AJAX endpoint for task sidebar to get user's tasks"""
@@ -49,16 +52,23 @@ def my_tasks_ajax(request):
     try:
         tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
         
+        # Convert to IST timezone
+        ist = pytz.timezone('Asia/Kolkata')
+        
         # Convert tasks to JSON-serializable format
         tasks_data = []
         for task in tasks:
+            # Convert deadline to IST
+            deadline_ist = task.deadline.astimezone(ist)
+            
             tasks_data.append({
                 'id': task.id,
                 'title': task.title,
                 'description': task.description,
                 'status': task.status,
                 'priority': task.priority,
-                'deadline': task.deadline.strftime('%b %d, %Y %I:%M %p'),
+                'deadline': deadline_ist.strftime('%b %d, %Y %I:%M %p'),
+                'deadline_iso': deadline_ist.isoformat(),  # Add ISO format for JS parsing
                 'overdue_days': task.overdue_days if task.status == 'OVERDUE' else 0,
                 'assigned_by': task.assigned_by.get_full_name() or task.assigned_by.username,
                 'created_at': task.created_at.strftime('%b %d, %Y'),
@@ -72,7 +82,7 @@ def my_tasks_ajax(request):
         
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
+        
 @login_required
 @require_POST
 def update_task_status(request, task_id):
