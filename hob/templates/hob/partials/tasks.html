@@ -651,19 +651,22 @@ function displayMyTasks(tasks) {
                     </div>
                 </div>
                 <div class="task-description">${task.description || 'No description'}</div>
-                <div class="task-meta">
-                    <div class="task-deadline">
-                        <i class="fas fa-clock"></i>
+                <div class="task-deadline">
+                        
+                        Deadline:
                         ${formattedDeadline}
                         ${isOverdue ? `<span class="overdue-text">(${daysOverdue} days overdue)</span>` : ''}
                     </div>
-                    <div class="task-actions">
+                    <div class="task-actions" style="margin-top: 0.5rem;">
                         <select class="task-status-select" onchange="updateTaskStatus(${task.id}, this.value)">
                             <option value="PENDING" ${task.status === 'PENDING' ? 'selected' : ''}>Pending</option>
                             <option value="IN_PROGRESS" ${task.status === 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
                             <option value="COMPLETED" ${task.status === 'COMPLETED' ? 'selected' : ''}>Completed</option>
                         </select>
                     </div>
+                <div class="task-meta">
+                    
+                    
                 </div>
             </div>
         `;
