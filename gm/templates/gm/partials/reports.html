@@ -1,0 +1,507 @@
+<div class="table-container">
+    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-color);">
+        <div style="display: flex; align-items: baseline; gap: 0.75rem;">
+            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; letter-spacing: 0.2px;">Daily Reports</h3>
+            <span style="color: var(--text-secondary); font-size: 0.9rem;">Team daily updates</span>
+        </div>
+    </div>
+
+    <div style="padding: 1.5rem;">
+        {% regroup recent_reports by report_date as reports_by_date %}
+        
+        {% for report_date in reports_by_date %}
+        <div style="margin-bottom: 2.5rem;">
+            <!-- Date Header -->
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid var(--border-color);">
+                <div style="width: 4px; height: 24px; background: var(--accent); border-radius: 2px;"></div>
+                <h4 style="margin: 0; font-size: 1.2rem; font-weight: 600; color: var(--text-primary);">
+                    {{ report_date.grouper|date:"F j, Y" }}
+                    {% if report_date.grouper == today %}
+                    <span style="background: var(--accent); color: var(--bg-primary); padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; margin-left: 0.5rem;">Today</span>
+                    {% endif %}
+                </h4>
+                <span style="color: var(--text-secondary); font-size: 0.9rem;">
+                    {{ report_date.list|length }} report{{ report_date.list|pluralize }}
+                </span>
+            </div>
+
+            <!-- Reports for this date -->
+            <div class="report-cards">
+                {% for report in report_date.list %}
+                <div class="report-card">
+                    <div class="report-header">
+                        <div class="report-title-section">
+                            <h5 class="report-name">{{ report.name }}</h5>
+                            <p class="report-heading">{{ report.heading }}</p>
+                        </div>
+                        <div class="report-meta">
+                            <span class="report-author">{{ report.user.get_full_name }}</span>
+                            <span class="report-time">{{ report.created_at|date:"g:i A" }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="report-content">
+                        <p>{{ report.report_text|linebreaksbr }}</p>
+                        
+                        <!-- File Download Section -->
+                        {% if report.attached_file %}
+<div class="file-attachment-section">
+    <div class="file-attachment">
+        <i class="fas fa-paperclip file-icon"></i>
+        <div class="file-info">
+            <span class="file-name">{{ report.get_file_name|default:"Attached File" }}</span>
+            <span class="file-size">
+                {% if report.attached_file.size %}
+                ({{ report.attached_file.size|filesizeformat }})
+                {% endif %}
+            </span>
+        </div>
+        <button type="button" 
+                class="download-btn"
+                onclick="downloadFile('{{ report.get_secure_file_url|escapejs }}', '{{ report.get_file_name|default:"download"|escapejs }}')">
+            <i class="fas fa-download"></i>
+            Download
+        </button>
+    </div>
+</div>
+{% endif %}
+                    </div>
+                    
+                    <div class="report-footer">
+                        <span class="report-role">{{ report.user.get_role_display }}</span>
+                        <div class="report-footer-right">
+                            {% if report.updated_at != report.created_at %}
+                            <span class="report-updated">Updated {{ report.updated_at|timesince }} ago</span>
+                            {% endif %}
+                            {% if report.attached_file %}
+                            <span class="file-badge">
+                                <i class="fas fa-paperclip"></i>
+                                Has Attachment
+                            </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <h3>No reports available</h3>
+            <p>No daily reports have been submitted yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+/* Report Cards Layout */
+.report-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.report-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.report-card:hover {
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.report-title-section {
+    flex: 1;
+}
+
+.report-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.3;
+}
+
+.report-heading {
+    font-size: 0.95rem;
+    color: var(--accent);
+    margin: 0;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.report-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.report-author {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.report-time {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.report-content {
+    margin-bottom: 1rem;
+}
+
+.report-content p {
+    color: var(--text-primary);
+    line-height: 1.6;
+    margin: 0 0 1rem 0;
+    font-size: 0.95rem;
+}
+
+/* File Attachment Styles */
+.file-attachment-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.file-attachment {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.file-attachment:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-hover);
+}
+
+.file-icon {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.file-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.file-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.file-size {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+}
+
+.download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--accent);
+    color: var(--bg-primary);
+    border: none;
+    padding: 0.5rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.download-btn:hover:not(:disabled) {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.download-btn:disabled {
+    background: var(--border-color);
+    color: var(--text-tertiary);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.report-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.report-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.report-role {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.report-updated {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+.file-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: var(--accent);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-secondary);
+}
+
+.empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-state h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.empty-state p {
+    margin: 0;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .report-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+    
+    .report-meta {
+        align-items: flex-start;
+        text-align: left;
+        flex-direction: row;
+        gap: 1rem;
+    }
+    
+    .report-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .report-footer-right {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .file-attachment {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .download-btn {
+        align-self: stretch;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .report-card {
+        padding: 1.25rem;
+    }
+    
+    .report-name {
+        font-size: 1rem;
+    }
+    
+    .report-heading {
+        font-size: 0.9rem;
+    }
+    
+    .file-info {
+        min-width: 0;
+    }
+    
+    .file-name {
+        word-break: break-word;
+    }
+}
+</style>
+
+
+
+<script>
+// Enhanced download function with multiple fallbacks
+function downloadFile(fileUrl, fileName) {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    // Ensure HTTPS URL
+    let secureUrl = fileUrl;
+    if (fileUrl.startsWith('http://')) {
+        secureUrl = fileUrl.replace('http://', 'https://');
+    }
+    
+    // Show loading state
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Downloading...';
+    button.disabled = true;
+    
+    // Method 1: Try fetch + blob approach first
+    fetch(secureUrl)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.blob();
+        })
+        .then(blob => {
+            // Check if blob is valid
+            if (blob.size === 0) throw new Error('Empty file');
+            
+            const blobUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+            
+            showToast('Download started successfully', 'success');
+        })
+        .catch(error => {
+            console.log('Fetch method failed, trying alternative...', error);
+            
+            // Method 2: Try Cloudinary attachment flag with HTTPS
+            const attachmentUrl = secureUrl + (secureUrl.includes('?') ? '&' : '?') + 'fl_attachment';
+            window.open(attachmentUrl, '_blank');
+            
+            showToast('Opening file in new tab', 'warning');
+        })
+        .finally(() => {
+            // Restore button after delay
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 1500);
+        });
+}
+
+// Toast notification function (make sure this exists)
+function showToast(message, type) {
+    // Create toast element if it doesn't exist
+    let toast = document.querySelector('.toast-notification');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.className = `toast-notification ${type}`;
+        document.body.appendChild(toast);
+    } else {
+        toast.className = `toast-notification ${type}`;
+    }
+    
+    toast.textContent = message;
+    toast.style.display = 'block';
+    
+    // Add toast styles if they don't exist
+    if (!document.querySelector('#toast-styles')) {
+        const styles = document.createElement('style');
+        styles.id = 'toast-styles';
+        styles.textContent = `
+            .toast-notification {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                display: none;
+            }
+            .toast-notification.success {
+                background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%);
+            }
+            .toast-notification.error {
+                background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%);
+            }
+            .toast-notification.warning {
+                background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(245, 158, 11, 0.8) 100%);
+            }
+            @keyframes slideIn {
+                from { 
+                    transform: translateX(100%) scale(0.95); 
+                    opacity: 0; 
+                }
+                to { 
+                    transform: translateX(0) scale(1); 
+                    opacity: 1; 
+                }
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+        toast.style.display = 'none';
+    }, 3000);
+}
+</script>
