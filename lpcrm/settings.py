@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'trainers',
     'tasks',
     'hob',
+    'gm',
     'django_crontab',
     'cloudinary',
 ]
