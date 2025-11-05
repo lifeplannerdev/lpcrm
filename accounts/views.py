@@ -1054,7 +1054,9 @@ def delete_lead(request, lead_id):
     elif request.user.role == 'OPS':
         return redirect('/operations')  
     elif request.user.role == 'ADM_EXEC':
-        return redirect('/executive-dashboard')      
+        return redirect('/executive-dashboard') 
+    elif request.user.role == 'ADMIN':
+        return redirect('gm:dashboard') 
     else:
         return redirect('/all-leads')    
 @login_required
