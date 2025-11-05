@@ -52,11 +52,10 @@
         <table class="bc-table bc-table-striped" id="leadsTable">
             <thead>
                 <tr>
-                    <th style="width: 60px;">#</th>
+                    <th style="width: 60px">#</th>
                     <th>Name</th>
                     <th>Phone</th>
                     <th>Source</th>
-                    <th>Priority</th>
                     <th>Status</th>
                     <th>Program</th>
                     <th>Assigned To</th>
@@ -69,7 +68,6 @@
                     data-source="{{ lead.source }}"
                     data-status="{{ lead.status|lower }}"
                     data-staff="{{ lead.assigned_to.id|default:'' }}"
-                    data-priority="{{ lead.priority|lower }}"
                     data-program="{{ lead.program|default:''|lower }}"
                     data-name="{{ lead.name|lower }}">
                     <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
@@ -83,17 +81,6 @@
                         <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; background: rgba(59, 130, 246, 0.2); color: #93c5fd;">
                             {{ lead.source }}
                         </span>
-                    </td>
-                    
-                    <!-- Priority Column -->
-                    <td>
-                        <select class="editable-select priority-select hob-assignment" 
-                                data-lead-id="{{ lead.id }}"
-                                data-field="priority">
-                            <option value="HIGH" {% if lead.priority == 'HIGH' %}selected{% endif %} class="priority-high">High</option>
-                            <option value="MEDIUM" {% if lead.priority == 'MEDIUM' %}selected{% endif %} class="priority-medium">Medium</option>
-                            <option value="LOW" {% if lead.priority == 'LOW' %}selected{% endif %} class="priority-low">Low</option>
-                        </select>
                     </td>
                     
                     <!-- Status Column -->
@@ -148,7 +135,7 @@
                 </tr>
                 {% empty %}
                 <tr id="noLeadsRow">
-                    <td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                    <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
                         No leads found
                     </td>
                 </tr>
@@ -454,7 +441,7 @@ function filterLeads() {
             if (!noResultsRow) {
                 noResultsRow = document.createElement('tr');
                 noResultsRow.className = 'no-results-message';
-                noResultsRow.innerHTML = '<td colspan="9" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No leads match the selected filters</td>';
+                noResultsRow.innerHTML = '<td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No leads match the selected filters</td>';
                 tableBody.appendChild(noResultsRow);
             }
             noResultsRow.style.display = '';
@@ -1142,7 +1129,7 @@ document.addEventListener('DOMContentLoaded', function() {
     border-collapse: collapse;
 }
 
-/* Updated Column width definitions for 9 columns */
+/* Updated Column width definitions for 8 columns */
 .bc-table th:first-child, 
 .bc-table td:first-child { 
     width: 60px; 
@@ -1153,17 +1140,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .bc-table th:nth-child(2), 
 .bc-table td:nth-child(2) { 
-    width: 14%; 
+    width: 16%; 
 }
 
 .bc-table th:nth-child(3), 
 .bc-table td:nth-child(3) { 
-    width: 12%; 
+    width: 13%; 
 }
 
 .bc-table th:nth-child(4), 
 .bc-table td:nth-child(4) { 
-    width: 10%; 
+    width: 11%; 
 }
 
 .bc-table th:nth-child(5), 
@@ -1173,22 +1160,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .bc-table th:nth-child(6), 
 .bc-table td:nth-child(6) { 
-    width: 14%; 
+    width: 18%; 
 }
 
 .bc-table th:nth-child(7), 
 .bc-table td:nth-child(7) { 
-    width: 18%; 
+    width: 17%; 
 }
 
 .bc-table th:nth-child(8), 
 .bc-table td:nth-child(8) { 
-    width: 14%; 
-}
-
-.bc-table th:nth-child(9), 
-.bc-table td:nth-child(9) { 
-    width: 8%; 
+    width: 13%; 
     text-align: center;
 }
 
@@ -1495,34 +1477,33 @@ document.addEventListener('DOMContentLoaded', function() {
     /* Hide some columns on medium screens */
     .bc-table th:nth-child(6), 
     .bc-table td:nth-child(6),
-    .bc-table th:nth-child(9), 
-    .bc-table td:nth-child(9) { 
+    .bc-table th:nth-child(8), 
+    .bc-table td:nth-child(8) { 
         display: none; 
     }
     
     /* Redistribute widths for remaining columns */
-    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 18%; }
-    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 14%; }
-    .bc-table th:nth-child(4), .bc-table td:nth-child(4) { width: 12%; }
-    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 14%; }
-    .bc-table th:nth-child(7), .bc-table td:nth-child(7) { width: 22%; }
-    .bc-table th:nth-child(8), .bc-table td:nth-child(8) { width: 18%; }
+    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 22%; }
+    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 18%; }
+    .bc-table th:nth-child(4), .bc-table td:nth-child(4) { width: 15%; }
+    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 22%; }
+    .bc-table th:nth-child(7), .bc-table td:nth-child(7) { width: 21%; }
 }
 
 @media (max-width: 768px) {
     /* Hide more columns on small screens */
     .bc-table th:nth-child(4), 
     .bc-table td:nth-child(4),
-    .bc-table th:nth-child(7), 
-    .bc-table td:nth-child(7) { 
+    .bc-table th:nth-child(6), 
+    .bc-table td:nth-child(6) { 
         display: none; 
     }
     
     /* Further adjust remaining columns */
-    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 25%; }
-    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 20%; }
+    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 28%; }
+    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 24%; }
     .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 25%; }
-    .bc-table th:nth-child(8), .bc-table td:nth-child(8) { width: 28%; }
+    .bc-table th:nth-child(7), .bc-table td:nth-child(7) { width: 21%; }
 }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
