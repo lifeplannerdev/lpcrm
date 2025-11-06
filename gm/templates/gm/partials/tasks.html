@@ -99,9 +99,10 @@
 
             
 
-            <div class="task-description">
+            <!-- Hidden task description for modal use -->
+            <div class="task-description" style="display: none;">
 
-                <p>{{ task.description|truncatewords:15 }}</p>
+                <p>{{ task.description }}</p>
 
             </div>
 
@@ -260,10 +261,6 @@
                                 </span>
 
                             {% endif %}
-
-                            <br>
-
-                            <small class="task-desc-small">{{ task.description|truncatewords:8 }}</small>
 
                         </div>
 
@@ -629,7 +626,7 @@ function loadTaskDetails(taskId) {
 
     // Get description from the original task data (we'll need to pass this from Django)
 
-    const description = 'Task description will be loaded from server data.';
+    const description = taskCard.querySelector('.task-description p')?.textContent || 'No description available.';
 
     const metaItems = taskCard.querySelectorAll('.meta-item');
 
