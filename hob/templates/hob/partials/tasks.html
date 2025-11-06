@@ -654,7 +654,6 @@ function displayMyTasks(tasks) {
                         <span class="task-status ${statusClass}">${task.status.replace('_', ' ')}</span>
                     </div>
                 </div>
-                <div class="task-description">${task.description || 'No description'}</div>
                 <div class="task-description" style="margin-top: 0.5rem;">Assigned by : ${task.assigned_by}</div>
                 
                 <div class="task-deadline">
@@ -663,7 +662,10 @@ function displayMyTasks(tasks) {
                         ${formattedDeadline}
                         ${isOverdue ? `<span class="overdue-text">(${daysOverdue} days overdue)</span>` : ''}
                     </div>
-                    <div class="task-actions" style="margin-top: 0.5rem;">
+                    <div class="task-actions" style="margin-top: 0.5rem; display: flex; gap: 0.5rem;">
+                        <button class="action-btn view-btn" onclick="openTaskDetails(${task.id})" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </button>
                         <select class="task-status-select" onchange="updateTaskStatus(${task.id}, this.value)">
                             <option value="PENDING" ${task.status === 'PENDING' ? 'selected' : ''}>Pending</option>
                             <option value="IN_PROGRESS" ${task.status === 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
