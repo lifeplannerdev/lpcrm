@@ -36,7 +36,11 @@
                     <div class="report-header">
                         <div class="report-title-section">
                             <h5 class="report-name">{{ report.name }}</h5>
-                            <p class="report-heading">{{ report.heading }}</p>
+                            <p class="report-heading">{{ report.heading }}
+                                {% if report.updated_at|date:"U" != report.created_at|date:"U" %}
+                    <span style="background: #373738; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; margin-left: 0.5rem;">Edited</span>
+                    {% endif %}
+                            </p>
                         </div>
                         <div class="report-meta">
                             <span class="report-author">{{ report.user.get_full_name }}</span>
