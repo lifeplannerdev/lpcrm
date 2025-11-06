@@ -584,7 +584,11 @@
                   data-date="{{ report.report_date|date:'Y-m-d' }}">
                 <td>{{ forloop.counter }}</td>
                 <td>
-                  <div class="report-heading">{{ report.name }}</div>
+                  <div class="report-heading">{{ report.name }}
+                    {% if report.updated_at|date:"U" != report.created_at|date:"U" %}
+                    <span style="background: #373738; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; margin-left: 0.5rem;">Edited</span>
+                    {% endif %}
+                  </div>
                 </td>
                 <td>
                   <div class="report-content">
