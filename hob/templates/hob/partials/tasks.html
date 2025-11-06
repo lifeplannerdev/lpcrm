@@ -1013,8 +1013,6 @@ function loadTaskDetails(taskId) {
 
 }
 
-}
-
 
 
 function closeTaskDetails() {
@@ -1276,12 +1274,10 @@ if (createTaskModal) {
 const taskDetailsModal = document.getElementById('taskDetailsModal');
 if (taskDetailsModal) {
     taskDetailsModal.addEventListener('click', function(e) {
-    if (e.target === this) {
-
+        if (e.target === this) {
             closeTaskDetails();
-    }
-
-});
+        }
+    });
 
 }
 
