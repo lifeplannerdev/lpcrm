@@ -1317,13 +1317,13 @@ def get_report_details(request, report_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required
-@require_http_methods(["PUT"])
+@require_http_methods(["POST"])
 def update_report(request, report_id):
     """Update an existing report"""
     try:
         report = get_object_or_404(DailyReport, id=report_id, user=request.user)
         
-        # For PUT requests with form data
+        # Get form data
         name = request.POST.get('name')
         heading = request.POST.get('heading')
         report_text = request.POST.get('report_text')
@@ -1361,6 +1361,9 @@ def update_report(request, report_id):
         })
         
     except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        print("Error updating report:", error_details)
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 @login_required

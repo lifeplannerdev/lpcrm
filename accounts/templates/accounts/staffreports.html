@@ -737,7 +737,7 @@
             <input type="file" id="modalAttachedFile" class="form-input" 
                    accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt" />
             <small style="color: var(--text-tertiary); font-size: 0.8rem;">
-              Supported formats: PDF, Word, Excel, Images, Text files
+              Supported formats: Word, Excel, Images, Text files
             </small>
           </div>
           <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
@@ -1179,19 +1179,49 @@ function deleteMicroWork(workId) {
         formData.append('report_text', document.getElementById('editReportText').value);
         formData.append('report_date', document.getElementById('editReportDate').value);
         formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-        axios({ method: 'put', url: `/accounts/reports/${report.id}/update/`, data: formData, headers: { 'Content-Type': 'multipart/form-data', 'X-Requested-With': 'XMLHttpRequest' } })
-          .then(() => {
-            showToast('Report updated', 'success');
-            document.getElementById('reportModal').style.display = 'none';
-            setTimeout(() => window.location.reload(), 600);
+        
+        // Use Django URL template tag for consistency
+        const url = `{% url 'accounts:update_report' 0 %}`.replace('0', report.id);
+        
+        axios({ 
+          method: 'post', 
+          url: url, 
+          data: formData, 
+          headers: { 
+            'Content-Type': 'multipart/form-data', 
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': getCookie('csrftoken')
+          } 
+        })
+          .then((response) => {
+            console.log('Update response:', response);
+            if (response.data.status === 'success') {
+              showToast('Report updated', 'success');
+              document.getElementById('reportModal').style.display = 'none';
+              setTimeout(() => window.location.reload(), 600);
+            } else {
+              showToast('Failed to update: ' + response.data.message, 'error');
+            }
           })
-          .catch(() => showToast('Failed to update', 'error'));
+          .catch((error) => {
+            console.error('Update error:', error);
+            showToast('Failed to update: ' + (error.response?.data?.message || 'Unknown error'), 'error');
+          });
         });
     }
     
     function deleteReport(reportId) {
       if (!confirm('Delete this report? This action cannot be undone.')) return;
-        axios.delete(`/accounts/reports/${reportId}/delete/`)
+      // Use Django URL template tag for consistency
+      const url = `{% url 'accounts:delete_report' 0 %}`.replace('0', reportId);
+      
+      // Include CSRF token in the request
+      axios.delete(url, {
+        headers: {
+          'X-CSRFToken': getCookie('csrftoken'),
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
         .then(() => {
             showToast('Report deleted successfully!', 'success');
           document.getElementById('reportModal').style.display = 'none';
