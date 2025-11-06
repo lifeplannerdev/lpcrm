@@ -588,8 +588,8 @@
                 </td>
                 <td>
                   <div class="report-content">
-                    {{ report.heading }}
-                    <span class="read-more" onclick="toggleReadMore(this)">Read more</span>
+                    {{ report.heading|truncatechars:15 }}
+                    
                   </div>
                 </td>
                 <td>
