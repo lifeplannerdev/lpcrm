@@ -188,13 +188,14 @@ def hob_assign_lead(request):
 @user_passes_test(is_business_head)
 def tasks_tab(request):
     """Tasks tab data"""
-    # ← ADD THIS LINE - Check and update overdue tasks
+    # Check and update overdue tasks
     Task.update_overdue_tasks()
     
-    tasks = Task.objects.all().order_by('-created_at')
+    # Filter tasks to show only those assigned by the logged-in user
+    tasks = Task.objects.filter(assigned_by=request.user).order_by('-created_at')
     
-    # Count overdue tasks
-    overdue_count = Task.objects.filter(status='OVERDUE').count()
+    # Count overdue tasks for the logged-in user
+    overdue_count = tasks.filter(status='OVERDUE').count()
     
     # Get all active users for task assignment
     staff_members = User.objects.filter(is_active=True)
