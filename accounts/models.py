@@ -15,7 +15,8 @@ class User(AbstractUser):
         ('MEDIA', 'Media Team'),
         ('TRAINER', 'Trainer'),  
         ('BUSINESS_HEAD', 'Business Head'),
-        ('CM','Center Manager')
+        ('CM','Center Manager'),
+        ('HR','Human Resources')
     ]
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     team = models.CharField(max_length=50, blank=True)
