@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'tasks',
     'hob',
     'gm',
+    'hr',
     'django_crontab',
     'cloudinary',
 ]

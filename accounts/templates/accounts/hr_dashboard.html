@@ -468,11 +468,15 @@
   <div class="dashboard-container">
     <!-- Header -->
     <div class="dashboard-header">
-      <h1 class="dashboard-title">HR DASHBOARD</h1>
+      <h1 class="dashboard-title">HUMAN RESOURCES DASHBOARD</h1>
       <div class="header-controls">
-        <a href="#" class="action-btn2">
+        <a href="#" class="action-btn">
           <i class="fas fa-users"></i>
           <span>{{ staff_members.count }} Staffs</span>
+        </a>
+        <a href="{% url 'accounts:all_leads' %}" class="action-btn2">
+          <i class="fas fa-bullseye"></i>
+          <span>{{ total_leads }} Leads</span>
         </a>
         <a href="{% url 'accounts:staff_reports' %}" class="action-btn2">
           <i class="fas fa-chart-bar"></i>
@@ -481,7 +485,56 @@
       </div>
     </div>
 
-    
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-icon" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6;">
+            <i class="fas fa-users"></i>
+          </div>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ staff_members.count }}</div>
+          <div class="stat-label">Total Staff</div>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-icon" style="background: rgba(34, 197, 94, 0.2); color: #22c55e;">
+            <i class="fas fa-user-check"></i>
+          </div>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ staff_members|length }}</div>
+          <div class="stat-label">Active Staff</div>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-icon" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b;">
+            <i class="fas fa-tasks"></i>
+          </div>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ total_active_tasks }}</div>
+          <div class="stat-label">Active Tasks</div>
+        </div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-header">
+          <div class="stat-icon" style="background: rgba(168, 85, 247, 0.2); color: #a855f7;">
+            <i class="fas fa-bullseye"></i>
+          </div>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ total_leads }}</div>
+          <div class="stat-label">Total Leads</div>
+        </div>
+      </div>
+    </div>
 
     <div class="dashboard-grid">
       <!-- Staff Overview -->

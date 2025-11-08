@@ -50,6 +50,10 @@ class User(AbstractUser):
     def is_cm(self):   
         return self.role == 'CM'
 
+    @property
+    def is_hr(self):
+        return self.role == 'HR'
+
 
 
 

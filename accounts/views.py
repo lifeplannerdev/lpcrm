@@ -85,6 +85,8 @@ def quick_login(request):
             return redirect('hob:dashboard')
         elif role == 'CM':
             return redirect('accounts:cm_dashboard')  
+        elif role == 'HR':
+            return redirect('hr:dashboard')    
         elif role == 'ADMIN':
             return redirect('gm:dashboard')      
 
@@ -96,9 +98,11 @@ def quick_login(request):
         return redirect('accounts:landing')
 
 
+
 def is_cm(user):
     """Check if user has cm role"""
     return user.role == 'CM'
+
 
 @login_required
 @user_passes_test(lambda u: u.is_cm)
