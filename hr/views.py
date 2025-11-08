@@ -8,7 +8,7 @@ from django.db.models import Q, Count
 from django.utils import timezone
 from datetime import datetime, timedelta
 import json
-
+from .models import Employee
 from accounts.models import User
 from leads.models import Lead
 from tasks.models import Task, TaskUpdate
@@ -40,3 +40,20 @@ def hr_dashboard(request):
         'total_leads': total_leads,
         'total_active_tasks': total_active_tasks,
     })    
+
+@login_required
+@user_passes_test(lambda u: u.is_hr)
+def employees(request):
+    """Employees management view"""
+    staff_members = User.objects.filter(is_active=True).annotate(
+        total_leads=Count('assigned_leads'),
+        active_tasks=Count('tasks', filter=Q(tasks__status__in=['PENDING', 'IN_PROGRESS']))
+    )
+    tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
+    
+    return render(request, 'hr/employees.html', {
+        'staff_members': staff_members, 
+        'tasks': tasks,
+    })
+    
+    

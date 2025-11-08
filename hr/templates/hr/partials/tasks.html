@@ -1,0 +1,61 @@
+<div class="task-grid">
+  <div class="table-header">
+    
+    <button class="action-btn" id="assign-task-btn">
+      <i class="fas fa-plus"></i>
+      <span>Assign Task</span>
+    </button>
+  </div>
+  
+  {% if tasks %}
+  <div class="task-grid">
+    {% for task in tasks %}
+    <div class="task-card" data-task-id="{{ task.id }}" data-status="{{ task.status }}" data-priority="{{ task.priority }}">
+      <div class="task-header">
+        <div class="task-title">{{ task.title }}</div>
+        <div class="task-badges">
+          <span class="badge 
+            {% if task.priority == 'HIGH' %}badge-error
+            {% elif task.priority == 'MEDIUM' %}badge-warning
+            {% else %}badge-success
+            {% endif %}">
+            {{ task.get_priority_display }}
+          </span>
+          <span class="badge 
+            {% if task.status == 'COMPLETED' %}badge-success
+            {% elif task.status == 'IN_PROGRESS' %}badge-warning
+            {% else %}badge-neutral
+            {% endif %}">
+            {{ task.get_status_display }}
+          </span>
+        </div>
+      </div>
+      <div class="task-description">
+        {{ task.description|truncatewords:20 }}
+      </div>
+      <div class="task-meta">
+        <div class="task-assignee">
+          <div class="task-avatar">
+            {{ task.assigned_to.first_name|first|upper }}{{ task.assigned_to.last_name|first|upper }}
+          </div>
+          <span>{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
+        </div>
+        <div>
+          <i class="fas fa-clock"></i>
+          Created: {{ task.created_at|date:"M d, Y" }}
+          {% if task.due_date %}
+          • Due: {{ task.due_date|date:"M d, Y" }}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-tasks"></i>
+    <h3>No tasks assigned</h3>
+    <p>Tasks will appear here when assigned to employees</p>
+  </div>
+  {% endif %}
+</div>

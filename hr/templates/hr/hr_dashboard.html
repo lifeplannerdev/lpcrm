@@ -470,9 +470,9 @@
     <div class="dashboard-header">
       <h1 class="dashboard-title">HR DASHBOARD</h1>
       <div class="header-controls">
-        <a href="#" class="action-btn2">
+        <a href="{% url 'hr:employee_list' %}" class="action-btn2">
           <i class="fas fa-users"></i>
-          <span>{{ staff_members.count }} Staffs</span>
+          <span>{{ employees.count }} Employees</span>
         </a>
         <a href="{% url 'accounts:staff_reports' %}" class="action-btn2">
           <i class="fas fa-chart-bar"></i>
