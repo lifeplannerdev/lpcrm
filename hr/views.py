@@ -120,3 +120,22 @@ def tasks_partial(request):
     return render(request, 'hr/partials/tasks.html', {
         'tasks': tasks,
     })
+
+
+@require_http_methods(["DELETE"])
+@login_required
+@user_passes_test(lambda u: u.is_hr)
+def delete_employee(request, employee_id):
+    """Delete an employee"""
+    try:
+        employee = get_object_or_404(Employee, id=employee_id)
+        employee.delete()
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Employee deleted successfully'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })

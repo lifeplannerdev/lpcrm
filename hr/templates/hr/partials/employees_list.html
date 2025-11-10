@@ -82,9 +82,7 @@
           </td>
           <td>
             <div class="action-buttons">
-              <button class="btn-icon edit-btn" data-employee-id="{{ employee.id }}" title="Edit Employee">
-                <i class="fas fa-edit"></i>
-              </button>
+             
               <button class="btn-icon view-btn" data-employee-id="{{ employee.id }}" title="View Details">
                 <i class="fas fa-eye"></i>
               </button>
@@ -97,14 +95,11 @@
                     <i class="fas fa-envelope"></i>
                     Send Email
                   </a>
-                  <a href="#" class="dropdown-item">
-                    <i class="fas fa-file-contract"></i>
-                    View Contract
-                  </a>
+                  
                   <div class="dropdown-divider"></div>
-                  <a href="#" class="dropdown-item text-danger">
+                  <a href="#" class="dropdown-item text-danger delete-employee" data-employee-id="{{ employee.id }}">
                     <i class="fas fa-user-slash"></i>
-                    Deactivate
+                    Delete
                   </a>
                 </div>
               </div>
@@ -1071,7 +1066,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (addEmployeeForm) {
         addEmployeeForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            console.log('Add employee form submitted');
             
             // Get form data
             const formData = new FormData(this);
@@ -1080,8 +1074,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const csrfTokenInput = this.querySelector('input[name=csrfmiddlewaretoken]');
             const csrfToken = csrfTokenInput ? csrfTokenInput.value : null;
             
-            console.log('CSRF token:', csrfToken);
-            console.log('Form data:', Object.fromEntries(formData.entries()));
+            if (!csrfToken) {
+                showToast('Security token not found. Please refresh the page and try again.', 'error');
+                return;
+            }
             
             if (!csrfToken) {
                 showToast('Security token not found. Please refresh the page and try again.', 'error');
@@ -1103,25 +1099,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             })
             .then(response => {
-                console.log('Response status:', response.status);
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Success:', data);
                 if (data.status === 'success') {
                     showToast('Employee added successfully!', 'success');
                     closeAddEmployeeModal();
-                    // Reload to show new employee
-                    window.location.reload();
+                    // Reload to show new employee after a short delay to ensure toast is visible
+                    setTimeout(function() {
+                        try {
+                            window.location.reload();
+                        } catch (e) {
+                            // Fallback: redirect to the employees page
+                            window.location.href = '/hr/employees/';
+                        }
+                    }, 1500);
                 } else {
                     showToast('Error: ' + (data.message || 'Unknown error occurred'), 'error');
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 showToast('An error occurred while adding the employee. Please try again.', 'error');
             })
             .finally(() => {
@@ -1136,7 +1136,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.edit-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const employeeId = this.getAttribute('data-employee-id');
-            console.log('Edit employee:', employeeId);
             // Add your edit functionality here
         });
     });
@@ -1144,17 +1143,51 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.view-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const employeeId = this.getAttribute('data-employee-id');
-            console.log('View employee:', employeeId);
             // Add your view functionality here
         });
     });
     
-    console.log('Employee list initialization completed successfully');
+    // Delete employee functionality
+    document.querySelectorAll('.delete-employee').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const employeeId = this.getAttribute('data-employee-id');
+            const employeeName = this.closest('tr').querySelector('.employee-name').textContent;
+            
+            // Confirm deletion
+            if (confirm(`Are you sure you want to delete ${employeeName}? This action cannot be undone.`)) {
+                // Get CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                // Send DELETE request
+                fetch(`/hr/employees/delete/${employeeId}/`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showToast('Employee deleted successfully!', 'success');
+                        // Remove the employee row from the table
+                        this.closest('tr').remove();
+                    } else {
+                        showToast('Error deleting employee: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showToast('An error occurred while deleting the employee.', 'error');
+                });
+            }
+        });
+    });
+    
 });
 
 // Fallback: if DOM is already loaded, run immediately
 if (document.readyState === 'interactive' || document.readyState === 'complete') {
-    console.log('Document already ready, triggering initialization');
     document.dispatchEvent(new Event('DOMContentLoaded'));
 }
 </script>
