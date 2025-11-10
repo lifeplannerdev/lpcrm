@@ -197,13 +197,13 @@
 }
 
 /* Enhanced Table Styles */
-.table-header {
+#employees-content .table-header {
   background: var(--bg-secondary);
   padding: 1.5rem 2rem;
   border-bottom: 1px solid var(--border-color);
 }
 
-.header-content {
+#employees-content .header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -211,7 +211,7 @@
   gap: 1rem;
 }
 
-.header-text h3 {
+#employees-content .header-text h3 {
   margin: 0;
   color: var(--text-primary);
   font-size: 1.5rem;
@@ -222,19 +222,19 @@
   background-clip: text;
 }
 
-.header-text p {
+#employees-content .header-text p {
   margin: 0.25rem 0 0 0;
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
 
-.header-actions {
+#employees-content .header-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.search-box {
+#employees-content .search-box {
   position: relative;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
@@ -244,12 +244,12 @@
   transition: all 0.3s ease;
 }
 
-.search-box:focus-within {
+#employees-content .search-box:focus-within {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.search-box i {
+#employees-content .search-box i {
   position: absolute;
   left: 1rem;
   top: 50%;
@@ -257,7 +257,7 @@
   color: var(--text-tertiary);
 }
 
-.search-box input {
+#employees-content .search-box input {
   background: transparent;
   border: none;
   color: var(--text-primary);
@@ -266,11 +266,11 @@
   outline: none;
 }
 
-.search-box input::placeholder {
+#employees-content .search-box input::placeholder {
   color: var(--text-tertiary);
 }
 
-.btn-primary {
+#employees-content .btn-primary {
   background: white;
   color:black;
   border: none;
@@ -286,12 +286,12 @@
   text-decoration: none;
 }
 
-.btn-primary:hover {
+#employees-content .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
 }
 
-.btn-secondary {
+#employees-content .btn-secondary {
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border-color);
@@ -307,19 +307,19 @@
   text-decoration: none;
 }
 
-.btn-secondary:hover {
+#employees-content .btn-secondary:hover {
   background: var(--border-hover);
   transform: translateY(-2px);
 }
 
 /* Enhanced Table Rows */
-.employee-info {
+#employees-content .employee-info {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-.staff-avatar {
+#employees-content .staff-avatar {
   width: 50px;
   height: 50px;
   border-radius: 12px;
@@ -335,23 +335,23 @@
 }
 
 /* Different avatar colors based on employee ID */
-.staff-avatar[data-employee-id]:nth-child(4n+1) {
+#employees-content .staff-avatar[data-employee-id]:nth-child(4n+1) {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.staff-avatar[data-employee-id]:nth-child(4n+2) {
+#employees-content .staff-avatar[data-employee-id]:nth-child(4n+2) {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
-.staff-avatar[data-employee-id]:nth-child(4n+3) {
+#employees-content .staff-avatar[data-employee-id]:nth-child(4n+3) {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
 
-.staff-avatar[data-employee-id]:nth-child(4n+4) {
+#employees-content .staff-avatar[data-employee-id]:nth-child(4n+4) {
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
 }
 
-.online-indicator {
+#employees-content .online-indicator {
   position: absolute;
   bottom: -2px;
   right: -2px;
@@ -362,12 +362,12 @@
   border-radius: 50%;
 }
 
-.employee-details {
+#employees-content .employee-details {
   flex: 1;
   min-width: 0;
 }
 
-.employee-name {
+#employees-content .employee-name {
   font-weight: 600;
   color: var(--text-primary);
   display: flex;
@@ -376,26 +376,26 @@
   margin-bottom: 0.25rem;
 }
 
-.employee-email {
+#employees-content .employee-email {
   font-size: 0.85rem;
   color: var(--text-secondary);
   margin-bottom: 0.25rem;
 }
 
-.employee-meta {
+#employees-content .employee-meta {
   display: flex;
   gap: 1rem;
   font-size: 0.75rem;
   color: var(--text-tertiary);
 }
 
-.meta-item {
+#employees-content .meta-item {
   display: flex;
   align-items: center;
   gap: 0.25rem;
 }
 
-.role-badge {
+#employees-content .role-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -407,40 +407,40 @@
   color: var(--text-primary);
 }
 
-.date-info, .salary-info {
+#employees-content .date-info, #employees-content .salary-info {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.join-date, .salary-badge {
+#employees-content .join-date, #employees-content .salary-badge {
   font-weight: 500;
   color: var(--text-primary);
 }
 
-.contact-info {
+#employees-content .contact-info {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.phone {
+#employees-content .phone {
   font-weight: 500;
   color: var(--text-primary);
 }
 
-.address {
+#employees-content .address {
   font-size: 0.8rem;
   color: var(--text-tertiary);
 }
 
-.action-buttons {
+#employees-content .action-buttons {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.btn-icon {
+#employees-content .btn-icon {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -455,18 +455,18 @@
   height: 32px;
 }
 
-.btn-icon:hover {
+#employees-content .btn-icon:hover {
   background: var(--border-hover);
   color: var(--text-primary);
   transform: translateY(-1px);
 }
 
 /* Dropdown */
-.dropdown {
+#employees-content .dropdown {
   position: relative;
 }
 
-.dropdown-menu {
+#employees-content .dropdown-menu {
   position: absolute;
   top: 100%;
   right: 0;
@@ -483,13 +483,13 @@
   z-index: 1000;
 }
 
-.dropdown:hover .dropdown-menu {
+#employees-content .dropdown:hover .dropdown-menu {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
 }
 
-.dropdown-item {
+#employees-content .dropdown-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -501,61 +501,61 @@
   font-size: 0.85rem;
 }
 
-.dropdown-item:hover {
+#employees-content .dropdown-item:hover {
   background: var(--bg-secondary);
 }
 
-.dropdown-divider {
+#employees-content .dropdown-divider {
   height: 1px;
   background: var(--border-color);
   margin: 0.5rem 0;
 }
 
-.text-danger {
+#employees-content .text-danger {
   color: #ef4444 !important;
 }
 
-.text-danger:hover {
+#employees-content .text-danger:hover {
   background: rgba(239, 68, 68, 0.1) !important;
 }
 
-.text-success {
+#employees-content .text-success {
   color: #22c55e !important;
 }
 
-.text-success:hover {
+#employees-content .text-success:hover {
   background: rgba(34, 197, 94, 0.1) !important;
 }
 
 /* Empty State */
-.empty-state {
+#employees-content .empty-state {
   padding: 4rem 2rem;
   text-align: center;
 }
 
-.empty-content {
+#employees-content .empty-content {
   max-width: 300px;
   margin: 0 auto;
 }
 
-.empty-content i {
+#employees-content .empty-content i {
   font-size: 4rem;
   color: var(--text-tertiary);
   margin-bottom: 1rem;
 }
 
-.empty-content h3 {
+#employees-content .empty-content h3 {
   color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
 
-.empty-content p {
+#employees-content .empty-content p {
   color: var(--text-secondary);
   margin-bottom: 1.5rem;
 }
 
 /* Modal Styles */
-.modal {
+#employees-content .modal {
   position: fixed;
   top: 0;
   left: 0;
@@ -568,7 +568,7 @@
   justify-content: center;
 }
 
-.modal-content {
+#employees-content .modal-content {
   background: var(--card-bg);
   border: 1px solid var(--border-color);
   border-radius: 16px;
@@ -580,7 +580,7 @@
   flex-direction: column;
 }
 
-.modal-header {
+#employees-content .modal-header {
   padding: 1.5rem 2rem;
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -589,13 +589,13 @@
   flex-shrink: 0;
 }
 
-.modal-header h3 {
+#employees-content .modal-header h3 {
   margin: 0;
   color: var(--text-primary);
   font-size: 1.25rem;
 }
 
-.close-modal {
+#employees-content .close-modal {
   font-size: 1.5rem;
   color: var(--text-tertiary);
   cursor: pointer;
@@ -604,50 +604,50 @@
   transition: color 0.2s ease;
 }
 
-.close-modal:hover {
+#employees-content .close-modal:hover {
   color: var(--text-primary);
 }
 
-.modal-body {
+#employees-content .modal-body {
   padding: 1.5rem 2rem;
   overflow-y: auto;
   flex: 1;
 }
 
 /* Sleek Modal Scrollbar */
-.modal-body::-webkit-scrollbar {
+#employees-content .modal-body::-webkit-scrollbar {
   width: 6px;
 }
 
-.modal-body::-webkit-scrollbar-track {
+#employees-content .modal-body::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.modal-body::-webkit-scrollbar-thumb {
+#employees-content .modal-body::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 3px;
 }
 
-.modal-body::-webkit-scrollbar-thumb:hover {
+#employees-content .modal-body::-webkit-scrollbar-thumb:hover {
   background: var(--border-hover);
 }
 
-.form-group {
+#employees-content .form-group {
   margin-bottom: 1.25rem;
 }
 
-.form-row {
+#employees-content .form-row {
   display: flex;
   gap: 1rem;
   margin-bottom: 1.25rem;
 }
 
-.form-row .form-group {
+#employees-content .form-row .form-group {
   flex: 1;
   margin-bottom: 0;
 }
 
-.form-group label {
+#employees-content .form-group label {
   display: block;
   margin-bottom: 0.5rem;
   color: var(--text-primary);
@@ -655,8 +655,8 @@
   font-size: 0.9rem;
 }
 
-.form-group input,
-.form-group textarea {
+#employees-content .form-group input,
+#employees-content .form-group textarea {
   width: 100%;
   padding: 0.75rem;
   background: var(--bg-secondary);
@@ -667,20 +667,20 @@
   transition: all 0.2s ease;
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+#employees-content .form-group input:focus,
+#employees-content .form-group textarea:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.form-group textarea {
+#employees-content .form-group textarea {
   resize: vertical;
   min-height: 60px;
   font-family: inherit;
 }
 
-.form-actions {
+#employees-content .form-actions {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
@@ -691,77 +691,77 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-  .header-content {
+  #employees-content .header-content {
     flex-direction: column;
     align-items: stretch;
   }
   
-  .header-actions {
+  #employees-content .header-actions {
     flex-direction: column;
   }
   
-  .search-box input {
+  #employees-content .search-box input {
     width: 100%;
   }
   
-  .action-buttons {
+  #employees-content .action-buttons {
     flex-direction: column;
   }
   
-  .form-row {
+  #employees-content .form-row {
     flex-direction: column;
     gap: 0;
   }
   
-  .modal-content {
+  #employees-content .modal-content {
     width: 95%;
     margin: 1rem;
   }
   
-  .modal-header,
-  .modal-body {
+  #employees-content .modal-header,
+  #employees-content .modal-body {
     padding: 1rem 1.5rem;
   }
 }
 
 /* Table styling */
-.table-scroll-vert {
+#employees-content .table-scroll-vert {
   max-height: 65vh;
   overflow-y: auto;
   overflow-x: auto;
 }
 
-.table-scroll-vert::-webkit-scrollbar {
+#employees-content .table-scroll-vert::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
-.table-scroll-vert::-webkit-scrollbar-track {
+#employees-content .table-scroll-vert::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.table-scroll-vert::-webkit-scrollbar-thumb {
+#employees-content .table-scroll-vert::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 4px;
 }
 
-.table-scroll-vert::-webkit-scrollbar-thumb:hover {
+#employees-content .table-scroll-vert::-webkit-scrollbar-thumb:hover {
   background: var(--border-hover);
 }
 
-table {
+#employees-content table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
 }
 
-th, td {
+#employees-content th, #employees-content td {
   padding: 0.875rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
 }
 
-th {
+#employees-content th {
   background: var(--bg-secondary);
   color: var(--text-secondary);
   font-weight: 600;
@@ -773,19 +773,19 @@ th {
   z-index: 10;
 }
 
-td {
+#employees-content td {
   color: var(--text-primary);
 }
 
-tbody tr {
+#employees-content tbody tr {
   transition: background 0.15s ease;
 }
 
-tbody tr:hover {
+#employees-content tbody tr:hover {
   background: rgba(255, 255, 255, 0.02);
 }
 
-tbody tr:last-child td {
+#employees-content tbody tr:last-child td {
   border-bottom: none;
 }
 
@@ -980,9 +980,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded - initializing employee list');
     
     // Add employee button functionality
-    const addEmployeeBtn = document.getElementById('add-employee-btn');
-    const addFirstEmployeeBtn = document.getElementById('add-first-employee');
-    const addEmployeeModal = document.getElementById('addEmployeeModal');
+    const addEmployeeBtn = document.querySelector('#employees-content #add-employee-btn');
+    const addFirstEmployeeBtn = document.querySelector('#employees-content #add-first-employee');
+    const addEmployeeModal = document.querySelector('#employees-content #addEmployeeModal');
     
     console.log('Add employee button:', addEmployeeBtn);
     console.log('Add employee modal:', addEmployeeModal);
@@ -1022,8 +1022,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Close modal events
-    const closeModalBtn = document.querySelector('.close-modal');
-    const cancelAddEmployeeBtn = document.getElementById('cancelAddEmployee');
+    const closeModalBtn = document.querySelector('#employees-content .close-modal');
+    const cancelAddEmployeeBtn = document.querySelector('#employees-content #cancelAddEmployee');
     
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', closeAddEmployeeModal);
@@ -1043,8 +1043,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Search functionality
-    const searchInput = document.getElementById('employee-search');
-    const employeeRows = document.querySelectorAll('.employee-row');
+    const searchInput = document.querySelector('#employees-content #employee-search');
+    const employeeRows = document.querySelectorAll('#employees-content .employee-row');
     
     if (searchInput && employeeRows.length > 0) {
         searchInput.addEventListener('input', function(e) {
@@ -1062,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Form submission
-    const addEmployeeForm = document.getElementById('addEmployeeForm');
+    const addEmployeeForm = document.querySelector('#employees-content #addEmployeeForm');
     if (addEmployeeForm) {
         addEmployeeForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -1133,14 +1133,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Edit and view buttons
-    document.querySelectorAll('.edit-btn').forEach(btn => {
+    document.querySelectorAll('#employees-content .edit-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const employeeId = this.getAttribute('data-employee-id');
             // Add your edit functionality here
         });
     });
     
-    document.querySelectorAll('.view-btn').forEach(btn => {
+    document.querySelectorAll('#employees-content .view-btn').forEach(btn => {
         btn.addEventListener('click', function() {
             const employeeId = this.getAttribute('data-employee-id');
             // Add your view functionality here
@@ -1148,7 +1148,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Delete employee functionality
-    document.querySelectorAll('.delete-employee').forEach(btn => {
+    document.querySelectorAll('#employees-content .delete-employee').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             const employeeId = this.getAttribute('data-employee-id');

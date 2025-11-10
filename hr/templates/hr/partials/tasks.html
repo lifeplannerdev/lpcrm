@@ -80,12 +80,12 @@
 }
 
 /* Task cards */
-.task-grid {
+#tasks-content .task-grid {
   display: grid;
   gap: 0.75rem;
 }
 
-.task-card {
+#tasks-content .task-card {
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: 8px;
@@ -94,12 +94,12 @@
   cursor: pointer;
 }
 
-.task-card:hover {
+#tasks-content .task-card:hover {
   border-color: var(--border-hover);
   transform: translateY(-1px);
 }
 
-.task-header {
+#tasks-content .task-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -107,26 +107,26 @@
   gap: 1rem;
 }
 
-.task-title {
+#tasks-content .task-title {
   font-weight: 600;
   color: var(--text-primary);
   font-size: 0.9375rem;
 }
 
-.task-badges {
+#tasks-content .task-badges {
   display: flex;
   gap: 0.5rem;
   flex-shrink: 0;
 }
 
-.task-description {
+#tasks-content .task-description {
   color: var(--text-secondary);
   font-size: 0.875rem;
   line-height: 1.5;
   margin-bottom: 0.75rem;
 }
 
-.task-meta {
+#tasks-content .task-meta {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -134,13 +134,13 @@
   color: var(--text-tertiary);
 }
 
-.task-assignee {
+#tasks-content .task-assignee {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
 
-.task-avatar {
+#tasks-content .task-avatar {
   width: 24px;
   height: 24px;
   border-radius: 50%;
@@ -154,19 +154,19 @@
 }
 
 /* Empty state */
-.empty-state {
+#tasks-content .empty-state {
   text-align: center;
   padding: 3rem 1rem;
   color: var(--text-secondary);
 }
 
-.empty-state i {
+#tasks-content .empty-state i {
   font-size: 3rem;
   margin-bottom: 1rem;
   opacity: 0.3;
 }
 
-.empty-state h3 {
+#tasks-content .empty-state h3 {
   font-size: 1.125rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
@@ -174,7 +174,7 @@
 }
 
 /* Badges */
-.badge {
+#tasks-content .badge {
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.625rem;
@@ -184,32 +184,32 @@
   border: 1px solid;
 }
 
-.badge-success {
+#tasks-content .badge-success {
   background: rgba(0, 229, 153, 0.1);
   color: var(--success);
   border-color: rgba(0, 229, 153, 0.2);
 }
 
-.badge-warning {
+#tasks-content .badge-warning {
   background: rgba(245, 166, 35, 0.1);
   color: var(--warning);
   border-color: rgba(245, 166, 35, 0.2);
 }
 
-.badge-error {
+#tasks-content .badge-error {
   background: rgba(238, 0, 0, 0.1);
   color: var(--error);
   border-color: rgba(238, 0, 0, 0.2);
 }
 
-.badge-neutral {
+#tasks-content .badge-neutral {
   background: rgba(161, 161, 170, 0.1);
   color: var(--text-secondary);
   border-color: var(--border-color);
 }
 
 /* Action buttons */
-.action-btn {
+#tasks-content .action-btn {
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
@@ -226,14 +226,14 @@
   font-family: inherit;
 }
 
-.action-btn:hover {
+#tasks-content .action-btn:hover {
   background: var(--card-bg);
   color: var(--text-primary);
   border-color: var(--border-hover);
 }
 
 /* Header */
-.table-header {
+#tasks-content .table-header {
   background: var(--bg-secondary);
   padding: 1.5rem 2rem;
   border-bottom: 1px solid var(--border-color);
@@ -242,7 +242,7 @@
   align-items: center;
 }
 
-.table-header h3 {
+#tasks-content .table-header h3 {
   margin: 0;
   color: var(--text-primary);
   font-size: 1.5rem;
@@ -253,13 +253,13 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Add task button
-  document.getElementById('assign-task-btn')?.addEventListener('click', function() {
+  document.querySelector('#tasks-content #assign-task-btn')?.addEventListener('click', function() {
     // Add your assign task logic here
     console.log('Assign task clicked');
   });
   
   // Task card click functionality
-  document.querySelectorAll('.task-card').forEach(card => {
+  document.querySelectorAll('#tasks-content .task-card').forEach(card => {
     card.addEventListener('click', function() {
       const taskId = this.getAttribute('data-task-id');
       console.log('View task:', taskId);
