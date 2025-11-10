@@ -1,3 +1,4 @@
+{% csrf_token %}
 <div class="table-container">
   <div class="table-header">
     <div class="header-content">
@@ -18,100 +19,73 @@
     </div>
   </div>
 
-  
-
   <div class="table-scroll-vert">
     <table class="bc-table bc-table-striped">
       <thead>
         <tr>
           <th>Employee</th>
-          <th>Role</th>
-          <th>Department</th>
+          <th>Position</th>
+          <th>Contact</th>
           <th>Join Date</th>
-          <th>Status</th>
+          <th>Salary</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
-        {% for staff in staff_members %}
-        <tr class="employee-row" data-search="{{ staff.get_full_name|lower }} {{ staff.email|lower }} {{ staff.get_role_display|lower }}">
+        {% for employee in employees %}
+        <tr class="employee-row" data-search="{{ employee.name|lower }} {{ employee.email|lower }} {{ employee.position|lower }}">
           <td>
             <div class="employee-info">
-              <div class="staff-avatar" data-user-id="{{ staff.id }}">
-                {{ staff.first_name|first|upper }}{{ staff.last_name|first|upper }}
+              <div class="staff-avatar" data-employee-id="{{ employee.id }}">
+                {{ employee.name|first|upper }}
               </div>
               <div class="employee-details">
                 <div class="employee-name">
-                  {{ staff.get_full_name|default:staff.username }}
-                  {% if staff.is_active %}
-                  <span class="online-indicator" title="Active Now"></span>
-                  {% endif %}
+                  {{ employee.name }}
                 </div>
-                <div class="employee-email">{{ staff.email }}</div>
+                <div class="employee-email">{{ employee.email }}</div>
                 <div class="employee-meta">
                   <span class="meta-item">
                     <i class="fas fa-id-badge"></i>
-                    ID: {{ staff.id }}
+                    ID: {{ employee.id }}
                   </span>
                 </div>
               </div>
             </div>
           </td>
           <td>
-            <div class="role-container">
-              <span class="role-badge role-{{ staff.role|lower }}">
-                <i class="fas 
-                  {% if staff.role == 'ADMIN' %}fa-crown
-                  {% elif staff.role == 'HR' %}fa-users-cog
-                  {% elif staff.role == 'OPS' %}fa-cogs
-                  {% elif staff.role == 'ADM_MANAGER' %}fa-user-tie
-                  {% elif staff.role == 'ADM_EXEC' %}fa-user-graduate
-                  {% elif staff.role == 'PROCESSING' %}fa-tasks
-                  {% elif staff.role == 'MEDIA' %}fa-camera
-                  {% elif staff.role == 'TRAINER' %}fa-chalkboard-teacher
-                  {% elif staff.role == 'BUSINESS_HEAD' %}fa-chart-line
-                  {% elif staff.role == 'CM' %}fa-building
-                  {% else %}fa-user{% endif %}">
-                </i>
-                {{ staff.get_role_display }}
+            <div class="position-container">
+              <span class="role-badge">
+                <i class="fas fa-briefcase"></i>
+                {{ employee.position }}
               </span>
             </div>
           </td>
           <td>
-            <div class="department-info">
-              <span class="department-badge">
-                <i class="fas fa-building"></i>
-                {{ staff.team|default:"Unassigned" }}
-              </span>
+            <div class="contact-info">
+              <div class="phone">{{ employee.phone }}</div>
+              <div class="address">{{ employee.address|truncatewords:3 }}</div>
             </div>
           </td>
           <td>
             <div class="date-info">
-              <div class="join-date">{{ staff.date_joined|date:"M d, Y" }}</div>
-              <div class="tenure">{{ staff.date_joined|timesince }}</div>
+              <div class="join-date">{{ employee.join_date }}</div>
             </div>
           </td>
           <td>
-            <div class="status-container">
-              {% if staff.is_active %}
-              <span class="status-badge status-active">
-                <i class="fas fa-circle"></i>
-                Active
+            <div class="salary-info">
+              <span class="salary-badge">
+                <i class="fas fa-rupee-sign"></i>
+                {{ employee.salary }}
               </span>
-              {% else %}
-              <span class="status-badge status-inactive">
-                <i class="fas fa-circle"></i>
-                Inactive
-              </span>
-              {% endif %}
             </div>
           </td>
           <td>
             <div class="action-buttons">
-              <button class="btn-icon edit-btn" data-employee-id="{{ staff.id }}" title="Edit Employee">
+              <button class="btn-icon edit-btn" data-employee-id="{{ employee.id }}" title="Edit Employee">
                 <i class="fas fa-edit"></i>
               </button>
-              <button class="btn-icon view-btn" data-employee-id="{{ staff.id }}" title="View Details">
+              <button class="btn-icon view-btn" data-employee-id="{{ employee.id }}" title="View Details">
                 <i class="fas fa-eye"></i>
               </button>
               <div class="dropdown">
@@ -128,17 +102,10 @@
                     View Contract
                   </a>
                   <div class="dropdown-divider"></div>
-                  {% if staff.is_active %}
                   <a href="#" class="dropdown-item text-danger">
                     <i class="fas fa-user-slash"></i>
                     Deactivate
                   </a>
-                  {% else %}
-                  <a href="#" class="dropdown-item text-success">
-                    <i class="fas fa-user-check"></i>
-                    Activate
-                  </a>
-                  {% endif %}
                 </div>
               </div>
             </div>
@@ -164,7 +131,85 @@
   </div>
 </div>
 
+<!-- Add Employee Modal -->
+<div id="addEmployeeModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Add New Employee</h3>
+      <span class="close-modal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <form id="addEmployeeForm">
+        <div class="form-group">
+          <label for="employeeName">Full Name</label>
+          <input type="text" id="employeeName" name="name" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="employeeEmail">Email</label>
+            <input type="email" id="employeeEmail" name="email" required>
+          </div>
+          <div class="form-group">
+            <label for="employeePhone">Phone</label>
+            <input type="text" id="employeePhone" name="phone" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="employeeAddress">Address</label>
+          <textarea id="employeeAddress" name="address" rows="2"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="employeeJoinDate">Join Date</label>
+            <input type="date" id="employeeJoinDate" name="join_date">
+          </div>
+          <div class="form-group">
+            <label for="employeePosition">Position</label>
+            <input type="text" id="employeePosition" name="position" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="employeeSalary">Salary</label>
+            <input type="text" id="employeeSalary" name="salary" required>
+          </div>
+          <div class="form-group">
+            <label for="employeePenalty">Penalty (if any)</label>
+            <input type="text" id="employeePenalty" name="penalty">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="employeeAttendance">Attendance</label>
+          <input type="text" id="employeeAttendance" name="attendance">
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="cancelAddEmployee">Cancel</button>
+          <button type="submit" class="btn-primary">Add Employee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <style>
+:root {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --card-bg: #111111;
+  --border-color: #2a2a2a;
+  --border-hover: #3a3a3a;
+  --text-primary: #ededed;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --accent: #0070f3;
+  --accent-hover: #0761d1;
+  --success: #00e599;
+  --warning: #f5a623;
+  --error: #e00;
+  --shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
+  --glow: 0 0 20px rgba(0, 112, 243, 0.3);
+}
+
 /* Enhanced Table Styles */
 .table-header {
   background: var(--bg-secondary);
@@ -260,6 +305,27 @@
   box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
 }
 
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  background: var(--border-hover);
+  transform: translateY(-2px);
+}
+
 /* Stats Container */
 .stats-container {
   display: grid;
@@ -348,20 +414,20 @@
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-/* Different avatar colors based on user ID */
-.staff-avatar[data-user-id]:nth-child(4n+1) {
+/* Different avatar colors based on employee ID */
+.staff-avatar[data-employee-id]:nth-child(4n+1) {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
-.staff-avatar[data-user-id]:nth-child(4n+2) {
+.staff-avatar[data-employee-id]:nth-child(4n+2) {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
-.staff-avatar[data-user-id]:nth-child(4n+3) {
+.staff-avatar[data-employee-id]:nth-child(4n+3) {
   background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
 
-.staff-avatar[data-user-id]:nth-child(4n+4) {
+.staff-avatar[data-employee-id]:nth-child(4n+4) {
   background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
 }
 
@@ -409,7 +475,7 @@
   gap: 0.25rem;
 }
 
-.role-badge, .department-badge {
+.role-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -421,85 +487,31 @@
   color: var(--text-primary);
 }
 
-/* Role-specific colors */
-.role-badge.role-admin {
-  background: rgba(245, 158, 11, 0.2);
-  color: #f59e0b;
-}
-
-.role-badge.role-hr {
-  background: rgba(59, 130, 246, 0.2);
-  color: #3b82f6;
-}
-
-.role-badge.role-ops {
-  background: rgba(139, 92, 246, 0.2);
-  color: #8b5cf6;
-}
-
-.role-badge.role-adm_manager {
-  background: rgba(16, 185, 129, 0.2);
-  color: #10b981;
-}
-
-.role-badge.role-adm_exec {
-  background: rgba(14, 165, 233, 0.2);
-  color: #0ea5e9;
-}
-
-.role-badge.role-processing {
-  background: rgba(99, 102, 241, 0.2);
-  color: #6366f1;
-}
-
-.role-badge.role-media {
-  background: rgba(236, 72, 153, 0.2);
-  color: #ec4899;
-}
-
-.role-badge.role-trainer {
-  background: rgba(168, 85, 247, 0.2);
-  color: #a855f7;
-}
-
-.role-badge.role-business_head {
-  background: rgba(217, 70, 239, 0.2);
-  color: #d946ef;
-}
-
-.role-badge.role-cm {
-  background: rgba(6, 182, 212, 0.2);
-  color: #06b6d4;
-}
-
-.date-info {
+.date-info, .salary-info {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.join-date {
+.join-date, .salary-badge {
   font-weight: 500;
   color: var(--text-primary);
 }
 
-.tenure {
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.phone {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.address {
   font-size: 0.8rem;
   color: var(--text-tertiary);
-}
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 500;
-}
-
-.status-badge i {
-  font-size: 0.6rem;
 }
 
 .action-buttons {
@@ -622,6 +634,106 @@
   margin-bottom: 1.5rem;
 }
 
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.close-modal {
+  font-size: 2rem;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+.close-modal:hover {
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 1.5rem 2rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-row {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header-content {
@@ -645,6 +757,76 @@
   .action-buttons {
     flex-direction: column;
   }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+/* Table styling */
+.table-scroll-vert {
+  max-height: 65vh;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.table-scroll-vert::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-scroll-vert::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-scroll-vert::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.table-scroll-vert::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+th, td {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+td {
+  color: var(--text-primary);
+}
+
+tbody tr {
+  transition: background 0.15s ease;
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
 }
 </style>
 
@@ -668,9 +850,64 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   // Add employee button
-  document.getElementById('add-employee-btn')?.addEventListener('click', function() {
-    // Add your add employee logic here
-    console.log('Add employee clicked');
+  const addEmployeeBtn = document.getElementById('add-employee-btn');
+  const addFirstEmployeeBtn = document.getElementById('add-first-employee');
+  const addEmployeeModal = document.getElementById('addEmployeeModal');
+  const closeModalBtn = document.querySelector('.close-modal');
+  const cancelAddEmployeeBtn = document.getElementById('cancelAddEmployee');
+  const addEmployeeForm = document.getElementById('addEmployeeForm');
+  
+  function openAddEmployeeModal() {
+    addEmployeeModal.style.display = 'flex';
+  }
+  
+  function closeAddEmployeeModal() {
+    addEmployeeModal.style.display = 'none';
+    addEmployeeForm.reset();
+  }
+  
+  addEmployeeBtn?.addEventListener('click', openAddEmployeeModal);
+  addFirstEmployeeBtn?.addEventListener('click', openAddEmployeeModal);
+  closeModalBtn?.addEventListener('click', closeAddEmployeeModal);
+  cancelAddEmployeeBtn?.addEventListener('click', closeAddEmployeeModal);
+  
+  // Close modal when clicking outside
+  window.addEventListener('click', function(e) {
+    if (e.target === addEmployeeModal) {
+      closeAddEmployeeModal();
+    }
+  });
+  
+  // Handle form submission
+  addEmployeeForm?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Get form data
+    const formData = new FormData(addEmployeeForm);
+    
+    // Submit form via AJAX
+    fetch('{% url "hr:add_employee" %}', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        alert('Employee added successfully!');
+        closeAddEmployeeModal();
+        // Reload the page to show the new employee
+        location.reload();
+      } else {
+        alert('Error adding employee: ' + data.message);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('An error occurred while adding the employee.');
+    });
   });
   
   // Edit buttons

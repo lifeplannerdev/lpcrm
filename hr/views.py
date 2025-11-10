@@ -9,7 +9,6 @@ from django.utils import timezone
 from datetime import datetime, timedelta
 import json
 from .models import Employee
-from accounts.models import User
 from leads.models import Lead
 from tasks.models import Task, TaskUpdate
 
@@ -45,15 +44,77 @@ def hr_dashboard(request):
 @user_passes_test(lambda u: u.is_hr)
 def employees(request):
     """Employees management view"""
-    staff_members = User.objects.filter(is_active=True).annotate(
-        total_leads=Count('assigned_leads'),
-        active_tasks=Count('tasks', filter=Q(tasks__status__in=['PENDING', 'IN_PROGRESS']))
-    )
+    employees = Employee.objects.all()
     tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
     
     return render(request, 'hr/employees.html', {
-        'staff_members': staff_members, 
+        'employees': employees, 
         'tasks': tasks,
     })
-    
-    
+
+@login_required
+@user_passes_test(lambda u: u.is_hr)
+def employees_list_partial(request):
+    """Employees list partial view"""
+    employees = Employee.objects.all()
+    return render(request, 'hr/partials/employees_list.html', {
+        'employees': employees,
+    })
+
+@require_POST
+@login_required
+@user_passes_test(lambda u: u.is_hr)
+def add_employee(request):
+    """Add new employee"""
+    try:
+        # Get form data
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        phone = request.POST.get('phone')
+        address = request.POST.get('address', '')
+        join_date = request.POST.get('join_date', '')
+        position = request.POST.get('position')
+        salary = request.POST.get('salary')
+        penalty = request.POST.get('penalty', '')
+        attendance = request.POST.get('attendance', '')
+        
+        # Create new employee
+        employee = Employee.objects.create(
+            name=name,
+            email=email,
+            phone=phone,
+            address=address,
+            join_date=join_date,
+            position=position,
+            salary=salary,
+            penalty=penalty,
+            attendance=attendance
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Employee added successfully',
+            'employee_id': employee.id
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })
+
+@login_required
+@user_passes_test(lambda u: u.is_hr)
+def attendance_partial(request):
+    """Attendance partial view"""
+    # For now, we'll return the partial without specific data
+    # You can add specific attendance data logic here
+    return render(request, 'hr/partials/attendance.html')
+
+@login_required
+@user_passes_test(lambda u: u.is_hr)
+def tasks_partial(request):
+    """Tasks partial view"""
+    tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
+    return render(request, 'hr/partials/tasks.html', {
+        'tasks': tasks,
+    })

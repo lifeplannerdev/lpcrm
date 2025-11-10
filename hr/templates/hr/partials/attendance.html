@@ -67,3 +67,239 @@
     </table>
   </div>
 </div>
+
+<style>
+:root {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --card-bg: #111111;
+  --border-color: #2a2a2a;
+  --border-hover: #3a3a3a;
+  --text-primary: #ededed;
+  --text-secondary: #a1a1aa;
+  --text-tertiary: #71717a;
+  --accent: #0070f3;
+  --accent-hover: #0761d1;
+  --success: #00e599;
+  --warning: #f5a623;
+  --error: #e00;
+  --shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
+  --glow: 0 0 20px rgba(0, 112, 243, 0.3);
+}
+
+/* Table styling */
+.table-wrapper {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-scroll {
+  max-height: 65vh;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.table-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.table-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.table-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+th, td {
+  padding: 0.875rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+th {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+td {
+  color: var(--text-primary);
+}
+
+tbody tr {
+  transition: background 0.15s ease;
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Avatar */
+.avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #00e599);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.75rem;
+  vertical-align: middle;
+  margin-right: 0.75rem;
+}
+
+.employee-info {
+  display: flex;
+  align-items: center;
+}
+
+.employee-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.employee-name {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.employee-email {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.625rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.badge-success {
+  background: rgba(0, 229, 153, 0.1);
+  color: var(--success);
+  border-color: rgba(0, 229, 153, 0.2);
+}
+
+.badge-warning {
+  background: rgba(245, 166, 35, 0.1);
+  color: var(--warning);
+  border-color: rgba(245, 166, 35, 0.2);
+}
+
+.badge-error {
+  background: rgba(238, 0, 0, 0.1);
+  color: var(--error);
+  border-color: rgba(238, 0, 0, 0.2);
+}
+
+.badge-neutral {
+  background: rgba(161, 161, 170, 0.1);
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.empty-state h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+/* Action buttons */
+.action-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.action-btn:hover {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+/* Header */
+.table-header {
+  background: var(--bg-secondary);
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Filter attendance button
+  document.getElementById('filter-attendance-btn')?.addEventListener('click', function() {
+    const dateFilter = document.getElementById('attendance-date-filter').value;
+    console.log('Filter attendance by date:', dateFilter);
+    // Add your filter logic here
+  });
+});
+</script>

@@ -14,8 +14,7 @@ class Employee(models.Model):
     attendance = models.TextField(max_length=100, blank=True, null=True)
 
     def __str__(self):
-        return self.name
+        return str(self.name)
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employees'
-    
