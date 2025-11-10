@@ -768,6 +768,15 @@
         });
       });
       
+      // Back button functionality
+      const backBtn = document.querySelector('.header-controls .action-btn');
+      if (backBtn) {
+        backBtn.addEventListener('click', function() {
+          // Redirect to HR dashboard
+          window.location.href = '/hr/';
+        });
+      }
+      
       // Load initial content
       loadTabContent('employees');
     });
