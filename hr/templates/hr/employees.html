@@ -627,10 +627,130 @@
     
     // Function to initialize tab-specific content
     function initializeTabContent(tabId) {
+      console.log('Initializing tab content for:', tabId);
       // Add any tab-specific JavaScript initialization here
       switch(tabId) {
         case 'employees':
-          initializeEmployeeSearch();
+          // Initialize employee search functionality
+          console.log('Employees tab loaded, checking for initialization');
+          
+          // Add a small delay to ensure DOM is fully rendered
+          setTimeout(function() {
+            // Manually attach event listeners to the buttons
+            console.log('Attaching event listeners to employee buttons');
+            
+            // Add employee button
+            const addEmployeeBtn = document.getElementById('add-employee-btn');
+            console.log('Add employee button:', addEmployeeBtn);
+            if (addEmployeeBtn) {
+              addEmployeeBtn.addEventListener('click', function(e) {
+                console.log('Add employee button clicked from main initialization');
+                e.preventDefault();
+                // Directly show the modal
+                const modal = document.getElementById('addEmployeeModal');
+                if (modal) {
+                  modal.style.display = 'flex';
+                  document.body.style.overflow = 'hidden';
+                  console.log('Modal displayed via main initialization');
+                }
+              });
+              console.log('Attached click listener to add employee button');
+            }
+            
+            // Test modal button
+            const testModalBtn = document.getElementById('test-modal-btn');
+            console.log('Test modal button:', testModalBtn);
+            if (testModalBtn) {
+              testModalBtn.addEventListener('click', function(e) {
+                console.log('Test modal button clicked from main initialization');
+                e.preventDefault();
+                // Directly show the modal
+                const modal = document.getElementById('addEmployeeModal');
+                if (modal) {
+                  modal.style.display = 'flex';
+                  document.body.style.overflow = 'hidden';
+                  console.log('Modal displayed via main initialization');
+                }
+              });
+              console.log('Attached click listener to test modal button');
+            }
+            
+            // Add first employee button (in empty state)
+            const addFirstEmployeeBtn = document.getElementById('add-first-employee');
+            console.log('Add first employee button:', addFirstEmployeeBtn);
+            if (addFirstEmployeeBtn) {
+              addFirstEmployeeBtn.addEventListener('click', function(e) {
+                console.log('Add first employee button clicked from main initialization');
+                e.preventDefault();
+                // Directly show the modal
+                const modal = document.getElementById('addEmployeeModal');
+                if (modal) {
+                  modal.style.display = 'flex';
+                  document.body.style.overflow = 'hidden';
+                  console.log('Modal displayed via main initialization');
+                }
+              });
+              console.log('Attached click listener to add first employee button');
+            }
+            
+            // Close modal functionality
+            const modal = document.getElementById('addEmployeeModal');
+            if (modal) {
+              // Close button
+              const closeBtn = modal.querySelector('.close-modal');
+              if (closeBtn) {
+                closeBtn.addEventListener('click', function() {
+                  console.log('Close button clicked');
+                  modal.style.display = 'none';
+                  document.body.style.overflow = '';
+                });
+              }
+              
+              // Cancel button
+              const cancelBtn = document.getElementById('cancelAddEmployee');
+              if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                  console.log('Cancel button clicked');
+                  modal.style.display = 'none';
+                  document.body.style.overflow = '';
+                });
+              }
+              
+              // Click outside to close
+              modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                  console.log('Clicked outside modal');
+                  modal.style.display = 'none';
+                  document.body.style.overflow = '';
+                }
+              });
+              
+              console.log('Attached close modal event listeners');
+            }
+          }, 500); // Small delay to ensure DOM is ready
+          
+          // Add a test button to the main page for debugging
+          /*
+          setTimeout(function() {
+            const testBtn = document.createElement('button');
+            testBtn.innerText = 'Test Modal from Main';
+            testBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 999999; background: green; color: white; padding: 10px;';
+            testBtn.onclick = function() {
+              console.log('Test button from main page clicked');
+              // Try to find the modal directly
+              const modal = document.getElementById('addEmployeeModal');
+              if (modal) {
+                console.log('Found modal, showing it');
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+              } else {
+                console.log('Modal not found');
+              }
+            };
+            document.body.appendChild(testBtn);
+            console.log('Test button added to main page');
+          }, 2000);
+          */
           break;
         case 'attendance':
           // Initialize attendance-specific functionality
@@ -638,27 +758,6 @@
         case 'tasks':
           // Initialize task-specific functionality
           break;
-      }
-    }
-    
-    // Initialize employee search functionality
-    function initializeEmployeeSearch() {
-      const searchInput = document.getElementById('employee-search');
-      if (searchInput) {
-        const employeeRows = document.querySelectorAll('.employee-row');
-        
-        searchInput.addEventListener('input', function(e) {
-          const searchTerm = e.target.value.toLowerCase();
-          
-          employeeRows.forEach(row => {
-            const searchData = row.getAttribute('data-search');
-            if (searchData.includes(searchTerm)) {
-              row.style.display = '';
-            } else {
-              row.style.display = 'none';
-            }
-          });
-        });
       }
     }
   </script>

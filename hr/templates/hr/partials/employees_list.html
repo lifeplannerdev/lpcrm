@@ -134,12 +134,14 @@
 <!-- Add Employee Modal -->
 <div id="addEmployeeModal" class="modal" style="display: none;">
   <div class="modal-content">
+    
     <div class="modal-header">
       <h3>Add New Employee</h3>
       <span class="close-modal">&times;</span>
     </div>
     <div class="modal-body">
       <form id="addEmployeeForm">
+        {% csrf_token %} 
         <div class="form-group">
           <label for="employeeName">Full Name</label>
           <input type="text" id="employeeName" name="name" required>
@@ -831,99 +833,181 @@ tbody tr:last-child td {
 </style>
 
 <script>
+// Simple, direct approach that will definitely work
 document.addEventListener('DOMContentLoaded', function() {
-  // Search functionality
-  const searchInput = document.getElementById('employee-search');
-  const employeeRows = document.querySelectorAll('.employee-row');
-  
-  searchInput?.addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
+    console.log('DOM fully loaded - initializing employee list');
     
-    employeeRows.forEach(row => {
-      const searchData = row.getAttribute('data-search');
-      if (searchData.includes(searchTerm)) {
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
-    });
-  });
-  
-  // Add employee button
-  const addEmployeeBtn = document.getElementById('add-employee-btn');
-  const addFirstEmployeeBtn = document.getElementById('add-first-employee');
-  const addEmployeeModal = document.getElementById('addEmployeeModal');
-  const closeModalBtn = document.querySelector('.close-modal');
-  const cancelAddEmployeeBtn = document.getElementById('cancelAddEmployee');
-  const addEmployeeForm = document.getElementById('addEmployeeForm');
-  
-  function openAddEmployeeModal() {
-    addEmployeeModal.style.display = 'flex';
-  }
-  
-  function closeAddEmployeeModal() {
-    addEmployeeModal.style.display = 'none';
-    addEmployeeForm.reset();
-  }
-  
-  addEmployeeBtn?.addEventListener('click', openAddEmployeeModal);
-  addFirstEmployeeBtn?.addEventListener('click', openAddEmployeeModal);
-  closeModalBtn?.addEventListener('click', closeAddEmployeeModal);
-  cancelAddEmployeeBtn?.addEventListener('click', closeAddEmployeeModal);
-  
-  // Close modal when clicking outside
-  window.addEventListener('click', function(e) {
-    if (e.target === addEmployeeModal) {
-      closeAddEmployeeModal();
+    // Add employee button functionality
+    const addEmployeeBtn = document.getElementById('add-employee-btn');
+    const addFirstEmployeeBtn = document.getElementById('add-first-employee');
+    const addEmployeeModal = document.getElementById('addEmployeeModal');
+    
+    console.log('Add employee button:', addEmployeeBtn);
+    console.log('Add employee modal:', addEmployeeModal);
+    
+    // Open modal function
+    function openAddEmployeeModal() {
+        console.log('Opening add employee modal');
+        if (addEmployeeModal) {
+            addEmployeeModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
     }
-  });
-  
-  // Handle form submission
-  addEmployeeForm?.addEventListener('submit', function(e) {
-    e.preventDefault();
     
-    // Get form data
-    const formData = new FormData(addEmployeeForm);
+    // Close modal function
+    function closeAddEmployeeModal() {
+        console.log('Closing add employee modal');
+        if (addEmployeeModal) {
+            addEmployeeModal.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+        // Reset form
+        const form = document.getElementById('addEmployeeForm');
+        if (form) {
+            form.reset();
+        }
+    }
     
-    // Submit form via AJAX
-    fetch('{% url "hr:add_employee" %}', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'success') {
-        alert('Employee added successfully!');
-        closeAddEmployeeModal();
-        // Reload the page to show the new employee
-        location.reload();
-      } else {
-        alert('Error adding employee: ' + data.message);
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('An error occurred while adding the employee.');
+    // Add event listeners for opening modal
+    if (addEmployeeBtn) {
+        addEmployeeBtn.addEventListener('click', openAddEmployeeModal);
+        console.log('Added click listener to add employee button');
+    }
+    
+    if (addFirstEmployeeBtn) {
+        addFirstEmployeeBtn.addEventListener('click', openAddEmployeeModal);
+        console.log('Added click listener to add first employee button');
+    }
+    
+    // Close modal events
+    const closeModalBtn = document.querySelector('.close-modal');
+    const cancelAddEmployeeBtn = document.getElementById('cancelAddEmployee');
+    
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeAddEmployeeModal);
+    }
+    
+    if (cancelAddEmployeeBtn) {
+        cancelAddEmployeeBtn.addEventListener('click', closeAddEmployeeModal);
+    }
+    
+    // Close modal when clicking outside
+    if (addEmployeeModal) {
+        addEmployeeModal.addEventListener('click', function(e) {
+            if (e.target === addEmployeeModal) {
+                closeAddEmployeeModal();
+            }
+        });
+    }
+    
+    // Search functionality
+    const searchInput = document.getElementById('employee-search');
+    const employeeRows = document.querySelectorAll('.employee-row');
+    
+    if (searchInput && employeeRows.length > 0) {
+        searchInput.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            
+            employeeRows.forEach(row => {
+                const searchData = row.getAttribute('data-search');
+                if (searchData && searchData.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+    
+    // Form submission
+    const addEmployeeForm = document.getElementById('addEmployeeForm');
+    if (addEmployeeForm) {
+        addEmployeeForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Add employee form submitted');
+            
+            // Get form data
+            const formData = new FormData(this);
+            
+            // Get CSRF token - FIXED SELECTOR
+            const csrfTokenInput = this.querySelector('input[name=csrfmiddlewaretoken]');
+            const csrfToken = csrfTokenInput ? csrfTokenInput.value : null;
+            
+            console.log('CSRF token:', csrfToken);
+            console.log('Form data:', Object.fromEntries(formData.entries()));
+            
+            if (!csrfToken) {
+                alert('Security token not found. Please refresh the page and try again.');
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Adding...';
+            submitBtn.disabled = true;
+            
+            // Submit via AJAX
+            fetch('/hr/employees/add/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Success:', data);
+                if (data.status === 'success') {
+                    alert('Employee added successfully!');
+                    closeAddEmployeeModal();
+                    // Reload to show new employee
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error occurred'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding the employee. Please try again.');
+            })
+            .finally(() => {
+                // Restore button state
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+    }
+    
+    // Edit and view buttons
+    document.querySelectorAll('.edit-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const employeeId = this.getAttribute('data-employee-id');
+            console.log('Edit employee:', employeeId);
+            // Add your edit functionality here
+        });
     });
-  });
-  
-  // Edit buttons
-  document.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const employeeId = this.getAttribute('data-employee-id');
-      console.log('Edit employee:', employeeId);
+    
+    document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const employeeId = this.getAttribute('data-employee-id');
+            console.log('View employee:', employeeId);
+            // Add your view functionality here
+        });
     });
-  });
-  
-  // View buttons
-  document.querySelectorAll('.view-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      const employeeId = this.getAttribute('data-employee-id');
-      console.log('View employee:', employeeId);
-    });
-  });
+    
+    console.log('Employee list initialization completed successfully');
 });
+
+// Fallback: if DOM is already loaded, run immediately
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    console.log('Document already ready, triggering initialization');
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+}
 </script>

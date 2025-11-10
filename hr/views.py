@@ -66,6 +66,7 @@ def employees_list_partial(request):
 @user_passes_test(lambda u: u.is_hr)
 def add_employee(request):
     """Add new employee"""
+    print("Add employee view called")
     try:
         # Get form data
         name = request.POST.get('name')
@@ -77,6 +78,8 @@ def add_employee(request):
         salary = request.POST.get('salary')
         penalty = request.POST.get('penalty', '')
         attendance = request.POST.get('attendance', '')
+        
+        print(f"Form data: name={name}, email={email}, phone={phone}, position={position}, salary={salary}")
         
         # Create new employee
         employee = Employee.objects.create(
@@ -91,12 +94,15 @@ def add_employee(request):
             attendance=attendance
         )
         
+        print(f"Employee created with ID: {employee.id}")
+        
         return JsonResponse({
             'status': 'success',
             'message': 'Employee added successfully',
             'employee_id': employee.id
         })
     except Exception as e:
+        print(f"Error adding employee: {str(e)}")
         return JsonResponse({
             'status': 'error',
             'message': str(e)
