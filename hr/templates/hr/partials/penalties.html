@@ -110,134 +110,6 @@
       </form>
     </div>
   </div>
-  <script>
-// Simple modal functionality - add this JavaScript
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded - initializing penalties modal');
-    
-    // Get elements
-    const addPenaltyBtn = document.getElementById('addPenaltyBtn');
-    const modal = document.getElementById('addPenaltyModal');
-    const closeModalBtn = document.getElementById('closeModal');
-    const cancelBtn = document.getElementById('cancelAddPenalty');
-    const form = document.getElementById('addPenaltyForm');
-    
-    console.log('Found elements:', {
-        addPenaltyBtn: !!addPenaltyBtn,
-        modal: !!modal,
-        closeModalBtn: !!closeModalBtn,
-        cancelBtn: !!cancelBtn,
-        form: !!form
-    });
-    
-    // Open modal function
-    function openModal() {
-        console.log('Opening modal');
-        if (modal) {
-            modal.classList.add('active');
-            document.body.style.overflow = 'hidden';
-            
-            // Set today's date as default
-            const today = new Date().toISOString().split('T')[0];
-            const dateInput = document.getElementById('penaltyDate');
-            if (dateInput) {
-                dateInput.value = today;
-            }
-        }
-    }
-    
-    // Close modal function
-    function closeModal() {
-        console.log('Closing modal');
-        if (modal) {
-            modal.classList.remove('active');
-            document.body.style.overflow = '';
-            
-            // Reset form
-            if (form) {
-                form.reset();
-            }
-        }
-    }
-    
-    // Event listeners
-    if (addPenaltyBtn) {
-        addPenaltyBtn.addEventListener('click', openModal);
-        console.log('Added click listener to add penalty button');
-    }
-    
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', closeModal);
-        console.log('Added click listener to close button');
-    }
-    
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', closeModal);
-        console.log('Added click listener to cancel button');
-    }
-    
-    // Close modal when clicking outside
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
-    }
-    
-    // Form submission
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            console.log('Form submitted');
-            
-            // Get form data
-            const formData = new FormData(this);
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            
-            // Show loading state
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = 'Adding...';
-            submitBtn.disabled = true;
-            
-            // Submit via AJAX
-            fetch('/hr/penalties/add/', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': csrfToken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('Penalty added successfully!');
-                    closeModal();
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    alert('Error: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while adding the penalty. Please try again.');
-            })
-            .finally(() => {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            });
-        });
-    }
-    
-    console.log('Modal initialization completed');
-});
-
-// Fallback for DOM ready state
-if (document.readyState === 'interactive' || document.readyState === 'complete') {
-    document.dispatchEvent(new Event('DOMContentLoaded'));
-}
-</script>
 </div>
 
 <style>
@@ -412,15 +284,19 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
   width: 100%;
   height: 100%;
   background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 10000;
   padding: 1rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .modal-overlay.active {
   display: flex;
+  opacity: 1;
 }
 
 .modal-container {
@@ -434,6 +310,12 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+}
+
+.modal-overlay.active .modal-container {
+  transform: scale(1);
 }
 
 .modal-header {
@@ -527,6 +409,11 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
   box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
 }
 
+.form-group select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
 .form-actions {
   display: flex;
   gap: 1rem;
@@ -552,6 +439,11 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
   background: var(--accent-hover);
 }
 
+.btn-primary:disabled {
+  background: var(--border-color);
+  cursor: not-allowed;
+}
+
 .btn-secondary {
   padding: 0.75rem 1.5rem;
   background: transparent;
@@ -569,3 +461,8 @@ if (document.readyState === 'interactive' || document.readyState === 'complete')
 }
 </style>
 
+<script>
+// Mark that penalties script has loaded
+window.penaltiesScriptLoaded = true;
+console.log('Penalties script loaded');
+</script>
