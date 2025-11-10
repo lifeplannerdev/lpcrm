@@ -56,7 +56,7 @@ def employees(request):
 @user_passes_test(lambda u: u.is_hr)
 def employees_list_partial(request):
     """Employees list partial view"""
-    employees = Employee.objects.all()
+    employees = Employee.objects.all().order_by('name')
     return render(request, 'hr/partials/employees_list.html', {
         'employees': employees,
     })
