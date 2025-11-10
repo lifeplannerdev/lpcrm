@@ -10,7 +10,8 @@ from datetime import datetime, timedelta
 import json
 from .models import Employee
 from leads.models import Lead
-from tasks.models import Task, TaskUpdate
+from .models import Penalty
+from tasks.models import Task
 
 logger = logging.getLogger(__name__)
 
@@ -104,24 +105,6 @@ def add_employee(request):
             'message': str(e)
         })
 
-@login_required
-@user_passes_test(lambda u: u.is_hr)
-def attendance_partial(request):
-    """Attendance partial view"""
-    # For now, we'll return the partial without specific data
-    # You can add specific attendance data logic here
-    return render(request, 'hr/partials/attendance.html')
-
-@login_required
-@user_passes_test(lambda u: u.is_hr)
-def tasks_partial(request):
-    """Tasks partial view"""
-    tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
-    return render(request, 'hr/partials/tasks.html', {
-        'tasks': tasks,
-    })
-
-
 @require_http_methods(["DELETE"])
 @login_required
 @user_passes_test(lambda u: u.is_hr)
@@ -138,4 +121,66 @@ def delete_employee(request, employee_id):
         return JsonResponse({
             'status': 'error',
             'message': str(e)
+        })        
+
+@login_required
+@user_passes_test(lambda u: u.is_hr)
+def attendance_partial(request):
+    """Attendance partial view"""
+    # For now, we'll return the partial without specific data
+    # You can add specific attendance data logic here
+    return render(request, 'hr/partials/attendance.html')
+
+@login_required
+@user_passes_test(lambda u: u.is_hr)
+def penalties_partial(request):
+    """Penalties partial view"""
+    penalties = Penalty.objects.all().order_by('-id')
+    employees = Employee.objects.all()
+    total_amount = sum(penalty.amount for penalty in penalties)
+    avg_amount = total_amount / len(penalties) if penalties else 0
+    return render(request, 'hr/partials/penalties.html', {
+        'penalties': penalties,
+        'employees': employees,
+        'total_amount': total_amount,
+        'avg_amount': avg_amount,
+    })
+
+
+@require_POST
+@login_required
+@user_passes_test(lambda u: u.is_hr)
+def add_penalty(request):
+    """Add new penalty"""
+    try:
+        # Get form data
+        employee_id = request.POST.get('employee')
+        act = request.POST.get('act')
+        amount = request.POST.get('amount')
+        month = request.POST.get('month')
+        date = request.POST.get('date')
+        
+        # Get employee instance
+        employee = Employee.objects.get(id=employee_id)
+        
+        # Create new penalty
+        penalty = Penalty.objects.create(
+            employee=employee,
+            act=act,
+            amount=amount,
+            month=month,
+            date=date
+        )
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Penalty added successfully',
+            'penalty_id': penalty.id
         })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })
+
+

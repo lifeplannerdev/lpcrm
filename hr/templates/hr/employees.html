@@ -625,7 +625,7 @@
       <div class="tabs-header">
         <button class="tab active" data-tab="employees">Employees</button>
         <button class="tab" data-tab="attendance">Attendance</button>
-        <button class="tab" data-tab="tasks">Tasks</button>
+        <button class="tab" data-tab="tasks">Penalties</button>
       </div>
       
       <div class="tab-content">
@@ -643,7 +643,7 @@
           </div>
         </div>
         
-        <!-- Tasks Tab -->
+        <!-- Penalties Tab -->
         <div class="tab-pane" id="tasks-tab">
           <div id="tasks-content">
             <div class="loading"></div>
@@ -811,7 +811,7 @@
         case 'attendance':
           return `${baseUrl}/hr/attendance/`;
         case 'tasks':
-          return `${baseUrl}/hr/tasks/`;
+          return `${baseUrl}/hr/penalties/`;
         default:
           return `${baseUrl}/hr/employees/list/`;
       }

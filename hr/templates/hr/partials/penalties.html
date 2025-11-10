@@ -1,0 +1,571 @@
+<div class="penalty-container">
+  <div class="penalty-header">
+    <h2>Employee Penalties</h2>
+    <button class="add-btn" id="addPenaltyBtn">
+      <i class="fas fa-plus"></i>
+      Add Penalty
+    </button>
+  </div>
+
+  {% if penalties %}
+  <div class="penalty-grid">
+    {% for penalty in penalties %}
+    <div class="penalty-card">
+      <div class="penalty-info">
+        <div class="employee-section">
+          <div class="employee-avatar">
+            {{ penalty.employee.name|first|upper }}
+          </div>
+          <div class="employee-details">
+            <div class="employee-name">{{ penalty.employee.name }}</div>
+            <div class="employee-position">{{ penalty.employee.position }}</div>
+          </div>
+        </div>
+        
+        <div class="penalty-details">
+          <div class="penalty-act">
+            <strong>Reason:</strong> {{ penalty.act }}
+          </div>
+          <div class="penalty-amount">
+            <strong>Amount:</strong> ₹{{ penalty.amount }}
+          </div>
+          <div class="penalty-month">
+            <strong>Month:</strong> {{ penalty.month }}
+          </div>
+          <div class="penalty-date">
+            <strong>Date:</strong> {{ penalty.date|date:"M d, Y" }}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-file-invoice-dollar"></i>
+    <h3>No Penalties Found</h3>
+    <p>There are no penalties recorded yet.</p>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Add Penalty Modal -->
+<div id="addPenaltyModal" class="modal-overlay">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h3>Add New Penalty</h3>
+      <button class="modal-close" id="closeModal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="addPenaltyForm">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="employeeSelect">Employee *</label>
+          <select id="employeeSelect" name="employee" required>
+            <option value="">Select an employee</option>
+            {% for employee in employees %}
+            <option value="{{ employee.id }}">{{ employee.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="penaltyMonth">Month *</label>
+          <select id="penaltyMonth" name="month" required>
+            <option value="">Select a month</option>
+            <option value="January">January</option>
+            <option value="February">February</option>
+            <option value="March">March</option>
+            <option value="April">April</option>
+            <option value="May">May</option>
+            <option value="June">June</option>
+            <option value="July">July</option>
+            <option value="August">August</option>
+            <option value="September">September</option>
+            <option value="October">October</option>
+            <option value="November">November</option>
+            <option value="December">December</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="penaltyAct">Act/Reason *</label>
+          <input type="text" id="penaltyAct" name="act" required placeholder="Enter reason for penalty">
+        </div>
+        
+        <div class="form-group">
+          <label for="penaltyAmount">Amount (₹) *</label>
+          <input type="number" id="penaltyAmount" name="amount" required placeholder="Enter amount" min="0">
+        </div>
+        
+        <div class="form-group">
+          <label for="penaltyDate">Date *</label>
+          <input type="date" id="penaltyDate" name="date" required>
+        </div>
+        
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="cancelAddPenalty">Cancel</button>
+          <button type="submit" class="btn-primary">Add Penalty</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <script>
+// Simple modal functionality - add this JavaScript
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded - initializing penalties modal');
+    
+    // Get elements
+    const addPenaltyBtn = document.getElementById('addPenaltyBtn');
+    const modal = document.getElementById('addPenaltyModal');
+    const closeModalBtn = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelAddPenalty');
+    const form = document.getElementById('addPenaltyForm');
+    
+    console.log('Found elements:', {
+        addPenaltyBtn: !!addPenaltyBtn,
+        modal: !!modal,
+        closeModalBtn: !!closeModalBtn,
+        cancelBtn: !!cancelBtn,
+        form: !!form
+    });
+    
+    // Open modal function
+    function openModal() {
+        console.log('Opening modal');
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Set today's date as default
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('penaltyDate');
+            if (dateInput) {
+                dateInput.value = today;
+            }
+        }
+    }
+    
+    // Close modal function
+    function closeModal() {
+        console.log('Closing modal');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+            
+            // Reset form
+            if (form) {
+                form.reset();
+            }
+        }
+    }
+    
+    // Event listeners
+    if (addPenaltyBtn) {
+        addPenaltyBtn.addEventListener('click', openModal);
+        console.log('Added click listener to add penalty button');
+    }
+    
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeModal);
+        console.log('Added click listener to close button');
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', closeModal);
+        console.log('Added click listener to cancel button');
+    }
+    
+    // Close modal when clicking outside
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+    }
+    
+    // Form submission
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log('Form submitted');
+            
+            // Get form data
+            const formData = new FormData(this);
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Show loading state
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = 'Adding...';
+            submitBtn.disabled = true;
+            
+            // Submit via AJAX
+            fetch('/hr/penalties/add/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Penalty added successfully!');
+                    closeModal();
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while adding the penalty. Please try again.');
+            })
+            .finally(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+    }
+    
+    console.log('Modal initialization completed');
+});
+
+// Fallback for DOM ready state
+if (document.readyState === 'interactive' || document.readyState === 'complete') {
+    document.dispatchEvent(new Event('DOMContentLoaded'));
+}
+</script>
+</div>
+
+<style>
+:root {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --card-bg: #111111;
+  --border-color: #2a2a2a;
+  --border-hover: #3a3a3a;
+  --text-primary: #ededed;
+  --text-secondary: #a1a1aa;
+  --accent: #0070f3;
+  --accent-hover: #0761d1;
+  --success: #00e599;
+  --error: #e00;
+  --shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+#penalties-content {
+  padding: 1.5rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.penalty-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.penalty-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.penalty-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.add-btn {
+  background: white;
+  color: rgb(0, 0, 0);
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s ease;
+}
+
+.add-btn:hover {
+  background: #f0f0f0;
+}
+
+/* Grid Layout */
+.penalty-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.25rem;
+}
+
+.penalty-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.25rem;
+  transition: border-color 0.2s ease;
+}
+
+.penalty-card:hover {
+  border-color: var(--border-hover);
+}
+
+.penalty-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.employee-section {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.employee-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), #00e599);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.employee-details .employee-name {
+  font-weight: 500;
+  font-size: 1rem;
+  margin-bottom: 0.125rem;
+}
+
+.employee-details .employee-position {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.penalty-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.penalty-details > div {
+  display: flex;
+  justify-content: space-between;
+}
+
+.penalty-act, .penalty-amount, .penalty-month, .penalty-date {
+  color: var(--text-primary);
+}
+
+.penalty-act strong, .penalty-amount strong, .penalty-month strong, .penalty-date strong {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.3;
+}
+
+.empty-state h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  margin-bottom: 1.5rem;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 1rem;
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal-container {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Sleek Modal Scrollbar */
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 0.875rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.btn-primary {
+  padding: 0.75rem 1.5rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--bg-secondary);
+}
+</style>
+

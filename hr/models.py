@@ -1,3 +1,4 @@
+import re
 from django.db import models
 
 # Create your models here.
@@ -18,3 +19,14 @@ class Employee(models.Model):
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employees'
+
+class Penalty(models.Model):
+    employee=models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='penalties', verbose_name='Employee')
+    act=models.CharField(max_length=1000)
+    amount=models.IntegerField(default=0, null=True, blank=True, verbose_name='Amount')
+    month=models.CharField(max_length=100)
+    date=models.DateField()
+
+    class Meta:
+        verbose_name = 'Penalty'
+        verbose_name_plural = 'Penalties'
