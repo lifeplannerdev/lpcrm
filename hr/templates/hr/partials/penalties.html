@@ -7,47 +7,50 @@
     </button>
   </div>
 
-  {% if penalties %}
-  <div class="penalty-grid">
-    {% for penalty in penalties %}
-    <div class="penalty-card">
-      <div class="penalty-info">
-        <div class="employee-section">
-          <div class="employee-avatar">
-            {{ penalty.employee.name|first|upper }}
+  <div class="penalty-list">
+    {% if penalties %}
+    <div class="penalty-grid">
+      {% for penalty in penalties %}
+      <div class="penalty-card">
+        <div class="penalty-info">
+          <div class="employee-section">
+            <div class="employee-avatar">
+              {{ penalty.employee.name|first|upper }}
+            </div>
+            <div class="employee-details">
+              <div class="employee-name">{{ penalty.employee.name }}</div>
+              <div class="employee-position">{{ penalty.employee.position }}</div>
+            </div>
           </div>
-          <div class="employee-details">
-            <div class="employee-name">{{ penalty.employee.name }}</div>
-            <div class="employee-position">{{ penalty.employee.position }}</div>
-          </div>
-        </div>
-        
-        <div class="penalty-details">
-          <div class="penalty-act">
-            <strong>Reason:</strong> {{ penalty.act }}
-          </div>
-          <div class="penalty-amount">
-            <strong>Amount:</strong> ₹{{ penalty.amount }}
-          </div>
-          <div class="penalty-month">
-            <strong>Month:</strong> {{ penalty.month }}
-          </div>
-          <div class="penalty-date">
-            <strong>Date:</strong> {{ penalty.date|date:"M d, Y" }}
+          
+          <div class="penalty-details">
+            <div class="penalty-act">
+              <strong>Reason:</strong> {{ penalty.act }}
+            </div>
+            <div class="penalty-amount">
+              <strong>Amount:</strong> ₹{{ penalty.amount }}
+            </div>
+            <div class="penalty-month">
+              <strong>Month:</strong> {{ penalty.month }}
+            </div>
+            <div class="penalty-date">
+              <strong>Date:</strong> {{ penalty.date|date:"M d, Y" }}
+            </div>
           </div>
         </div>
       </div>
+      {% endfor %}
     </div>
-    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-file-invoice-dollar"></i>
+      <h3>No Penalties Found</h3>
+      <p>There are no penalties recorded yet.</p>
+    </div>
+    {% endif %}
   </div>
-  {% else %}
-  <div class="empty-state">
-    <i class="fas fa-file-invoice-dollar"></i>
-    <h3>No Penalties Found</h3>
-    <p>There are no penalties recorded yet.</p>
-  </div>
-  {% endif %}
 </div>
+
 
 <!-- Add Penalty Modal -->
 <div id="addPenaltyModal" class="modal-overlay">
@@ -197,6 +200,30 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+}
+/* Scrollable penalties list */
+.penalty-list {
+  max-height: calc(100vh - 180px); /* adjust for header + padding */
+  overflow-y: auto;
+  padding-right: 8px; /* space for scrollbar */
+}
+
+/* Sleek scrollbar styling */
+.penalty-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.penalty-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.penalty-list::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.penalty-list::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
 }
 
 .employee-section {
