@@ -134,7 +134,6 @@
 <!-- Add Employee Modal -->
 <div id="addEmployeeModal" class="modal" style="display: none;">
   <div class="modal-content">
-    
     <div class="modal-header">
       <h3>Add New Employee</h3>
       <span class="close-modal">&times;</span>
@@ -170,19 +169,9 @@
             <input type="text" id="employeePosition" name="position" required>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="employeeSalary">Salary</label>
-            <input type="text" id="employeeSalary" name="salary" required>
-          </div>
-          <div class="form-group">
-            <label for="employeePenalty">Penalty (if any)</label>
-            <input type="text" id="employeePenalty" name="penalty">
-          </div>
-        </div>
         <div class="form-group">
-          <label for="employeeAttendance">Attendance</label>
-          <input type="text" id="employeeAttendance" name="attendance">
+          <label for="employeeSalary">Salary</label>
+          <input type="text" id="employeeSalary" name="salary" required>
         </div>
         <div class="form-actions">
           <button type="button" class="btn-secondary" id="cancelAddEmployee">Cancel</button>
@@ -326,72 +315,6 @@
 .btn-secondary:hover {
   background: var(--border-hover);
   transform: translateY(-2px);
-}
-
-/* Stats Container */
-.stats-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  padding: 1.5rem 2rem;
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.stat-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 16px;
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--border-hover);
-  box-shadow: var(--shadow-medium);
-}
-
-.stat-icon {
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-}
-
-.stat-icon.active {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-}
-
-.stat-icon.inactive {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-number {
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.stat-label {
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  margin-top: 0.25rem;
 }
 
 /* Enhanced Table Rows */
@@ -655,9 +578,11 @@
   border: 1px solid var(--border-color);
   border-radius: 16px;
   width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-width: 500px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -666,19 +591,22 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .modal-header h3 {
   margin: 0;
   color: var(--text-primary);
+  font-size: 1.25rem;
 }
 
 .close-modal {
-  font-size: 2rem;
+  font-size: 1.5rem;
   color: var(--text-tertiary);
   cursor: pointer;
   background: none;
   border: none;
+  transition: color 0.2s ease;
 }
 
 .close-modal:hover {
@@ -687,16 +615,36 @@
 
 .modal-body {
   padding: 1.5rem 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Sleek Modal Scrollbar */
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-row {
   display: flex;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .form-row .form-group {
@@ -709,6 +657,7 @@
   margin-bottom: 0.5rem;
   color: var(--text-primary);
   font-weight: 500;
+  font-size: 0.9rem;
 }
 
 .form-group input,
@@ -720,6 +669,7 @@
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 0.9rem;
+  transition: all 0.2s ease;
 }
 
 .form-group input:focus,
@@ -729,11 +679,19 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+.form-group textarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: inherit;
+}
+
 .form-actions {
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
   margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
 }
 
 /* Responsive */
@@ -751,11 +709,6 @@
     width: 100%;
   }
   
-  .stats-container {
-    grid-template-columns: 1fr;
-    padding: 1rem;
-  }
-  
   .action-buttons {
     flex-direction: column;
   }
@@ -763,6 +716,16 @@
   .form-row {
     flex-direction: column;
     gap: 0;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 1rem;
+  }
+  
+  .modal-header,
+  .modal-body {
+    padding: 1rem 1.5rem;
   }
 }
 
@@ -830,9 +793,193 @@ tbody tr:hover {
 tbody tr:last-child td {
   border-bottom: none;
 }
+
+
+/* Toast Notification Styles */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toast {
+  padding: 16px 20px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 300px;
+  max-width: 400px;
+  animation: toastSlideIn 0.3s ease-out;
+  transform-origin: top right;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #00e599, #00c885);
+  border-left: 4px solid #00ffaa;
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #ff4d4d, #e60000);
+  border-left: 4px solid #ff3333;
+}
+
+.toast-info {
+  background: linear-gradient(135deg, #4d94ff, #1a75ff);
+  border-left: 4px solid #3399ff;
+}
+
+.toast-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.toast-content {
+  flex: 1;
+  font-size: 14px;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.3);
+  width: 100%;
+  transform-origin: left;
+  animation: toastProgress 5s linear forwards;
+}
+
+@keyframes toastProgress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
 </style>
 
 <script>
+// Toast Notification Functions
+let toastContainer = null;
+
+function createToastContainer() {
+  if (!toastContainer) {
+    toastContainer = document.createElement('div');
+    toastContainer.className = 'toast-container';
+    document.body.appendChild(toastContainer);
+  }
+  return toastContainer;
+}
+
+function showToast(message, type = 'info', duration = 5000) {
+  // Create toast container if it doesn't exist
+  const container = createToastContainer();
+  
+  // Create toast element
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  
+  // Add icon based on type
+  const icon = document.createElement('span');
+  icon.className = 'toast-icon';
+  if (type === 'success') {
+    icon.innerHTML = '&#10003;'; // Checkmark
+  } else if (type === 'error') {
+    icon.innerHTML = '&#10005;'; // Cross
+  } else {
+    icon.innerHTML = '&#8505;'; // Info
+  }
+  
+  // Add content
+  const content = document.createElement('div');
+  content.className = 'toast-content';
+  content.textContent = message;
+  
+  // Add close button
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'toast-close';
+  closeBtn.innerHTML = '&times;';
+  closeBtn.onclick = () => {
+    toast.remove();
+  };
+  
+  // Add progress bar
+  const progress = document.createElement('div');
+  progress.className = 'toast-progress';
+  
+  // Assemble toast
+  toast.appendChild(icon);
+  toast.appendChild(content);
+  toast.appendChild(closeBtn);
+  toast.appendChild(progress);
+  
+  // Add to container
+  container.appendChild(toast);
+  
+  // Auto remove after duration
+  const timer = setTimeout(() => {
+    if (toast.parentNode) {
+      toast.remove();
+    }
+  }, duration);
+  
+  // Pause timer on hover
+  toast.addEventListener('mouseenter', () => {
+    progress.style.animationPlayState = 'paused';
+    clearTimeout(timer);
+  });
+  
+  toast.addEventListener('mouseleave', () => {
+    progress.style.animationPlayState = 'running';
+    setTimeout(() => {
+      if (toast.parentNode) {
+        toast.remove();
+      }
+    }, duration - 1000);
+  });
+}
+
 // Simple, direct approach that will definitely work
 document.addEventListener('DOMContentLoaded', function() {
     console.log('DOM fully loaded - initializing employee list');
@@ -937,7 +1084,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Form data:', Object.fromEntries(formData.entries()));
             
             if (!csrfToken) {
-                alert('Security token not found. Please refresh the page and try again.');
+                showToast('Security token not found. Please refresh the page and try again.', 'error');
                 return;
             }
             
@@ -965,17 +1112,17 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 console.log('Success:', data);
                 if (data.status === 'success') {
-                    alert('Employee added successfully!');
+                    showToast('Employee added successfully!', 'success');
                     closeAddEmployeeModal();
                     // Reload to show new employee
                     window.location.reload();
                 } else {
-                    alert('Error: ' + (data.message || 'Unknown error occurred'));
+                    showToast('Error: ' + (data.message || 'Unknown error occurred'), 'error');
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while adding the employee. Please try again.');
+                showToast('An error occurred while adding the employee. Please try again.', 'error');
             })
             .finally(() => {
                 // Restore button state

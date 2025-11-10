@@ -446,6 +446,109 @@
       to { transform: rotate(360deg); }
     }
     
+    /* Toast Notification Styles */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      padding: 16px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      max-width: 400px;
+      animation: toastSlideIn 0.3s ease-out;
+      transform-origin: top right;
+      position: relative;
+    }
+
+    @keyframes toastSlideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .toast-success {
+      background: linear-gradient(135deg, #00e599, #00c885);
+      border-left: 4px solid #00ffaa;
+    }
+
+    .toast-error {
+      background: linear-gradient(135deg, #ff4d4d, #e60000);
+      border-left: 4px solid #ff3333;
+    }
+
+    .toast-info {
+      background: linear-gradient(135deg, #4d94ff, #1a75ff);
+      border-left: 4px solid #3399ff;
+    }
+
+    .toast-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .toast-content {
+      flex: 1;
+      font-size: 14px;
+    }
+
+    .toast-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .toast-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .toast-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.3);
+      width: 100%;
+      transform-origin: left;
+      animation: toastProgress 5s linear forwards;
+    }
+
+    @keyframes toastProgress {
+      from {
+        transform: scaleX(1);
+      }
+      to {
+        transform: scaleX(0);
+      }
+    }
+    
     /* Responsive */
     @media (max-width: 1024px) {
       .dashboard-container {
@@ -551,6 +654,86 @@
   </div>
 
   <script>
+    // Toast Notification Functions
+    let toastContainer = null;
+
+    function createToastContainer() {
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        document.body.appendChild(toastContainer);
+      }
+      return toastContainer;
+    }
+
+    function showToast(message, type = 'info', duration = 5000) {
+      // Create toast container if it doesn't exist
+      const container = createToastContainer();
+      
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      
+      // Add icon based on type
+      const icon = document.createElement('span');
+      icon.className = 'toast-icon';
+      if (type === 'success') {
+        icon.innerHTML = '&#10003;'; // Checkmark
+      } else if (type === 'error') {
+        icon.innerHTML = '&#10005;'; // Cross
+      } else {
+        icon.innerHTML = '&#8505;'; // Info
+      }
+      
+      // Add content
+      const content = document.createElement('div');
+      content.className = 'toast-content';
+      content.textContent = message;
+      
+      // Add close button
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'toast-close';
+      closeBtn.innerHTML = '&times;';
+      closeBtn.onclick = () => {
+        toast.remove();
+      };
+      
+      // Add progress bar
+      const progress = document.createElement('div');
+      progress.className = 'toast-progress';
+      
+      // Assemble toast
+      toast.appendChild(icon);
+      toast.appendChild(content);
+      toast.appendChild(closeBtn);
+      toast.appendChild(progress);
+      
+      // Add to container
+      container.appendChild(toast);
+      
+      // Auto remove after duration
+      const timer = setTimeout(() => {
+        if (toast.parentNode) {
+          toast.remove();
+        }
+      }, duration);
+      
+      // Pause timer on hover
+      toast.addEventListener('mouseenter', () => {
+        progress.style.animationPlayState = 'paused';
+        clearTimeout(timer);
+      });
+      
+      toast.addEventListener('mouseleave', () => {
+        progress.style.animationPlayState = 'running';
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.remove();
+          }
+        }, duration - 1000);
+      });
+    }
+
     // Tab switching functionality
     document.addEventListener('DOMContentLoaded', function() {
       const tabs = document.querySelectorAll('.tab');
@@ -691,6 +874,87 @@
                 }
               });
               console.log('Attached click listener to add first employee button');
+            }
+            
+            // Form submission functionality
+            const addEmployeeForm = document.getElementById('addEmployeeForm');
+            console.log('Add employee form:', addEmployeeForm);
+            if (addEmployeeForm) {
+              // Remove any existing event listeners to prevent duplicates
+              const newForm = addEmployeeForm.cloneNode(true);
+              addEmployeeForm.parentNode.replaceChild(newForm, addEmployeeForm);
+              
+              newForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                console.log('Add employee form submitted from main initialization');
+                
+                // Get form data
+                const formData = new FormData(this);
+                
+                // Log all form data
+                for (let [key, value] of formData.entries()) {
+                  console.log(key, value);
+                }
+                
+                // Get CSRF token
+                const csrfTokenInput = this.querySelector('input[name=csrfmiddlewaretoken]');
+                const csrfToken = csrfTokenInput ? csrfTokenInput.value : null;
+                
+                console.log('CSRF token:', csrfToken);
+                
+                if (!csrfToken) {
+                  showToast('Security token not found. Please refresh the page and try again.', 'error');
+                  return;
+                }
+                
+                // Show loading state
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Adding...';
+                submitBtn.disabled = true;
+                
+                // Submit via AJAX
+                fetch('/hr/employees/add/', {
+                  method: 'POST',
+                  body: formData,
+                  headers: {
+                    'X-CSRFToken': csrfToken
+                  }
+                })
+                .then(response => {
+                  console.log('Response status:', response.status);
+                  if (!response.ok) {
+                    throw new Error('Network response was not ok: ' + response.status);
+                  }
+                  return response.json();
+                })
+                .then(data => {
+                  console.log('Success:', data);
+                  if (data.status === 'success') {
+                    showToast('Employee added successfully!', 'success');
+                    // Close modal
+                    const modal = document.getElementById('addEmployeeModal');
+                    if (modal) {
+                      modal.style.display = 'none';
+                      document.body.style.overflow = '';
+                    }
+                    // Reload to show new employee
+                    window.location.reload();
+                  } else {
+                    showToast('Error: ' + (data.message || 'Unknown error occurred'), 'error');
+                  }
+                })
+                .catch(error => {
+                  console.error('Error:', error);
+                  showToast('An error occurred while adding the employee. Please try again. Error: ' + error.message, 'error');
+                })
+                .finally(() => {
+                  // Restore button state
+                  submitBtn.textContent = originalText;
+                  submitBtn.disabled = false;
+                });
+              });
+              console.log('Attached submit listener to add employee form');
             }
             
             // Close modal functionality

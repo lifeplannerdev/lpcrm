@@ -76,8 +76,6 @@ def add_employee(request):
         join_date = request.POST.get('join_date', '')
         position = request.POST.get('position')
         salary = request.POST.get('salary')
-        penalty = request.POST.get('penalty', '')
-        attendance = request.POST.get('attendance', '')
         
         print(f"Form data: name={name}, email={email}, phone={phone}, position={position}, salary={salary}")
         
@@ -89,9 +87,7 @@ def add_employee(request):
             address=address,
             join_date=join_date,
             position=position,
-            salary=salary,
-            penalty=penalty,
-            attendance=attendance
+            salary=salary
         )
         
         print(f"Employee created with ID: {employee.id}")
