@@ -816,179 +816,6 @@
           return `${baseUrl}/hr/employees/list/`;
       }
     }
-    // Function to initialize penalties tab (can be called multiple times)
-function initializePenaltiesTab() {
-  console.log('Setting up penalties modal...');
-  
-  const addPenaltyBtn = document.getElementById('addPenaltyBtn');
-  const modal = document.getElementById('addPenaltyModal');
-  const closeModalBtn = document.getElementById('closeModal');
-  const cancelBtn = document.getElementById('cancelAddPenalty');
-  const form = document.getElementById('addPenaltyForm');
-  
-  console.log('Penalty elements found:', {
-    addPenaltyBtn: !!addPenaltyBtn,
-    modal: !!modal,
-    closeModalBtn: !!closeModalBtn,
-    cancelBtn: !!cancelBtn,
-    form: !!form
-  });
-  
-  if (!addPenaltyBtn || !modal) {
-    console.error('Penalty modal elements not found!');
-    return;
-  }
-  
-  // Open modal function
-  function openPenaltyModal() {
-    console.log('Opening penalty modal');
-    modal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-    
-    // Set today's date
-    const today = new Date().toISOString().split('T')[0];
-    const dateInput = document.getElementById('penaltyDate');
-    if (dateInput && !dateInput.value) {
-      dateInput.value = today;
-    }
-  }
-  
-  // Close modal function
-  function closePenaltyModal() {
-    console.log('Closing penalty modal');
-    modal.classList.remove('active');
-    document.body.style.overflow = '';
-    
-    setTimeout(() => {
-      if (form) form.reset();
-    }, 300);
-  }
-  
-  // Remove existing event listeners by cloning elements
-  const newAddPenaltyBtn = addPenaltyBtn.cloneNode(true);
-  addPenaltyBtn.parentNode.replaceChild(newAddPenaltyBtn, addPenaltyBtn);
-  
-  // Add penalty button click
-  newAddPenaltyBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    console.log('Add penalty button clicked');
-    openPenaltyModal();
-  });
-  
-  // Close button
-  if (closeModalBtn) {
-    const newCloseBtn = closeModalBtn.cloneNode(true);
-    closeModalBtn.parentNode.replaceChild(newCloseBtn, closeModalBtn);
-    
-    newCloseBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      closePenaltyModal();
-    });
-  }
-  
-  // Cancel button
-  if (cancelBtn) {
-    const newCancelBtn = cancelBtn.cloneNode(true);
-    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-    
-    newCancelBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      closePenaltyModal();
-    });
-  }
-  
-  // Click outside to close (recreate modal click handler)
-  const newModal = document.getElementById('addPenaltyModal');
-  const modalClickHandler = function(e) {
-    if (e.target === newModal) {
-      closePenaltyModal();
-    }
-  };
-  
-  // Remove old listeners and add new one
-  newModal.removeEventListener('click', modalClickHandler);
-  newModal.addEventListener('click', modalClickHandler);
-  
-  // Prevent modal content clicks from closing
-  const modalContainer = newModal.querySelector('.modal-container');
-  if (modalContainer) {
-    modalContainer.addEventListener('click', function(e) {
-      e.stopPropagation();
-    });
-  }
-  
-  // Form submission
-  if (form) {
-    const newForm = form.cloneNode(true);
-    form.parentNode.replaceChild(newForm, form);
-    
-    newForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-      console.log('Penalty form submitted');
-      
-      const formData = new FormData(this);
-      const csrfToken = this.querySelector('[name=csrfmiddlewaretoken]').value;
-      
-      if (!csrfToken) {
-        showToast('Security token not found. Please refresh the page.', 'error');
-        return;
-      }
-      
-      const submitBtn = this.querySelector('button[type="submit"]');
-      const originalText = submitBtn.textContent;
-      submitBtn.textContent = 'Adding...';
-      submitBtn.disabled = true;
-      
-      fetch('/hr/penalties/add/', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-CSRFToken': csrfToken
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.status === 'success') {
-          showToast('Penalty added successfully!', 'success');
-          closePenaltyModal();
-          
-          // Reload the penalties content
-          const tasksContent = document.getElementById('tasks-content');
-          if (tasksContent) {
-            tasksContent.innerHTML = '<div class="loading"></div>';
-            
-            // Fetch updated penalties list
-            fetch('/hr/penalties/')
-              .then(response => response.text())
-              .then(html => {
-                tasksContent.innerHTML = html;
-                // Re-initialize the penalties functionality
-                setTimeout(() => {
-                  initializePenaltiesTab();
-                }, 100);
-              })
-              .catch(error => {
-                console.error('Error reloading penalties:', error);
-                showToast('Added successfully but failed to refresh list. Please reload the page.', 'info');
-              });
-          }
-        } else {
-          showToast('Error: ' + (data.message || 'Unknown error'), 'error');
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred. Please try again.', 'error');
-      })
-      .finally(() => {
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
-      });
-    });
-  }
-  
-  console.log('Penalties modal initialized successfully!');
-}
     
     // Function to initialize tab-specific content
     function initializeTabContent(tabId) {
@@ -1203,171 +1030,153 @@ function initializePenaltiesTab() {
               });
             }, 500);
           }, 500); // Small delay to ensure DOM is ready
-          
-          // Add a test button to the main page for debugging
-          /*
-          setTimeout(function() {
-            const testBtn = document.createElement('button');
-            testBtn.innerText = 'Test Modal from Main';
-            testBtn.style.cssText = 'position: fixed; top: 10px; right: 10px; z-index: 999999; background: green; color: white; padding: 10px;';
-            testBtn.onclick = function() {
-              console.log('Test button from main page clicked');
-              // Try to find the modal directly
-              const modal = document.getElementById('addEmployeeModal');
-              if (modal) {
-                console.log('Found modal, showing it');
-                modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-              } else {
-                console.log('Modal not found');
-              }
-            };
-            document.body.appendChild(testBtn);
-            console.log('Test button added to main page');
-          }, 2000);
-          */
           break;
         case 'attendance':
           // Initialize attendance-specific functionality
           break;
         case 'tasks':
-          case 'tasks':
-  // Initialize penalties modal functionality
-  console.log('Initializing penalties tab');
-  
-  setTimeout(function() {
-    console.log('Setting up penalties modal...');
-    
-    const addPenaltyBtn = document.getElementById('addPenaltyBtn');
-    const modal = document.getElementById('addPenaltyModal');
-    const closeModalBtn = document.getElementById('closeModal');
-    const cancelBtn = document.getElementById('cancelAddPenalty');
-    const form = document.getElementById('addPenaltyForm');
-    
-    console.log('Penalty elements found:', {
-      addPenaltyBtn: !!addPenaltyBtn,
-      modal: !!modal,
-      closeModalBtn: !!closeModalBtn,
-      cancelBtn: !!cancelBtn,
-      form: !!form
-    });
-    
-    if (!addPenaltyBtn || !modal) {
-      console.error('Penalty modal elements not found!');
-      return;
-    }
-    
-    // Open modal function
-    function openPenaltyModal() {
-      console.log('Opening penalty modal');
-      modal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-      
-      // Set today's date
-      const today = new Date().toISOString().split('T')[0];
-      const dateInput = document.getElementById('penaltyDate');
-      if (dateInput && !dateInput.value) {
-        dateInput.value = today;
-      }
-    }
-    
-    // Close modal function
-    function closePenaltyModal() {
-      console.log('Closing penalty modal');
-      modal.classList.remove('active');
-      document.body.style.overflow = '';
-      
-      setTimeout(() => {
-        if (form) form.reset();
-      }, 300);
-    }
-    
-    // Add penalty button click
-    addPenaltyBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      console.log('Add penalty button clicked');
-      openPenaltyModal();
-    });
-    
-    // Close button
-    if (closeModalBtn) {
-      closeModalBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        closePenaltyModal();
-      });
-    }
-    
-    // Cancel button
-    if (cancelBtn) {
-      cancelBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        closePenaltyModal();
-      });
-    }
-    
-    // Click outside to close
-    modal.addEventListener('click', function(e) {
-      if (e.target === modal) {
-        closePenaltyModal();
-      }
-    });
-    
-    // Prevent modal content clicks from closing
-    const modalContainer = modal.querySelector('.modal-container');
-    if (modalContainer) {
-      modalContainer.addEventListener('click', function(e) {
-        e.stopPropagation();
-      });
-    }
-    
-    // Form submission
-    if (form) {
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        console.log('Penalty form submitted');
-        
-        const formData = new FormData(this);
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.textContent = 'Adding...';
-        submitBtn.disabled = true;
-        
-        fetch('/hr/penalties/add/', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-CSRFToken': csrfToken
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === 'success') {
-            showToast('Penalty added successfully!', 'success');
-            closePenaltyModal();
-            setTimeout(() => {
-              loadTabContent('tasks');
-            }, 500);
-          } else {
-            showToast('Error: ' + (data.message || 'Unknown error'), 'error');
-          }
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          showToast('An error occurred. Please try again.', 'error');
-        })
-        .finally(() => {
-          submitBtn.textContent = originalText;
-          submitBtn.disabled = false;
-        });
-      });
-    }
-    
-    console.log('Penalties modal initialized successfully!');
-  }, 500);
-  break;
+          // Initialize penalties modal functionality
+          console.log('Initializing penalties tab');
           
+          setTimeout(function() {
+            console.log('Setting up penalties modal...');
+            
+            const addPenaltyBtn = document.getElementById('addPenaltyBtn');
+            const modal = document.getElementById('addPenaltyModal');
+            const closeModalBtn = document.getElementById('closeModal');
+            const cancelBtn = document.getElementById('cancelAddPenalty');
+            const form = document.getElementById('addPenaltyForm');
+            
+            console.log('Penalty elements found:', {
+              addPenaltyBtn: !!addPenaltyBtn,
+              modal: !!modal,
+              closeModalBtn: !!closeModalBtn,
+              cancelBtn: !!cancelBtn,
+              form: !!form
+            });
+            
+            if (!addPenaltyBtn || !modal) {
+              console.error('Penalty modal elements not found!');
+              return;
+            }
+            
+            // Open modal function
+            function openPenaltyModal() {
+              console.log('Opening penalty modal');
+              modal.classList.add('active');
+              document.body.style.overflow = 'hidden';
+              
+              // Set today's date
+              const today = new Date().toISOString().split('T')[0];
+              const dateInput = document.getElementById('penaltyDate');
+              if (dateInput && !dateInput.value) {
+                dateInput.value = today;
+              }
+            }
+            
+            // Close modal function
+            function closePenaltyModal() {
+              console.log('Closing penalty modal');
+              modal.classList.remove('active');
+              document.body.style.overflow = '';
+              
+              setTimeout(() => {
+                if (form) form.reset();
+              }, 300);
+            }
+            
+            // Add penalty button click
+            addPenaltyBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              console.log('Add penalty button clicked');
+              openPenaltyModal();
+            });
+            
+            // Close button
+            if (closeModalBtn) {
+              closeModalBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                closePenaltyModal();
+              });
+            }
+            
+            // Cancel button
+            if (cancelBtn) {
+              cancelBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                closePenaltyModal();
+              });
+            }
+            
+            // Click outside to close
+            modal.addEventListener('click', function(e) {
+              if (e.target === modal) {
+                closePenaltyModal();
+              }
+            });
+            
+            // Prevent modal content clicks from closing
+            const modalContainer = modal.querySelector('.modal-container');
+            if (modalContainer) {
+              modalContainer.addEventListener('click', function(e) {
+                e.stopPropagation();
+              });
+            }
+            
+if (form) {
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    console.log('Penalty form submitted');
+    
+    const formData = new FormData(this);
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = 'Adding...';
+    submitBtn.disabled = true;
+    
+    fetch('/hr/penalties/add/', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': csrfToken
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'success') {
+        showToast('Penalty added successfully!', 'success');
+        closePenaltyModal();
+        
+        // ✅ RELOAD ONLY THE PENALTIES CONTENT (NOT THE ENTIRE PAGE)
+        setTimeout(() => {
+          // Force reload the penalties tab content
+          const tasksContent = document.getElementById('tasks-content');
+          if (tasksContent) {
+            tasksContent.innerHTML = '<div class="loading"></div>';
+            loadTabContent('tasks');
+          }
+        }, 500);
+        
+      } else {
+        showToast('Error: ' + (data.message || 'Unknown error'), 'error');
+        submitBtn.textContent = originalText;
+        submitBtn.disabled = false;
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      showToast('An error occurred. Please try again.', 'error');
+      submitBtn.textContent = originalText;
+      submitBtn.disabled = false;
+    });
+  });
+}
+            
+            console.log('Penalties modal initialized successfully!');
+          }, 500);
+          break;
       }
     }
   </script>

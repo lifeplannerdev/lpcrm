@@ -139,6 +139,16 @@ def penalties_partial(request):
     employees = Employee.objects.all()
     total_amount = sum(penalty.amount for penalty in penalties)
     avg_amount = total_amount / len(penalties) if penalties else 0
+    
+    # Check if this is an AJAX request
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return render(request, 'hr/partials/penalties.html', {
+            'penalties': penalties,
+            'employees': employees,
+            'total_amount': total_amount,
+            'avg_amount': avg_amount,
+        })
+    
     return render(request, 'hr/partials/penalties.html', {
         'penalties': penalties,
         'employees': employees,
