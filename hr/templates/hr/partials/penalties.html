@@ -7,11 +7,17 @@
     </button>
   </div>
 
+  <!-- Add CSRF token for JavaScript access -->
+  {% csrf_token %}
+
   <div class="penalty-list">
     {% if penalties %}
     <div class="penalty-grid">
       {% for penalty in penalties %}
-      <div class="penalty-card">
+      <div class="penalty-card" data-penalty-id="{{ penalty.id }}">
+        <button class="delete-penalty-btn" data-penalty-id="{{ penalty.id }}">
+          <i class="fas fa-trash"></i>
+        </button>
         <div class="penalty-info">
           <div class="employee-section">
             <div class="employee-avatar">
@@ -190,10 +196,34 @@
   border-radius: 8px;
   padding: 1.25rem;
   transition: border-color 0.2s ease;
+  position: relative;
 }
 
 .penalty-card:hover {
   border-color: var(--border-hover);
+}
+
+.delete-penalty-btn {
+  position: absolute;
+  top: 20px;
+  right: 10px;
+  background: transparent;
+  color: #ff4d4d;
+  border: none;
+  border-radius: 4px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.delete-penalty-btn:hover {
+  background: rgba(255, 77, 77, 0.1);
+  transform: scale(1.1);
 }
 
 .penalty-info {
@@ -201,6 +231,14 @@
   flex-direction: column;
   gap: 1rem;
 }
+
+.penalty-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
 /* Scrollable penalties list */
 .penalty-list {
   max-height: calc(100vh - 180px); /* adjust for header + padding */
@@ -263,6 +301,32 @@
   flex-direction: column;
   gap: 0.5rem;
   font-size: 0.9rem;
+}
+
+.penalty-actions {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.delete-penalty-btn {
+  background: transparent;
+  color: #ff4d4d;
+  border: 1px solid #ff4d4d;
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.delete-penalty-btn:hover {
+  background: rgba(255, 77, 77, 0.1);
 }
 
 .penalty-details > div {
@@ -492,4 +556,161 @@
 // Mark that penalties script has loaded
 window.penaltiesScriptLoaded = true;
 console.log('Penalties script loaded');
+
+// Global delete function
+function deletePenalty(penaltyId, buttonElement) {
+  console.log('Delete function called for penalty ID:', penaltyId);
+  
+  if (confirm('Are you sure you want to delete this penalty?')) {
+    // Get CSRF token
+    let csrfToken = '';
+    const csrfElement = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfElement) {
+      csrfToken = csrfElement.value;
+    }
+    
+    if (!csrfToken) {
+      alert('Security token not found. Please refresh the page.');
+      return;
+    }
+    
+    console.log('CSRF Token found, sending DELETE request...');
+    
+    // Show loading state
+    const originalHTML = buttonElement.innerHTML;
+    buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    buttonElement.disabled = true;
+    
+    // Send DELETE request to server
+    fetch(`/hr/penalties/delete/${penaltyId}/`, {
+      method: 'DELETE',
+      headers: {
+        'X-CSRFToken': csrfToken,
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => {
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then(data => {
+      console.log('Response data:', data);
+      if (data.status === 'success') {
+        // Show success message
+        if (typeof showToast === 'function') {
+          showToast('Penalty deleted successfully!', 'success');
+        } else {
+          alert('Penalty deleted successfully!');
+        }
+        
+        // Remove the penalty card from the DOM with animation
+        const penaltyCard = buttonElement.closest('.penalty-card');
+        if (penaltyCard) {
+          penaltyCard.style.opacity = '0';
+          penaltyCard.style.transform = 'translateX(100px)';
+          setTimeout(() => {
+            penaltyCard.remove();
+            
+            // Check if no penalties left and show empty state
+            const penaltyGrid = document.querySelector('.penalty-grid');
+            if (penaltyGrid && penaltyGrid.children.length === 0) {
+              // Reload the penalties content to show empty state
+              const tasksContent = document.getElementById('tasks-content');
+              if (tasksContent) {
+                tasksContent.innerHTML = '<div class="loading"></div>';
+                // Use the existing loadTabContent function
+                if (typeof loadTabContent === 'function') {
+                  loadTabContent('tasks');
+                }
+              }
+            }
+          }, 300);
+        }
+      } else {
+        throw new Error(data.message || 'Unknown error occurred');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      const errorMessage = error.message || 'An error occurred while deleting the penalty';
+      if (typeof showToast === 'function') {
+        showToast('Error: ' + errorMessage, 'error');
+      } else {
+        alert('Error: ' + errorMessage);
+      }
+      
+      // Restore button state
+      buttonElement.innerHTML = originalHTML;
+      buttonElement.disabled = false;
+    });
+  }
+}
+
+// Enhanced event delegation that works with dynamically loaded content
+document.addEventListener('click', function(e) {
+  // Handle delete button clicks
+  if (e.target.closest('.delete-penalty-btn')) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const button = e.target.closest('.delete-penalty-btn');
+    const penaltyId = button.getAttribute('data-penalty-id');
+    
+    if (penaltyId) {
+      console.log('Delete button clicked via event delegation for penalty ID:', penaltyId);
+      deletePenalty(penaltyId, button);
+    } else {
+      console.error('No penalty ID found on delete button');
+    }
+    return;
+  }
+  
+  // Handle card clicks to prevent accidental deletions
+  if (e.target.closest('.penalty-card')) {
+    const card = e.target.closest('.penalty-card');
+    const deleteBtn = card.querySelector('.delete-penalty-btn');
+    
+    // If the click wasn't on the delete button, do nothing (allow other interactions)
+    if (!e.target.closest('.delete-penalty-btn')) {
+      return;
+    }
+  }
+});
+
+// Additional safety: Re-initialize delete buttons when content loads
+function initializePenaltiesDeleteButtons() {
+  console.log('Initializing penalties delete buttons...');
+  const deleteButtons = document.querySelectorAll('.delete-penalty-btn');
+  console.log('Found', deleteButtons.length, 'delete buttons to initialize');
+  
+  deleteButtons.forEach(button => {
+    const penaltyId = button.getAttribute('data-penalty-id');
+    console.log('Button with penalty ID:', penaltyId);
+    
+    // Remove any existing listeners to prevent duplicates
+    const newButton = button.cloneNode(true);
+    button.parentNode.replaceChild(newButton, button);
+    
+    // The event delegation above will handle the new button
+  });
+}
+
+// Initialize when the script loads
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('DOM loaded, initializing penalties...');
+  // Small delay to ensure penalties content is loaded
+  setTimeout(initializePenaltiesDeleteButtons, 100);
+});
+
+// Also initialize when the penalties tab becomes active
+const penaltiesTab = document.querySelector('[data-tab="tasks"]');
+if (penaltiesTab) {
+  penaltiesTab.addEventListener('click', function() {
+    console.log('Penalties tab clicked, re-initializing delete buttons...');
+    setTimeout(initializePenaltiesDeleteButtons, 500);
+  });
+}
 </script>

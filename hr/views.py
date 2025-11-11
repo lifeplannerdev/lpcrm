@@ -194,3 +194,22 @@ def add_penalty(request):
         })
 
 
+@require_http_methods(["DELETE"])
+@login_required
+@user_passes_test(lambda u: u.is_hr)
+def delete_penalty(request, penalty_id):
+    """Delete a penalty"""
+    try:
+        penalty = get_object_or_404(Penalty, id=penalty_id)
+        penalty.delete()
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Penalty deleted successfully'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        })
+
+

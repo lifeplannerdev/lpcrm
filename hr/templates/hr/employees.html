@@ -734,6 +734,122 @@
       });
     }
 
+    // Global function to initialize penalties delete buttons
+    function initializePenaltiesDeleteButtons() {
+      console.log('Initializing penalties delete buttons...');
+      const deleteButtons = document.querySelectorAll('.delete-penalty-btn');
+      console.log('Found', deleteButtons.length, 'delete buttons to initialize');
+      
+      deleteButtons.forEach(button => {
+        const penaltyId = button.getAttribute('data-penalty-id');
+        console.log('Button with penalty ID:', penaltyId);
+        
+        // The event delegation will handle these buttons
+      });
+    }
+
+    // Global delete function for penalties
+    function deletePenalty(penaltyId, buttonElement) {
+      console.log('Delete function called for penalty ID:', penaltyId);
+      
+      if (confirm('Are you sure you want to delete this penalty?')) {
+        // Get CSRF token
+        let csrfToken = '';
+        const csrfElement = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfElement) {
+          csrfToken = csrfElement.value;
+        }
+        
+        if (!csrfToken) {
+          alert('Security token not found. Please refresh the page.');
+          return;
+        }
+        
+        console.log('CSRF Token found, sending DELETE request...');
+        
+        // Show loading state
+        const originalHTML = buttonElement.innerHTML;
+        buttonElement.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        buttonElement.disabled = true;
+        
+        // Send DELETE request to server
+        fetch(`/hr/penalties/delete/${penaltyId}/`, {
+          method: 'DELETE',
+          headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+          }
+        })
+        .then(response => {
+          console.log('Response status:', response.status);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('Response data:', data);
+          if (data.status === 'success') {
+            // Show success message
+            showToast('Penalty deleted successfully!', 'success');
+            
+            // Remove the penalty card from the DOM with animation
+            const penaltyCard = buttonElement.closest('.penalty-card');
+            if (penaltyCard) {
+              penaltyCard.style.opacity = '0';
+              penaltyCard.style.transform = 'translateX(100px)';
+              setTimeout(() => {
+                penaltyCard.remove();
+                
+                // Check if no penalties left and show empty state
+                const penaltyGrid = document.querySelector('.penalty-grid');
+                if (penaltyGrid && penaltyGrid.children.length === 0) {
+                  // Reload the penalties content to show empty state
+                  const tasksContent = document.getElementById('tasks-content');
+                  if (tasksContent) {
+                    tasksContent.innerHTML = '<div class="loading"></div>';
+                    // Use the existing loadTabContent function
+                    loadTabContent('tasks');
+                  }
+                }
+              }, 300);
+            }
+          } else {
+            throw new Error(data.message || 'Unknown error occurred');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          const errorMessage = error.message || 'An error occurred while deleting the penalty';
+          showToast('Error: ' + errorMessage, 'error');
+          
+          // Restore button state
+          buttonElement.innerHTML = originalHTML;
+          buttonElement.disabled = false;
+        });
+      }
+    }
+
+    // Enhanced event delegation for penalties
+    document.addEventListener('click', function(e) {
+      // Handle delete button clicks for penalties
+      if (e.target.closest('.delete-penalty-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const button = e.target.closest('.delete-penalty-btn');
+        const penaltyId = button.getAttribute('data-penalty-id');
+        
+        if (penaltyId) {
+          console.log('Delete button clicked via event delegation for penalty ID:', penaltyId);
+          deletePenalty(penaltyId, button);
+        } else {
+          console.error('No penalty ID found on delete button');
+        }
+        return;
+      }
+    });
+
     // Tab switching functionality
     document.addEventListener('DOMContentLoaded', function() {
       const tabs = document.querySelectorAll('.tab');
@@ -820,7 +936,7 @@
     // Function to initialize tab-specific content
     function initializeTabContent(tabId) {
       console.log('Initializing tab content for:', tabId);
-      // Add any tab-specific JavaScript initialization here
+      
       switch(tabId) {
         case 'employees':
           // Initialize employee search functionality
@@ -1031,15 +1147,17 @@
             }, 500);
           }, 500); // Small delay to ensure DOM is ready
           break;
+          
         case 'attendance':
           // Initialize attendance-specific functionality
           break;
+          
         case 'tasks':
           // Initialize penalties modal functionality
           console.log('Initializing penalties tab');
           
           setTimeout(function() {
-            console.log('Setting up penalties modal...');
+            console.log('Setting up penalties modal and delete buttons...');
             
             const addPenaltyBtn = document.getElementById('addPenaltyBtn');
             const modal = document.getElementById('addPenaltyModal');
@@ -1123,58 +1241,61 @@
               });
             }
             
-if (form) {
-  form.addEventListener('submit', function(e) {
-    e.preventDefault();
-    console.log('Penalty form submitted');
-    
-    const formData = new FormData(this);
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalText = submitBtn.textContent;
-    submitBtn.textContent = 'Adding...';
-    submitBtn.disabled = true;
-    
-    fetch('/hr/penalties/add/', {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'X-CSRFToken': csrfToken
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'success') {
-        showToast('Penalty added successfully!', 'success');
-        closePenaltyModal();
-        
-        // ✅ RELOAD ONLY THE PENALTIES CONTENT (NOT THE ENTIRE PAGE)
-        setTimeout(() => {
-          // Force reload the penalties tab content
-          const tasksContent = document.getElementById('tasks-content');
-          if (tasksContent) {
-            tasksContent.innerHTML = '<div class="loading"></div>';
-            loadTabContent('tasks');
-          }
-        }, 500);
-        
-      } else {
-        showToast('Error: ' + (data.message || 'Unknown error'), 'error');
-        submitBtn.textContent = originalText;
-        submitBtn.disabled = false;
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      showToast('An error occurred. Please try again.', 'error');
-      submitBtn.textContent = originalText;
-      submitBtn.disabled = false;
-    });
-  });
-}
+            if (form) {
+              form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                console.log('Penalty form submitted');
+                
+                const formData = new FormData(this);
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Adding...';
+                submitBtn.disabled = true;
+                
+                fetch('/hr/penalties/add/', {
+                  method: 'POST',
+                  body: formData,
+                  headers: {
+                    'X-CSRFToken': csrfToken
+                  }
+                })
+                .then(response => response.json())
+                .then(data => {
+                  if (data.status === 'success') {
+                    showToast('Penalty added successfully!', 'success');
+                    closePenaltyModal();
+                    
+                    // RELOAD ONLY THE PENALTIES CONTENT (NOT THE ENTIRE PAGE)
+                    setTimeout(() => {
+                      // Force reload the penalties tab content
+                      const tasksContent = document.getElementById('tasks-content');
+                      if (tasksContent) {
+                        tasksContent.innerHTML = '<div class="loading"></div>';
+                        loadTabContent('tasks');
+                      }
+                    }, 500);
+                    
+                  } else {
+                    showToast('Error: ' + (data.message || 'Unknown error'), 'error');
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                  }
+                })
+                .catch(error => {
+                  console.error('Error:', error);
+                  showToast('An error occurred. Please try again.', 'error');
+                  submitBtn.textContent = originalText;
+                  submitBtn.disabled = false;
+                });
+              });
+            }
             
-            console.log('Penalties modal initialized successfully!');
+            // Initialize delete buttons for penalties
+            initializePenaltiesDeleteButtons();
+            
+            console.log('Penalties tab fully initialized!');
           }, 500);
           break;
       }
