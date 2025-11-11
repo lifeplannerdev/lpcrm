@@ -548,6 +548,84 @@
         transform: scaleX(0);
       }
     }
+
+    /* View Penalty Modal Styles */
+    .penalty-details-view {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .detail-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .detail-item.full-width {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+
+    .detail-item label {
+      font-weight: 600;
+      color: var(--text-secondary);
+      min-width: 120px;
+      font-size: 0.9rem;
+    }
+
+    .detail-value {
+      color: var(--text-primary);
+      text-align: right;
+      flex: 1;
+      font-size: 0.95rem;
+    }
+
+    .detail-item.full-width .detail-value {
+      text-align: left;
+    }
+
+    .amount-text {
+      color: #ff4d4d;
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+
+    .act-text {
+      color: var(--text-primary);
+      line-height: 1.4;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      background: rgba(0, 229, 153, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(0, 229, 153, 0.3);
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border-color);
+    }
     
     /* Responsive */
     @media (max-width: 1024px) {
@@ -653,6 +731,8 @@
     </div>
   </div>
 
+ 
+
   <script>
     // Toast Notification Functions
     let toastContainer = null;
@@ -743,8 +823,6 @@
       deleteButtons.forEach(button => {
         const penaltyId = button.getAttribute('data-penalty-id');
         console.log('Button with penalty ID:', penaltyId);
-        
-        // The event delegation will handle these buttons
       });
     }
 
@@ -830,8 +908,234 @@
       }
     }
 
+    // View penalty details function
+    function viewPenaltyDetails(penaltyId, buttonElement) {
+      console.log('View details function called for penalty ID:', penaltyId);
+      
+      // Get the penalty card element
+      const penaltyCard = buttonElement.closest('.penalty-card');
+      
+      // Extract data from the penalty card
+      const employeeName = penaltyCard.querySelector('.employee-name').textContent;
+      const employeePosition = penaltyCard.querySelector('.employee-position').textContent;
+      const penaltyAct = penaltyCard.querySelector('.act-text').textContent;
+      const penaltyAmount = penaltyCard.querySelector('.penalty-amount').textContent.replace('Amount: ₹', '');
+      const penaltyMonth = penaltyCard.querySelector('.penalty-month').textContent.replace('Month: ', '');
+      const penaltyDate = penaltyCard.querySelector('.penalty-date').textContent.replace('Date: ', '');
+      
+      // Populate the view modal
+      document.getElementById('viewEmployeeName').textContent = employeeName;
+      document.getElementById('viewEmployeePosition').textContent = employeePosition;
+      document.getElementById('viewEmployeeEmail').textContent = 'Not available'; // You might want to add email to your model
+      document.getElementById('viewPenaltyAct').textContent = penaltyAct;
+      document.getElementById('viewPenaltyAmount').textContent = `₹${penaltyAmount}`;
+      document.getElementById('viewPenaltyMonth').textContent = penaltyMonth;
+      document.getElementById('viewPenaltyDate').textContent = penaltyDate;
+      
+      // Show the view modal
+      const viewModal = document.getElementById('viewPenaltyModal');
+      viewModal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      
+      // Add animation
+      setTimeout(() => {
+        viewModal.style.opacity = '1';
+      }, 10);
+    }
+
+    // Close view modal function
+    function closeViewModal() {
+      const viewModal = document.getElementById('viewPenaltyModal');
+      if (viewModal) {
+        viewModal.style.opacity = '0';
+        setTimeout(() => {
+          viewModal.style.display = 'none';
+          document.body.style.overflow = '';
+        }, 300);
+      }
+    }
+
+    // Close add penalty modal function
+    function closeAddPenaltyModal() {
+      const addModal = document.getElementById('addPenaltyModal');
+      if (addModal) {
+        addModal.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+
+    // Modal management functions for penalties
+    function initializePenaltiesModals() {
+      console.log('Initializing penalties modals...');
+      
+      // View Penalty Modal
+      const viewModal = document.getElementById('viewPenaltyModal');
+      const closeViewModalBtn = document.getElementById('closeViewModal');
+      const closeViewDetailsBtn = document.getElementById('closeViewDetails');
+      
+      if (viewModal && closeViewModalBtn) {
+        console.log('Found view modal close button');
+        closeViewModalBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Close view modal button clicked');
+          closeViewModal();
+        });
+      } else {
+        console.log('View modal close button not found');
+      }
+      
+      if (viewModal && closeViewDetailsBtn) {
+        console.log('Found close view details button');
+        closeViewDetailsBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Close view details button clicked');
+          closeViewModal();
+        });
+      } else {
+        console.log('Close view details button not found');
+      }
+      
+      // Click outside to close view modal
+      if (viewModal) {
+        viewModal.addEventListener('click', function(e) {
+          if (e.target === viewModal) {
+            console.log('Clicked outside view modal, closing...');
+            closeViewModal();
+          }
+        });
+      }
+      
+      // Add Penalty Modal
+      const addModal = document.getElementById('addPenaltyModal');
+      const closeAddModalBtn = document.getElementById('closeModal');
+      const cancelAddPenaltyBtn = document.getElementById('cancelAddPenalty');
+      const addPenaltyBtn = document.getElementById('addPenaltyBtn');
+      
+      if (addModal && closeAddModalBtn) {
+        console.log('Found add penalty modal close button');
+        closeAddModalBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Close add penalty modal button clicked');
+          closeAddPenaltyModal();
+        });
+      }
+      
+      if (addModal && cancelAddPenaltyBtn) {
+        console.log('Found cancel add penalty button');
+        cancelAddPenaltyBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Cancel add penalty button clicked');
+          closeAddPenaltyModal();
+        });
+      }
+      
+      // Click outside to close add modal
+      if (addModal) {
+        addModal.addEventListener('click', function(e) {
+          if (e.target === addModal) {
+            console.log('Clicked outside add penalty modal, closing...');
+            closeAddPenaltyModal();
+          }
+        });
+      }
+      
+      // Add Penalty Button
+      if (addPenaltyBtn) {
+        console.log('Found add penalty button');
+        addPenaltyBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          console.log('Add penalty button clicked');
+          const addModal = document.getElementById('addPenaltyModal');
+          if (addModal) {
+            addModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Set today's date
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('penaltyDate');
+            if (dateInput && !dateInput.value) {
+              dateInput.value = today;
+            }
+          }
+        });
+      }
+      
+      // Add Penalty Form Submission
+      const addPenaltyForm = document.getElementById('addPenaltyForm');
+      if (addPenaltyForm) {
+        console.log('Found add penalty form');
+        addPenaltyForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          console.log('Penalty form submitted');
+          
+          const formData = new FormData(this);
+          const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+          
+          const submitBtn = this.querySelector('button[type="submit"]');
+          const originalText = submitBtn.textContent;
+          submitBtn.textContent = 'Adding...';
+          submitBtn.disabled = true;
+          
+          fetch('/hr/penalties/add/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-CSRFToken': csrfToken
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              showToast('Penalty added successfully!', 'success');
+              closeAddPenaltyModal();
+              
+              // RELOAD ONLY THE PENALTIES CONTENT (NOT THE ENTIRE PAGE)
+              setTimeout(() => {
+                // Force reload the penalties tab content
+                const tasksContent = document.getElementById('tasks-content');
+                if (tasksContent) {
+                  tasksContent.innerHTML = '<div class="loading"></div>';
+                  if (typeof loadTabContent === 'function') {
+                    loadTabContent('tasks');
+                  }
+                }
+              }, 500);
+              
+            } else {
+              showToast('Error: ' + (data.message || 'Unknown error'), 'error');
+              submitBtn.textContent = originalText;
+              submitBtn.disabled = false;
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showToast('An error occurred. Please try again.', 'error');
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+          });
+        });
+      }
+    }
+
     // Enhanced event delegation for penalties
     document.addEventListener('click', function(e) {
+      // Handle view button clicks for penalties
+      if (e.target.closest('.view-penalty-btn')) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const button = e.target.closest('.view-penalty-btn');
+        const penaltyId = button.getAttribute('data-penalty-id');
+        
+        if (penaltyId) {
+          console.log('View button clicked via event delegation for penalty ID:', penaltyId);
+          viewPenaltyDetails(penaltyId, button);
+        } else {
+          console.error('No penalty ID found on view button');
+        }
+        return;
+      }
+      
       // Handle delete button clicks for penalties
       if (e.target.closest('.delete-penalty-btn')) {
         e.preventDefault();
@@ -1157,143 +1461,15 @@
           console.log('Initializing penalties tab');
           
           setTimeout(function() {
-            console.log('Setting up penalties modal and delete buttons...');
+            console.log('Setting up penalties modals and buttons...');
             
-            const addPenaltyBtn = document.getElementById('addPenaltyBtn');
-            const modal = document.getElementById('addPenaltyModal');
-            const closeModalBtn = document.getElementById('closeModal');
-            const cancelBtn = document.getElementById('cancelAddPenalty');
-            const form = document.getElementById('addPenaltyForm');
-            
-            console.log('Penalty elements found:', {
-              addPenaltyBtn: !!addPenaltyBtn,
-              modal: !!modal,
-              closeModalBtn: !!closeModalBtn,
-              cancelBtn: !!cancelBtn,
-              form: !!form
-            });
-            
-            if (!addPenaltyBtn || !modal) {
-              console.error('Penalty modal elements not found!');
-              return;
+            // Initialize penalties modals and buttons
+            if (typeof initializePenaltiesModals === 'function') {
+              initializePenaltiesModals();
             }
-            
-            // Open modal function
-            function openPenaltyModal() {
-              console.log('Opening penalty modal');
-              modal.classList.add('active');
-              document.body.style.overflow = 'hidden';
-              
-              // Set today's date
-              const today = new Date().toISOString().split('T')[0];
-              const dateInput = document.getElementById('penaltyDate');
-              if (dateInput && !dateInput.value) {
-                dateInput.value = today;
-              }
+            if (typeof initializePenaltiesDeleteButtons === 'function') {
+              initializePenaltiesDeleteButtons();
             }
-            
-            // Close modal function
-            function closePenaltyModal() {
-              console.log('Closing penalty modal');
-              modal.classList.remove('active');
-              document.body.style.overflow = '';
-              
-              setTimeout(() => {
-                if (form) form.reset();
-              }, 300);
-            }
-            
-            // Add penalty button click
-            addPenaltyBtn.addEventListener('click', function(e) {
-              e.preventDefault();
-              console.log('Add penalty button clicked');
-              openPenaltyModal();
-            });
-            
-            // Close button
-            if (closeModalBtn) {
-              closeModalBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                closePenaltyModal();
-              });
-            }
-            
-            // Cancel button
-            if (cancelBtn) {
-              cancelBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                closePenaltyModal();
-              });
-            }
-            
-            // Click outside to close
-            modal.addEventListener('click', function(e) {
-              if (e.target === modal) {
-                closePenaltyModal();
-              }
-            });
-            
-            // Prevent modal content clicks from closing
-            const modalContainer = modal.querySelector('.modal-container');
-            if (modalContainer) {
-              modalContainer.addEventListener('click', function(e) {
-                e.stopPropagation();
-              });
-            }
-            
-            if (form) {
-              form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                console.log('Penalty form submitted');
-                
-                const formData = new FormData(this);
-                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                
-                const submitBtn = this.querySelector('button[type="submit"]');
-                const originalText = submitBtn.textContent;
-                submitBtn.textContent = 'Adding...';
-                submitBtn.disabled = true;
-                
-                fetch('/hr/penalties/add/', {
-                  method: 'POST',
-                  body: formData,
-                  headers: {
-                    'X-CSRFToken': csrfToken
-                  }
-                })
-                .then(response => response.json())
-                .then(data => {
-                  if (data.status === 'success') {
-                    showToast('Penalty added successfully!', 'success');
-                    closePenaltyModal();
-                    
-                    // RELOAD ONLY THE PENALTIES CONTENT (NOT THE ENTIRE PAGE)
-                    setTimeout(() => {
-                      // Force reload the penalties tab content
-                      const tasksContent = document.getElementById('tasks-content');
-                      if (tasksContent) {
-                        tasksContent.innerHTML = '<div class="loading"></div>';
-                        loadTabContent('tasks');
-                      }
-                    }, 500);
-                    
-                  } else {
-                    showToast('Error: ' + (data.message || 'Unknown error'), 'error');
-                    submitBtn.textContent = originalText;
-                    submitBtn.disabled = false;
-                  }
-                })
-                .catch(error => {
-                  console.error('Error:', error);
-                  showToast('An error occurred. Please try again.', 'error');
-                  submitBtn.textContent = originalText;
-                  submitBtn.disabled = false;
-                });
-              });
-            }
-            
-            // Initialize delete buttons for penalties
-            initializePenaltiesDeleteButtons();
             
             console.log('Penalties tab fully initialized!');
           }, 500);
