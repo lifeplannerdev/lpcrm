@@ -1,10 +1,18 @@
 <div class="penalty-container">
   <div class="penalty-header">
     <h2>Employee Penalties</h2>
-    <button class="add-btn" id="addPenaltyBtn">
-      <i class="fas fa-plus"></i>
-      Add Penalty
-    </button>
+    <div class="header-controls">
+      <select id="employeeFilter" class="filter-select">
+        <option value="">All Employees</option>
+        {% for employee in employees %}
+        <option value="{{ employee.id }}">{{ employee.name }}</option>
+        {% endfor %}
+      </select>
+      <button class="add-btn" id="addPenaltyBtn">
+        <i class="fas fa-plus"></i>
+        Add Penalty
+      </button>
+    </div>
   </div>
 
   <!-- Add CSRF token for JavaScript access -->
@@ -14,7 +22,7 @@
     {% if penalties %}
     <div class="penalty-grid">
       {% for penalty in penalties %}
-      <div class="penalty-card" data-penalty-id="{{ penalty.id }}">
+      <div class="penalty-card" data-penalty-id="{{ penalty.id }}" data-employee-id="{{ penalty.employee.id }}">
         <div class="penalty-actions">
           <button class="view-penalty-btn" data-penalty-id="{{ penalty.id }}" title="View Details">
             <i class="fas fa-eye"></i>
@@ -219,6 +227,35 @@
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
   border-bottom: 1px solid var(--border-color);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.filter-select {
+  padding: 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 180px;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
+}
+
+.filter-select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .penalty-header h2 {
@@ -769,8 +806,17 @@ function deletePenalty(penaltyId, buttonElement) {
                 // Use the existing loadTabContent function
                 if (typeof loadTabContent === 'function') {
                   loadTabContent('tasks');
+                  // Re-apply the filter after content reload
+                  setTimeout(() => {
+                    applySavedFilter();
+                  }, 100);
                 }
               }
+            } else {
+              // Re-apply the filter to maintain current selection
+              setTimeout(() => {
+                applySavedFilter();
+              }, 100);
             }
           }, 300);
         }
@@ -1008,6 +1054,10 @@ function initializePenaltiesModals() {
               tasksContent.innerHTML = '<div class="loading"></div>';
               if (typeof loadTabContent === 'function') {
                 loadTabContent('tasks');
+                // Re-apply the filter after content reload
+                setTimeout(() => {
+                  applySavedFilter();
+                }, 100);
               }
             }
           }, 500);
@@ -1039,10 +1089,61 @@ function initializePenaltiesButtons() {
   // The event delegation above will handle these buttons
 }
 
+// Employee filter functionality
+function filterPenalties() {
+  const employeeFilter = document.getElementById('employeeFilter');
+  const penaltyCards = document.querySelectorAll('.penalty-card');
+  
+  if (!employeeFilter || penaltyCards.length === 0) return;
+  
+  const selectedEmployeeId = employeeFilter.value;
+  
+  // Store the selected filter in localStorage to preserve it after page reloads
+  if (selectedEmployeeId) {
+    localStorage.setItem('penaltyEmployeeFilter', selectedEmployeeId);
+  } else {
+    localStorage.removeItem('penaltyEmployeeFilter');
+  }
+  
+  penaltyCards.forEach(card => {
+    if (!selectedEmployeeId) {
+      // Show all cards if no filter is selected
+      card.style.display = 'block';
+    } else {
+      // Show only cards matching the selected employee
+      const cardEmployeeId = card.getAttribute('data-employee-id');
+      if (cardEmployeeId === selectedEmployeeId) {
+        card.style.display = 'block';
+      } else {
+        card.style.display = 'none';
+      }
+    }
+  });
+}
+
+// Apply saved filter on page load
+function applySavedFilter() {
+  const savedFilter = localStorage.getItem('penaltyEmployeeFilter');
+  const employeeFilter = document.getElementById('employeeFilter');
+  
+  if (savedFilter && employeeFilter) {
+    employeeFilter.value = savedFilter;
+    filterPenalties();
+  }
+}
+
 // Initialize when the penalties content loads
 console.log('Penalties content loaded, initializing modals and buttons...');
 initializePenaltiesModals();
 initializePenaltiesButtons();
+
+// Add event listener for employee filter
+const employeeFilter = document.getElementById('employeeFilter');
+if (employeeFilter) {
+  employeeFilter.addEventListener('change', filterPenalties);
+  // Apply saved filter if exists
+  applySavedFilter();
+}
 
 // Also make functions globally available for the main page to call if needed
 window.initializePenaltiesModals = initializePenaltiesModals;

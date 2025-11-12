@@ -731,8 +731,6 @@
     </div>
   </div>
 
- 
-
   <script>
     // Toast Notification Functions
     let toastContainer = null;
@@ -813,6 +811,95 @@
         }, duration - 1000);
       });
     }
+
+    // =============================================
+    // PENALTIES FILTER FUNCTIONALITY
+    // =============================================
+
+    // Employee filter functionality for penalties
+    function initializePenaltiesFilter() {
+      const employeeFilter = document.getElementById('employeeFilter');
+      console.log('Initializing penalties filter, found element:', employeeFilter);
+      
+      if (employeeFilter) {
+        // Remove any existing event listeners
+        const newFilter = employeeFilter.cloneNode(true);
+        employeeFilter.parentNode.replaceChild(newFilter, employeeFilter);
+        
+        // Add new event listener
+        newFilter.addEventListener('change', filterPenalties);
+        console.log('Filter event listener attached');
+        
+        // Apply saved filter if exists
+        applySavedFilter();
+      }
+    }
+
+    function filterPenalties() {
+      console.log('filterPenalties function called');
+      
+      const employeeFilter = document.getElementById('employeeFilter');
+      const penaltyCards = document.querySelectorAll('.penalty-card');
+      
+      console.log('Found filter:', employeeFilter, 'and cards:', penaltyCards.length);
+      
+      if (!employeeFilter) {
+        console.error('Employee filter not found!');
+        return;
+      }
+      
+      if (penaltyCards.length === 0) {
+        console.log('No penalty cards found to filter');
+        return;
+      }
+      
+      const selectedEmployeeId = employeeFilter.value;
+      console.log('Selected employee ID:', selectedEmployeeId);
+      
+      // Store the selected filter in localStorage to preserve it after page reloads
+      if (selectedEmployeeId) {
+        localStorage.setItem('penaltyEmployeeFilter', selectedEmployeeId);
+      } else {
+        localStorage.removeItem('penaltyEmployeeFilter');
+      }
+      
+      let visibleCount = 0;
+      penaltyCards.forEach((card, index) => {
+        const cardEmployeeId = card.getAttribute('data-employee-id');
+        console.log(`Card ${index} employee ID:`, cardEmployeeId);
+        
+        if (!selectedEmployeeId || selectedEmployeeId === '') {
+          // Show all cards if no filter is selected
+          card.style.display = 'block';
+          visibleCount++;
+        } else {
+          // Show only cards matching the selected employee
+          if (cardEmployeeId === selectedEmployeeId) {
+            card.style.display = 'block';
+            visibleCount++;
+          } else {
+            card.style.display = 'none';
+          }
+        }
+      });
+      
+      console.log('Filter applied. Now showing', visibleCount, 'penalties');
+    }
+
+    // Apply saved filter on page load
+    function applySavedFilter() {
+      const savedFilter = localStorage.getItem('penaltyEmployeeFilter');
+      const employeeFilter = document.getElementById('employeeFilter');
+      
+      if (savedFilter && employeeFilter) {
+        employeeFilter.value = savedFilter;
+        filterPenalties();
+      }
+    }
+
+    // =============================================
+    // PENALTIES MANAGEMENT FUNCTIONS
+    // =============================================
 
     // Global function to initialize penalties delete buttons
     function initializePenaltiesDeleteButtons() {
@@ -1154,6 +1241,10 @@
       }
     });
 
+    // =============================================
+    // MAIN APPLICATION FUNCTIONALITY
+    // =============================================
+
     // Tab switching functionality
     document.addEventListener('DOMContentLoaded', function() {
       const tabs = document.querySelectorAll('.tab');
@@ -1463,12 +1554,15 @@
           setTimeout(function() {
             console.log('Setting up penalties modals and buttons...');
             
-            // Initialize penalties modals and buttons
+            // Initialize penalties modals, buttons, and filter
             if (typeof initializePenaltiesModals === 'function') {
               initializePenaltiesModals();
             }
             if (typeof initializePenaltiesDeleteButtons === 'function') {
               initializePenaltiesDeleteButtons();
+            }
+            if (typeof initializePenaltiesFilter === 'function') {
+              initializePenaltiesFilter();
             }
             
             console.log('Penalties tab fully initialized!');
