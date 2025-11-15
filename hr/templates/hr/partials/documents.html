@@ -6,8 +6,7 @@
   <title>Documents - HR Dashboard</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    
+    /* Your existing CSS styles remain the same */
     :root {
       --bg-primary: #000000;
       --bg-secondary: #0a0a0a;
@@ -64,10 +63,6 @@
       position: relative;
       z-index: 1;
     }
-    
-    
-    
-    
     
     .action-btn {
       background: transparent;
@@ -554,18 +549,29 @@
 </head>
 <body>
   <div class="dashboard-container">
-    
-
     <!-- Documents Content -->
     <div class="table-wrapper">
       <div class="table-header">
         <h3>Documents</h3>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <!-- Search Box -->
+          <!-- Month Filter -->
           <div style="position: relative;">
-            <input type="text" id="document-search" placeholder="Search documents..." 
-                   class="form-input" style="padding: 0.5rem 2.5rem 0.5rem 1rem; background: var(--bg-primary); width: 250px; border: 1px solid var(--border-color);">
-            <i class="fas fa-search" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
+            <select id="monthFilter" class="form-input" style="padding: 0.5rem 1rem; background: var(--bg-primary); width: 150px; border: 1px solid var(--border-color); appearance: none; cursor: pointer;">
+              <option value="">All Months</option>
+              <option value="January">January</option>
+              <option value="February">February</option>
+              <option value="March">March</option>
+              <option value="April">April</option>
+              <option value="May">May</option>
+              <option value="June">June</option>
+              <option value="July">July</option>
+              <option value="August">August</option>
+              <option value="September">September</option>
+              <option value="October">October</option>
+              <option value="November">November</option>
+              <option value="December">December</option>
+            </select>
+            <i class="fas fa-calendar" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none;"></i>
           </div>
           
           <!-- Add Document Button -->
@@ -578,7 +584,7 @@
       
       <div class="table-scroll">
         {% if documents %}
-          <table>
+          <table id="documentsTable">
             <thead>
               <tr>
                 <th style="width: 40%;">Document Name</th>
@@ -588,9 +594,9 @@
                 <th style="width: 10%;">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="documentsTableBody">
               {% for document in documents %}
-              <tr>
+              <tr class="document-row" data-month="{{ document.month }}">
                 <td style="width: 30%;">
                   <div class="document-info">
                     {% if document.document %}
@@ -804,28 +810,129 @@
       });
     }
 
-    // Documents Management Functions
-    document.addEventListener('DOMContentLoaded', function() {
+    // =============================================
+    // DOCUMENTS FILTER FUNCTIONALITY
+    // =============================================
+
+    // Month filter functionality for documents
+    function initializeDocumentsFilter() {
+      const monthFilter = document.getElementById('monthFilter');
+      console.log('Initializing documents filter, found element:', monthFilter);
+      
+      if (monthFilter) {
+        // Remove any existing event listeners
+        const newFilter = monthFilter.cloneNode(true);
+        monthFilter.parentNode.replaceChild(newFilter, monthFilter);
+        
+        // Add new event listener
+        newFilter.addEventListener('change', filterDocuments);
+        console.log('Month filter event listener attached');
+        
+        // Apply saved filter if exists
+        applySavedDocumentsFilter();
+      }
+    }
+
+    function filterDocuments() {
+      console.log('filterDocuments function called');
+      
+      const monthFilter = document.getElementById('monthFilter');
+      const documentRows = document.querySelectorAll('.document-row');
+      
+      console.log('Found filter:', monthFilter, 'and rows:', documentRows.length);
+      
+      if (!monthFilter) {
+        console.error('Month filter not found!');
+        return;
+      }
+      
+      if (documentRows.length === 0) {
+        console.log('No document rows found to filter');
+        return;
+      }
+      
+      const selectedMonth = monthFilter.value;
+      console.log('Selected month:', selectedMonth);
+      
+      // Store the selected filter in localStorage to preserve it after page reloads
+      if (selectedMonth) {
+        localStorage.setItem('documentMonthFilter', selectedMonth);
+      } else {
+        localStorage.removeItem('documentMonthFilter');
+      }
+      
+      let visibleCount = 0;
+      documentRows.forEach((row, index) => {
+        const rowMonth = row.getAttribute('data-month');
+        console.log(`Row ${index} month:`, rowMonth);
+        
+        if (!selectedMonth || selectedMonth === '') {
+          // Show all rows if no filter is selected
+          row.style.display = '';
+          visibleCount++;
+        } else {
+          // Show only rows matching the selected month
+          if (rowMonth === selectedMonth) {
+            row.style.display = '';
+            visibleCount++;
+          } else {
+            row.style.display = 'none';
+          }
+        }
+      });
+      
+      console.log('Filter applied. Now showing', visibleCount, 'documents');
+      
+      // Show/hide empty state message
+      const emptyState = document.querySelector('.empty-state');
+      const table = document.getElementById('documentsTable');
+      
+      if (visibleCount === 0 && table) {
+        // Create empty state if it doesn't exist
+        if (!emptyState) {
+          const newEmptyState = document.createElement('div');
+          newEmptyState.className = 'empty-state';
+          newEmptyState.innerHTML = `
+            <i class="fas fa-folder-open"></i>
+            <h3>No documents found for ${selectedMonth}</h3>
+            <p>Try selecting a different month or upload new documents.</p>
+          `;
+          table.parentNode.appendChild(newEmptyState);
+        }
+        table.style.display = 'none';
+      } else {
+        // Remove empty state if it exists and show table
+        if (emptyState) {
+          emptyState.remove();
+        }
+        if (table) {
+          table.style.display = '';
+        }
+      }
+    }
+
+    // Apply saved filter on page load
+    function applySavedDocumentsFilter() {
+      const savedFilter = localStorage.getItem('documentMonthFilter');
+      const monthFilter = document.getElementById('monthFilter');
+      
+      if (savedFilter && monthFilter) {
+        monthFilter.value = savedFilter;
+        filterDocuments();
+      }
+    }
+
+    // =============================================
+    // DOCUMENTS MANAGEMENT FUNCTIONS
+    // =============================================
+
+    function initializeDocuments() {
+      console.log('Initializing documents functionality...');
+      
       // Add Document Button
       const addDocumentBtn = document.getElementById('add-document-btn');
       if (addDocumentBtn) {
         addDocumentBtn.addEventListener('click', function() {
-          document.getElementById('addDocumentModal').style.display = 'flex';
-          document.body.style.overflow = 'hidden';
-          
-          // Set today's date as default
-          const today = new Date().toISOString().split('T')[0];
-          const dateInput = document.getElementById('documentDate');
-          if (dateInput && !dateInput.value) {
-            dateInput.value = today;
-          }
-        });
-      }
-      
-      // Add First Document Button
-      const addFirstDocumentBtn = document.getElementById('add-first-document');
-      if (addFirstDocumentBtn) {
-        addFirstDocumentBtn.addEventListener('click', function() {
           document.getElementById('addDocumentModal').style.display = 'flex';
           document.body.style.overflow = 'hidden';
           
@@ -867,20 +974,8 @@
         });
       }
       
-      // Search functionality
-      const searchInput = document.getElementById('document-search');
-      if (searchInput) {
-        let searchTimeout;
-        searchInput.addEventListener('input', function() {
-          clearTimeout(searchTimeout);
-          searchTimeout = setTimeout(() => {
-            const searchQuery = this.value;
-            // You can implement search functionality here
-            // For now, we'll just log the search query
-            console.log('Searching for:', searchQuery);
-          }, 500);
-        });
-      }
+      // Initialize month filter
+      initializeDocumentsFilter();
       
       // Form submission
       const addDocumentForm = document.getElementById('addDocumentForm');
@@ -967,6 +1062,11 @@
           }
         }
       });
+    }
+
+    // Initialize when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeDocuments();
     });
   </script>
 </body>

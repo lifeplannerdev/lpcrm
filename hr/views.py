@@ -216,6 +216,11 @@ def documents_partial(request):
     """Documents partial view"""
     documents = AttendanceDocument.objects.all().order_by('-uploaded_at')
     
+    # Add month filter functionality
+    month_filter = request.GET.get('month', '')
+    if month_filter:
+        documents = documents.filter(month=month_filter)
+    
     # Add search functionality
     search_query = request.GET.get('search', '')
     if search_query:
@@ -232,6 +237,7 @@ def documents_partial(request):
     context = {
         'documents': page_obj,
         'search_query': search_query,
+        'month_filter': month_filter,
     }
     
     return render(request, 'hr/partials/documents.html', context)
