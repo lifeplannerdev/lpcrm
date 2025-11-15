@@ -214,7 +214,7 @@ def delete_penalty(request, penalty_id):
 @user_passes_test(lambda u: u.is_hr)
 def documents_partial(request):
     """Documents partial view"""
-    documents = AttendanceDocument.objects.all().order_by('-date')
+    documents = AttendanceDocument.objects.all().order_by('-uploaded_at')
     
     # Add search functionality
     search_query = request.GET.get('search', '')
