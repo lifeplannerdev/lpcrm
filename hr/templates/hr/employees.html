@@ -446,6 +446,123 @@
       to { transform: rotate(360deg); }
     }
     
+    /* Modal styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(8px);
+    }
+    
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-header h3 {
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .close-modal {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    
+    .close-modal:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+    }
+    
+    .modal-actions {
+      padding: 1.5rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+    
+    /* Form styles */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    
+    label {
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+    
+    .form-input {
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.1);
+    }
+    
     /* Toast Notification Styles */
     .toast-container {
       position: fixed;
@@ -666,6 +783,11 @@
       .employee-email {
         display: none;
       }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
     }
     
     @media (max-width: 480px) {
@@ -681,6 +803,11 @@
       .action-btn {
         width: 100%;
         justify-content: center;
+      }
+      
+      .modal-content {
+        width: 95%;
+        margin: 1rem;
       }
     }
   </style>
@@ -702,7 +829,7 @@
     <div class="tabs-container">
       <div class="tabs-header">
         <button class="tab active" data-tab="employees">Employees</button>
-        <button class="tab" data-tab="attendance">Attendance</button>
+        <button class="tab" data-tab="documents">Documents</button>
         <button class="tab" data-tab="tasks">Penalties</button>
       </div>
       
@@ -714,9 +841,9 @@
           </div>
         </div>
         
-        <!-- Attendance Tab -->
-        <div class="tab-pane" id="attendance-tab">
-          <div id="attendance-content">
+        <!-- Documents Tab -->
+        <div class="tab-pane" id="documents-tab">
+          <div id="documents-content">
             <div class="loading"></div>
           </div>
         </div>
@@ -728,6 +855,179 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- Add Employee Modal -->
+  <div id="addEmployeeModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add New Employee</h3>
+        <button class="close-modal">&times;</button>
+      </div>
+      <form id="addEmployeeForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="employeeName">Full Name</label>
+            <input type="text" id="employeeName" name="name" required class="form-input" placeholder="Enter full name">
+          </div>
+          
+          <div class="form-group">
+            <label for="employeeEmail">Email Address</label>
+            <input type="email" id="employeeEmail" name="email" required class="form-input" placeholder="Enter email address">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="employeePhone">Phone Number</label>
+              <input type="tel" id="employeePhone" name="phone" required class="form-input" placeholder="Enter phone number">
+            </div>
+            <div class="form-group">
+              <label for="employeePosition">Position</label>
+              <input type="text" id="employeePosition" name="position" required class="form-input" placeholder="Enter position">
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="employeeSalary">Salary</label>
+            <input type="text" id="employeeSalary" name="salary" required class="form-input" placeholder="Enter salary">
+          </div>
+          
+          <div class="form-group">
+            <label for="employeeAddress">Address (Optional)</label>
+            <textarea id="employeeAddress" name="address" class="form-input" placeholder="Enter address" rows="3"></textarea>
+          </div>
+          
+          <div class="form-group">
+            <label for="employeeJoinDate">Join Date (Optional)</label>
+            <input type="date" id="employeeJoinDate" name="join_date" class="form-input">
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="action-btn" id="cancelAddEmployee">Cancel</button>
+          <button type="submit" class="action-btn" style="background: var(--accent); color: white; border-color: var(--accent);">
+            <i class="fas fa-plus"></i>
+            Add Employee
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- View Penalty Modal -->
+  <div id="viewPenaltyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Penalty Details</h3>
+        <button class="close-modal" id="closeViewModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="penalty-details-view">
+          <div class="detail-section">
+            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Employee Information</h4>
+            <div class="detail-item">
+              <label>Name:</label>
+              <span class="detail-value" id="viewEmployeeName">-</span>
+            </div>
+            <div class="detail-item">
+              <label>Position:</label>
+              <span class="detail-value" id="viewEmployeePosition">-</span>
+            </div>
+            <div class="detail-item">
+              <label>Email:</label>
+              <span class="detail-value" id="viewEmployeeEmail">-</span>
+            </div>
+          </div>
+          
+          <div class="detail-section">
+            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">Penalty Details</h4>
+            <div class="detail-item">
+              <label>Amount:</label>
+              <span class="detail-value amount-text" id="viewPenaltyAmount">-</span>
+            </div>
+            <div class="detail-item">
+              <label>Month:</label>
+              <span class="detail-value" id="viewPenaltyMonth">-</span>
+            </div>
+            <div class="detail-item">
+              <label>Date:</label>
+              <span class="detail-value" id="viewPenaltyDate">-</span>
+            </div>
+            <div class="detail-item full-width">
+              <label>Act/Reason:</label>
+              <span class="detail-value act-text" id="viewPenaltyAct">-</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="action-btn" id="closeViewDetails">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Penalty Modal -->
+  <div id="addPenaltyModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add New Penalty</h3>
+        <button class="close-modal" id="closeModal">&times;</button>
+      </div>
+      <form id="addPenaltyForm">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="employeeSelect">Employee</label>
+            <select id="employeeSelect" name="employee" required class="form-input">
+              <option value="">Select Employee</option>
+              <!-- Options will be populated dynamically -->
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="penaltyAct">Act/Reason</label>
+            <textarea id="penaltyAct" name="act" required class="form-input" placeholder="Enter penalty reason" rows="3"></textarea>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="penaltyAmount">Amount (₹)</label>
+              <input type="number" id="penaltyAmount" name="amount" required class="form-input" placeholder="Enter amount">
+            </div>
+            <div class="form-group">
+              <label for="penaltyMonth">Month</label>
+              <select id="penaltyMonth" name="month" required class="form-input">
+                <option value="">Select Month</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="penaltyDate">Date</label>
+            <input type="date" id="penaltyDate" name="date" required class="form-input">
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="action-btn" id="cancelAddPenalty">Cancel</button>
+          <button type="submit" class="action-btn" style="background: var(--accent); color: white; border-color: var(--accent);">
+            <i class="fas fa-plus"></i>
+            Add Penalty
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -1046,7 +1346,7 @@
     function closeAddPenaltyModal() {
       const addModal = document.getElementById('addPenaltyModal');
       if (addModal) {
-        addModal.classList.remove('active');
+        addModal.style.display = 'none';
         document.body.style.overflow = '';
       }
     }
@@ -1134,7 +1434,7 @@
           console.log('Add penalty button clicked');
           const addModal = document.getElementById('addPenaltyModal');
           if (addModal) {
-            addModal.classList.add('active');
+            addModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
             
             // Set today's date
@@ -1242,6 +1542,202 @@
     });
 
     // =============================================
+    // DOCUMENTS MANAGEMENT FUNCTIONS
+    // =============================================
+
+    // Initialize documents functionality
+    function initializeDocuments() {
+      console.log('Initializing documents functionality...');
+      
+      // Add Document Button
+      const addDocumentBtn = document.getElementById('add-document-btn');
+      if (addDocumentBtn) {
+        addDocumentBtn.addEventListener('click', function() {
+          document.getElementById('addDocumentModal').style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          
+          // Set today's date as default
+          const today = new Date().toISOString().split('T')[0];
+          const dateInput = document.getElementById('documentDate');
+          if (dateInput && !dateInput.value) {
+            dateInput.value = today;
+          }
+        });
+      }
+      
+      // Add First Document Button
+      const addFirstDocumentBtn = document.getElementById('add-first-document');
+      if (addFirstDocumentBtn) {
+        addFirstDocumentBtn.addEventListener('click', function() {
+          document.getElementById('addDocumentModal').style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          
+          // Set today's date as default
+          const today = new Date().toISOString().split('T')[0];
+          const dateInput = document.getElementById('documentDate');
+          if (dateInput && !dateInput.value) {
+            dateInput.value = today;
+          }
+        });
+      }
+      
+      // Close Modal
+      const closeDocumentModal = document.getElementById('closeDocumentModal');
+      if (closeDocumentModal) {
+        closeDocumentModal.addEventListener('click', function() {
+          document.getElementById('addDocumentModal').style.display = 'none';
+          document.body.style.overflow = '';
+        });
+      }
+      
+      // Cancel Button
+      const cancelAddDocument = document.getElementById('cancelAddDocument');
+      if (cancelAddDocument) {
+        cancelAddDocument.addEventListener('click', function() {
+          document.getElementById('addDocumentModal').style.display = 'none';
+          document.body.style.overflow = '';
+        });
+      }
+      
+      // Click outside to close
+      const addDocumentModal = document.getElementById('addDocumentModal');
+      if (addDocumentModal) {
+        addDocumentModal.addEventListener('click', function(e) {
+          if (e.target === this) {
+            this.style.display = 'none';
+            document.body.style.overflow = '';
+          }
+        });
+      }
+      
+      // Search functionality
+      const searchInput = document.getElementById('document-search');
+      if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            const searchQuery = this.value;
+            const url = new URL(window.location);
+            url.searchParams.set('search', searchQuery);
+            url.searchParams.delete('page'); // Reset to first page when searching
+            
+            // Reload the documents content
+            const documentsContent = document.getElementById('documents-content');
+            if (documentsContent) {
+              documentsContent.innerHTML = '<div class="loading"></div>';
+              fetch(url.pathname + url.search)
+                .then(response => response.text())
+                .then(html => {
+                  documentsContent.innerHTML = html;
+                  initializeDocuments(); // Re-initialize after loading new content
+                })
+                .catch(error => {
+                  console.error('Error searching documents:', error);
+                });
+            }
+          }, 500);
+        });
+      }
+      
+      // Form submission
+      const addDocumentForm = document.getElementById('addDocumentForm');
+      if (addDocumentForm) {
+        addDocumentForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          const formData = new FormData(this);
+          const submitBtn = this.querySelector('button[type="submit"]');
+          const originalText = submitBtn.innerHTML;
+          
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+          submitBtn.disabled = true;
+          
+          fetch('/hr/documents/add/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              showToast('Document uploaded successfully!', 'success');
+              document.getElementById('addDocumentModal').style.display = 'none';
+              document.body.style.overflow = '';
+              
+              // Reset form
+              addDocumentForm.reset();
+              
+              // Reload documents content
+              const documentsContent = document.getElementById('documents-content');
+              if (documentsContent) {
+                documentsContent.innerHTML = '<div class="loading"></div>';
+                if (typeof loadTabContent === 'function') {
+                  loadTabContent('documents');
+                }
+              }
+            } else {
+              showToast('Error: ' + data.message, 'error');
+            }
+          })
+          .catch(error => {
+            showToast('An error occurred while uploading the document.', 'error');
+          })
+          .finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+          });
+        });
+      }
+      
+      // Delete document functionality via event delegation
+      document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-document-btn')) {
+          const button = e.target.closest('.delete-document-btn');
+          const documentId = button.getAttribute('data-document-id');
+          
+          if (confirm('Are you sure you want to delete this document?')) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch(`/hr/documents/delete/${documentId}/`, {
+              method: 'DELETE',
+              headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+              }
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                showToast('Document deleted successfully!', 'success');
+                button.closest('tr').remove();
+                
+                // Check if table is empty and reload if needed
+                const tableBody = document.querySelector('tbody');
+                if (tableBody && tableBody.children.length === 0) {
+                  const documentsContent = document.getElementById('documents-content');
+                  if (documentsContent) {
+                    documentsContent.innerHTML = '<div class="loading"></div>';
+                    if (typeof loadTabContent === 'function') {
+                      loadTabContent('documents');
+                    }
+                  }
+                }
+              } else {
+                showToast('Error: ' + data.message, 'error');
+              }
+            })
+            .catch(error => {
+              showToast('An error occurred while deleting the document.', 'error');
+            });
+          }
+        }
+      });
+    }
+
+    // =============================================
     // MAIN APPLICATION FUNCTIONALITY
     // =============================================
 
@@ -1319,8 +1815,8 @@
       switch(tabId) {
         case 'employees':
           return `${baseUrl}/hr/employees/list/`;
-        case 'attendance':
-          return `${baseUrl}/hr/attendance/`;
+        case 'documents':
+          return `${baseUrl}/hr/documents/`;
         case 'tasks':
           return `${baseUrl}/hr/penalties/`;
         default:
@@ -1543,8 +2039,10 @@
           }, 500); // Small delay to ensure DOM is ready
           break;
           
-        case 'attendance':
-          // Initialize attendance-specific functionality
+        case 'documents':
+          // Initialize documents functionality
+          console.log('Documents tab loaded');
+          initializeDocuments();
           break;
           
         case 'tasks':

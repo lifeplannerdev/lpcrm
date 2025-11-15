@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documents - HR Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    :root {
+      --bg-primary: #000000;
+      --bg-secondary: #0a0a0a;
+      --card-bg: #111111;
+      --border-color: #2a2a2a;
+      --border-hover: #3a3a3a;
+      --text-primary: #ededed;
+      --text-secondary: #a1a1aa;
+      --text-tertiary: #71717a;
+      --accent: #0070f3;
+      --accent-hover: #0761d1;
+      --success: #00e599;
+      --warning: #f5a623;
+      --error: #e00;
+      --shadow: 0 0 0 1px rgba(255, 255, 255, 0.03);
+      --glow: 0 0 20px rgba(0, 112, 243, 0.3);
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Vercel-style grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    
+    
+    
+    
+    
+    .action-btn {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      text-decoration: none;
+      font-family: inherit;
+    }
+    
+    .action-btn:hover {
+      background: var(--card-bg);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+    }
+    
+    /* Table styling */
+    .table-wrapper {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      width:100%;
+    }
+    
+    .table-header {
+      background: var(--bg-secondary);
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .table-header h3 {
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+    
+    .table-scroll {
+      max-height: 65vh;
+      overflow-y: auto;
+      overflow-x: auto;
+    }
+    
+    .table-scroll::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    .table-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .table-scroll::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+    
+    .table-scroll::-webkit-scrollbar-thumb:hover {
+      background: var(--border-hover);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    
+    th, td {
+      padding: 0.875rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    th {
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-weight: 600;
+      font-size: 0.8125rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    
+    td {
+      color: var(--text-primary);
+    }
+    
+    tbody tr {
+      transition: background 0.15s ease;
+    }
+    
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+    
+    /* Document info */
+    .document-info {
+      display: flex;
+      align-items: center;
+    }
+    
+    .document-name {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+    
+    /* Badges */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.625rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border: 1px solid;
+    }
+    
+    .badge-success {
+      background: rgba(0, 229, 153, 0.1);
+      color: var(--success);
+      border-color: rgba(0, 229, 153, 0.2);
+    }
+    
+    .badge-warning {
+      background: rgba(245, 166, 35, 0.1);
+      color: var(--warning);
+      border-color: rgba(245, 166, 35, 0.2);
+    }
+    
+    .badge-error {
+      background: rgba(238, 0, 0, 0.1);
+      color: var(--error);
+      border-color: rgba(238, 0, 0, 0.2);
+    }
+    
+    .badge-neutral {
+      background: rgba(161, 161, 170, 0.1);
+      color: var(--text-secondary);
+      border-color: var(--border-color);
+    }
+    
+    .badge-info {
+      background: rgba(77, 156, 255, 0.1);
+      color: #4d9cff;
+      border-color: rgba(77, 156, 255, 0.2);
+    }
+    
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-secondary);
+    }
+    
+    .empty-state i {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.3;
+    }
+    
+    .empty-state h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+    
+    /* Modal styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(8px);
+    }
+    
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalSlideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .modal-header h3 {
+      margin: 0;
+      color: var(--text-primary);
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .close-modal {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    
+    .close-modal:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+    }
+    
+    .modal-actions {
+      padding: 1.5rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+    
+    /* Form styles */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+    
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    
+    label {
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+    }
+    
+    .form-input {
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      transition: all 0.2s;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.1);
+    }
+    
+    .form-input::file-selector-button {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 1rem;
+      transition: all 0.2s;
+    }
+    
+    .form-input::file-selector-button:hover {
+      background: var(--card-bg);
+      border-color: var(--border-hover);
+    }
+    
+    small {
+      color: var(--text-tertiary);
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+    
+    /* Toast Notification Styles */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast {
+      padding: 16px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 300px;
+      max-width: 400px;
+      animation: toastSlideIn 0.3s ease-out;
+      transform-origin: top right;
+      position: relative;
+    }
+
+    @keyframes toastSlideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .toast-success {
+      background: linear-gradient(135deg, #00e599, #00c885);
+      border-left: 4px solid #00ffaa;
+    }
+
+    .toast-error {
+      background: linear-gradient(135deg, #ff4d4d, #e60000);
+      border-left: 4px solid #ff3333;
+    }
+
+    .toast-info {
+      background: linear-gradient(135deg, #4d94ff, #1a75ff);
+      border-left: 4px solid #3399ff;
+    }
+
+    .toast-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .toast-content {
+      flex: 1;
+      font-size: 14px;
+    }
+
+    .toast-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+
+    .toast-close:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .toast-progress {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.3);
+      width: 100%;
+      transform-origin: left;
+      animation: toastProgress 5s linear forwards;
+    }
+
+    @keyframes toastProgress {
+      from {
+        transform: scaleX(1);
+      }
+      to {
+        transform: scaleX(0);
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .dashboard-container {
+        padding: 1.5rem;
+      }
+      
+      .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .dashboard-container {
+        padding: 1rem;
+      }
+      
+      .dashboard-title {
+        font-size: 1.5rem;
+      }
+      
+      .table-header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+      
+      th, td {
+        padding: 0.75rem 0.625rem;
+        font-size: 0.8125rem;
+      }
+      
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .header-controls {
+        width: 100%;
+      }
+      
+      .action-btn {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .modal-content {
+        width: 95%;
+        margin: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-container">
+    
+
+    <!-- Documents Content -->
+    <div class="table-wrapper">
+      <div class="table-header">
+        <h3>Documents</h3>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <!-- Search Box -->
+          <div style="position: relative;">
+            <input type="text" id="document-search" placeholder="Search documents..." 
+                   class="form-input" style="padding: 0.5rem 2.5rem 0.5rem 1rem; background: var(--bg-primary); width: 250px; border: 1px solid var(--border-color);">
+            <i class="fas fa-search" style="position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-tertiary);"></i>
+          </div>
+          
+          <!-- Add Document Button -->
+          <button class="action-btn" id="add-document-btn">
+            <i class="fas fa-plus"></i>
+            <span>Add Document</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="table-scroll">
+        {% if documents %}
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 30%;">Document Name</th>
+                <th style="width: 15%;">Date</th>
+                <th style="width: 15%;">Month</th>
+                <th style="width: 15%;">File Type</th>
+                <th style="width: 15%;">Uploaded</th>
+                <th style="width: 10%;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for document in documents %}
+              <tr>
+                <td style="width: 30%;">
+                  <div class="document-info">
+                    {% if document.document %}
+                      {% with document.document.url|lower as doc_url %}
+                        {% if '.pdf' in doc_url %}
+                          <i class="fas fa-file-pdf" style="color: #e74c3c; margin-right: 0.75rem;"></i>
+                        {% elif '.xlsx' in doc_url or '.xls' in doc_url %}
+                          <i class="fas fa-file-excel" style="color: #00e599; margin-right: 0.75rem;"></i>
+                        {% elif '.doc' in doc_url or '.docx' in doc_url %}
+                          <i class="fas fa-file-word" style="color: #4d9cff; margin-right: 0.75rem;"></i>
+                        {% elif '.jpg' in doc_url or '.png' in doc_url or '.jpeg' in doc_url %}
+                          <i class="fas fa-file-image" style="color: #f5a623; margin-right: 0.75rem;"></i>
+                        {% else %}
+                          <i class="fas fa-file" style="color: var(--text-secondary); margin-right: 0.75rem;"></i>
+                        {% endif %}
+                      {% endwith %}
+                    {% else %}
+                      <i class="fas fa-file" style="color: var(--text-secondary); margin-right: 0.75rem;"></i>
+                    {% endif %}
+                    <span class="document-name">{{ document.name }}</span>
+                  </div>
+                </td>
+                <td style="width: 15%;">{{ document.date }}</td>
+                <td style="width: 15%;">
+                  <span class="badge badge-neutral">{{ document.month }}</span>
+                </td>
+                <td style="width: 15%;">
+                  {% if document.document %}
+                    {% with document.document.url|lower as doc_url %}
+                      {% if '.pdf' in doc_url %}
+                        <span class="badge badge-error">PDF</span>
+                      {% elif '.xlsx' in doc_url or '.xls' in doc_url %}
+                        <span class="badge badge-success">Excel</span>
+                      {% elif '.doc' in doc_url or '.docx' in doc_url %}
+                        <span class="badge badge-info">Word</span>
+                      {% elif '.jpg' in doc_url or '.png' in doc_url or '.jpeg' in doc_url %}
+                        <span class="badge badge-warning">Image</span>
+                      {% else %}
+                        <span class="badge badge-neutral">File</span>
+                      {% endif %}
+                    {% endwith %}
+                  {% else %}
+                    <span class="badge badge-neutral">No file</span>
+                  {% endif %}
+                </td>
+                <td style="width: 15%;">{{ document.uploaded_at|date:"M d, Y" }}</td>
+                <td style="width: 10%;">
+                  <div style="display: flex; gap: 0.5rem;">
+                    {% if document.document %}
+                      <a href="{{ document.document.url }}" download class="action-btn" style="padding: 0.375rem 0.75rem;">
+                        <i class="fas fa-download"></i>
+                        <span>Download</span>
+                      </a>
+                    {% endif %}
+                    <button class="action-btn delete-document-btn" data-document-id="{{ document.id }}" style="padding: 0.375rem 0.75rem; color: var(--error);">
+                      <i class="fas fa-trash"></i>
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <div class="empty-state">
+            <i class="fas fa-folder-open"></i>
+            <h3>No documents found</h3>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Document Modal -->
+  <div id="addDocumentModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Upload Document</h3>
+        <button class="close-modal" id="closeDocumentModal">&times;</button>
+      </div>
+      <form id="addDocumentForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="documentName">Document Name</label>
+            <input type="text" id="documentName" name="name" required class="form-input" placeholder="Enter document name">
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="documentDate">Date</label>
+              <input type="date" id="documentDate" name="date" required class="form-input">
+            </div>
+            <div class="form-group">
+              <label for="documentMonth">Month</label>
+              <select id="documentMonth" name="month" required class="form-input">
+                <option value="">Select Month</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="form-group">
+            <label for="documentFile">Upload Document</label>
+            <input type="file" id="documentFile" name="document" accept=".pdf,.xlsx,.xls,.doc,.docx,.jpg,.jpeg,.png" class="form-input">
+            <small>
+              Supported formats: PDF, Excel, Word, Images (Max 10MB)
+            </small>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="action-btn" id="cancelAddDocument">Cancel</button>
+          <button type="submit" class="action-btn" style="background: var(--accent); color: white; border-color: var(--accent);">
+            <i class="fas fa-upload"></i>
+            Upload Document
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Toast Notification Functions
+    let toastContainer = null;
+
+    function createToastContainer() {
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.className = 'toast-container';
+        document.body.appendChild(toastContainer);
+      }
+      return toastContainer;
+    }
+
+    function showToast(message, type = 'info', duration = 5000) {
+      // Create toast container if it doesn't exist
+      const container = createToastContainer();
+      
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      
+      // Add icon based on type
+      const icon = document.createElement('span');
+      icon.className = 'toast-icon';
+      if (type === 'success') {
+        icon.innerHTML = '&#10003;'; // Checkmark
+      } else if (type === 'error') {
+        icon.innerHTML = '&#10005;'; // Cross
+      } else {
+        icon.innerHTML = '&#8505;'; // Info
+      }
+      
+      // Add content
+      const content = document.createElement('div');
+      content.className = 'toast-content';
+      content.textContent = message;
+      
+      // Add close button
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'toast-close';
+      closeBtn.innerHTML = '&times;';
+      closeBtn.onclick = () => {
+        toast.remove();
+      };
+      
+      // Add progress bar
+      const progress = document.createElement('div');
+      progress.className = 'toast-progress';
+      
+      // Assemble toast
+      toast.appendChild(icon);
+      toast.appendChild(content);
+      toast.appendChild(closeBtn);
+      toast.appendChild(progress);
+      
+      // Add to container
+      container.appendChild(toast);
+      
+      // Auto remove after duration
+      const timer = setTimeout(() => {
+        if (toast.parentNode) {
+          toast.remove();
+        }
+      }, duration);
+      
+      // Pause timer on hover
+      toast.addEventListener('mouseenter', () => {
+        progress.style.animationPlayState = 'paused';
+        clearTimeout(timer);
+      });
+      
+      toast.addEventListener('mouseleave', () => {
+        progress.style.animationPlayState = 'running';
+        setTimeout(() => {
+          if (toast.parentNode) {
+            toast.remove();
+          }
+        }, duration - 1000);
+      });
+    }
+
+    // Documents Management Functions
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add Document Button
+      const addDocumentBtn = document.getElementById('add-document-btn');
+      if (addDocumentBtn) {
+        addDocumentBtn.addEventListener('click', function() {
+          document.getElementById('addDocumentModal').style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          
+          // Set today's date as default
+          const today = new Date().toISOString().split('T')[0];
+          const dateInput = document.getElementById('documentDate');
+          if (dateInput && !dateInput.value) {
+            dateInput.value = today;
+          }
+        });
+      }
+      
+      // Add First Document Button
+      const addFirstDocumentBtn = document.getElementById('add-first-document');
+      if (addFirstDocumentBtn) {
+        addFirstDocumentBtn.addEventListener('click', function() {
+          document.getElementById('addDocumentModal').style.display = 'flex';
+          document.body.style.overflow = 'hidden';
+          
+          // Set today's date as default
+          const today = new Date().toISOString().split('T')[0];
+          const dateInput = document.getElementById('documentDate');
+          if (dateInput && !dateInput.value) {
+            dateInput.value = today;
+          }
+        });
+      }
+      
+      // Close Modal
+      const closeDocumentModal = document.getElementById('closeDocumentModal');
+      if (closeDocumentModal) {
+        closeDocumentModal.addEventListener('click', function() {
+          document.getElementById('addDocumentModal').style.display = 'none';
+          document.body.style.overflow = '';
+        });
+      }
+      
+      // Cancel Button
+      const cancelAddDocument = document.getElementById('cancelAddDocument');
+      if (cancelAddDocument) {
+        cancelAddDocument.addEventListener('click', function() {
+          document.getElementById('addDocumentModal').style.display = 'none';
+          document.body.style.overflow = '';
+        });
+      }
+      
+      // Click outside to close
+      const addDocumentModal = document.getElementById('addDocumentModal');
+      if (addDocumentModal) {
+        addDocumentModal.addEventListener('click', function(e) {
+          if (e.target === this) {
+            this.style.display = 'none';
+            document.body.style.overflow = '';
+          }
+        });
+      }
+      
+      // Search functionality
+      const searchInput = document.getElementById('document-search');
+      if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            const searchQuery = this.value;
+            // You can implement search functionality here
+            // For now, we'll just log the search query
+            console.log('Searching for:', searchQuery);
+          }, 500);
+        });
+      }
+      
+      // Form submission
+      const addDocumentForm = document.getElementById('addDocumentForm');
+      if (addDocumentForm) {
+        addDocumentForm.addEventListener('submit', function(e) {
+          e.preventDefault();
+          
+          const formData = new FormData(this);
+          const submitBtn = this.querySelector('button[type="submit"]');
+          const originalText = submitBtn.innerHTML;
+          
+          submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+          submitBtn.disabled = true;
+          
+          fetch('/hr/documents/add/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              showToast('Document uploaded successfully!', 'success');
+              document.getElementById('addDocumentModal').style.display = 'none';
+              document.body.style.overflow = '';
+              
+              // Reset form
+              addDocumentForm.reset();
+              
+              // Reload page to show new document
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            } else {
+              showToast('Error: ' + data.message, 'error');
+            }
+          })
+          .catch(error => {
+            showToast('An error occurred while uploading the document.', 'error');
+          })
+          .finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+          });
+        });
+      }
+      
+      // Delete document functionality
+      document.addEventListener('click', function(e) {
+        if (e.target.closest('.delete-document-btn')) {
+          const button = e.target.closest('.delete-document-btn');
+          const documentId = button.getAttribute('data-document-id');
+          
+          if (confirm('Are you sure you want to delete this document?')) {
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            fetch(`/hr/documents/delete/${documentId}/`, {
+              method: 'DELETE',
+              headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/json'
+              }
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.status === 'success') {
+                showToast('Document deleted successfully!', 'success');
+                button.closest('tr').remove();
+                
+                // Check if table is empty and show empty state
+                const tableBody = document.querySelector('tbody');
+                if (tableBody && tableBody.children.length === 0) {
+                  window.location.reload();
+                }
+              } else {
+                showToast('Error: ' + data.message, 'error');
+              }
+            })
+            .catch(error => {
+              showToast('An error occurred while deleting the document.', 'error');
+            });
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

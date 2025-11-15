@@ -1,7 +1,28 @@
 import re
 from django.db import models
+from cloudinary.models import CloudinaryField
 
-# Create your models here.
+class AttendanceDocument(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Document Name")
+    date = models.DateField(verbose_name="Date")
+    month = models.CharField(max_length=100, verbose_name="Month")
+    document = CloudinaryField(
+        resource_type='auto',
+        folder='hr/attendance_documents/',
+        null=True,
+        blank=True,
+        verbose_name="Attendance Document",
+        help_text="Upload attendance document (PDF, Excel, Image, etc.)"
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = 'Attendance Document'
+        verbose_name_plural = 'Attendance Documents'
+        ordering = ['-date']
+    
+    def __str__(self):
+        return f"{self.name} - {self.date}"
 
 class Employee(models.Model):
     name = models.CharField(max_length=100)
