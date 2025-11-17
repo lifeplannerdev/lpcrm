@@ -5,28 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Student List - LP CRM</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.6/dist/basecoat.cdn.min.css">
-<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.6/dist/js/all.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.6/dist/js/all.min.js" defer></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
     :root {
-      --bg-primary: #000000;
-      --bg-secondary: #0a0a0a;
-      --card-bg: #111111;
-      --border-color: #1f1f1f;
-      --border-hover: #333333;
+      --bg-primary: #0a0a0a;
+      --bg-secondary: #111111;
+      --bg-tertiary: #1a1a1a;
+      --card-bg: #000000;
+      --border-color: #262626;
+      --border-hover: #404040;
       --text-primary: #ffffff;
       --text-secondary: #a1a1aa;
       --text-tertiary: #71717a;
       --accent: #ffffff;
       --accent-hover: #f4f4f5;
+      --blue-accent: #0070f3;
+      --blue-hover: #0061d6;
       --shadow-small: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
       --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
       --shadow-large: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      --shadow-vercel: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.3);
     }
+    
     * {
-      margin: 0; padding: 0; box-sizing: border-box;
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box;
     }
+    
     body {
       background: var(--bg-primary);
       background-image: 
@@ -34,40 +43,46 @@
         radial-gradient(circle at 75% 75%, #1a1a1a 0%, transparent 50%);
       color: var(--text-primary);
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      min-height: 100vh; line-height: 1.6;
+      min-height: 100vh; 
+      line-height: 1.6;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
+    
     .dashboard-container {
       max-width: 1400px;
       margin: 0 auto;
       padding: 2rem;
     }
+    
     .dashboard-header {
-      margin-bottom: 3rem;
+      margin-bottom: 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 1.5rem;
     }
+    
     .dashboard-title {
-      font-size: clamp(2rem, 4vw, 2.5rem);
+      font-size: clamp(1.8rem, 4vw, 2.2rem);
       font-weight: 700;
       letter-spacing: -0.025em;
-      background: linear-gradient(135deg, #989595 0%, #45454a 100%);
+      background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+    
     .header-controls {
       display: flex;
       align-items: center;
       gap: 1rem;
     }
+    
     .btn {
       padding: 0.6rem 1.2rem;
-      border-radius: 8px;
+      border-radius: 6px;
       font-size: 0.85rem;
       font-weight: 500;
       border: none;
@@ -83,54 +98,65 @@
       font-size: 0.8rem;
       white-space: nowrap;
     }
+    
     .btn-primary {
-      background: linear-gradient(135deg, var(--accent) 0%, #f4f4f5 100%);
-      color: var(--bg-primary);
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      background: rgba(15, 15, 15, 0.486);
+      color: white;
+      border: 1px solid gray;
+      
     }
+    
     .btn-primary:hover, .btn-primary:active {
-      background: linear-gradient(135deg, #f4f4f5 0%, var(--accent) 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      background: var(--blue-hover);
+      transform: translateY(-1px);
+      
     }
+    
     .btn-secondary {
       background: transparent;
       color: var(--text-secondary);
       border: 1px solid var(--border-color);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: var(--shadow-vercel);
     }
+    
     .btn-secondary:hover, .btn-secondary:active {
       color: var(--text-primary);
       border-color: var(--border-hover);
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.03);
       transform: translateY(-1px);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
     }
+    
     .search-container {
       display: flex;
       align-items: center;
       gap: 1rem;
     }
+    
     .search-box {
       position: relative;
       display: flex;
       align-items: center;
-      background: var(--card-bg);
+      background: var(--bg-secondary);
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      padding: 0.5rem;
-      transition: border 0.18s;
-      min-width: 300px;
+      padding: 0.5rem 0.75rem;
+      transition: all 0.2s ease;
+      min-width: 280px;
+      box-shadow: var(--shadow-vercel);
     }
+    
     .search-box:focus-within {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+      border-color: var(--blue-accent);
+      box-shadow: 0 0 0 1px var(--blue-accent), 0 4px 12px rgba(0, 112, 243, 0.1);
     }
+    
     .search-icon {
       color: var(--text-secondary);
       margin-right: 0.5rem;
       font-size: 0.9rem;
     }
+    
     .search-input {
       background: transparent;
       border: none;
@@ -139,9 +165,11 @@
       flex: 1;
       outline: none;
     }
+    
     .search-input::placeholder {
       color: var(--text-tertiary);
     }
+    
     .clear-search {
       background: transparent;
       border: none;
@@ -151,16 +179,19 @@
       border-radius: 4px;
       transition: color 0.18s;
     }
+    
     .clear-search:hover {
       color: var(--text-primary);
     }
+    
     .filter-container {
       display: flex;
       align-items: center;
       max-width: 140px;
     }
+    
     .filter-select {
-      background: var(--card-bg);
+      background: var(--bg-secondary);
       color: var(--text-primary);
       border: 1px solid var(--border-color);
       border-radius: 8px;
@@ -170,32 +201,51 @@
       transition: all 0.2s ease;
       height: 40px;
       min-width: 140px;
+      box-shadow: var(--shadow-vercel);
     }
+    
     .filter-select:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+      border-color: var(--blue-accent);
+      box-shadow: 0 0 0 1px var(--blue-accent);
     }
+    
     .table-container {
       background: var(--card-bg);
-      border-radius: 16px;
+      border-radius: 12px;
       overflow: hidden;
       border: 1px solid var(--border-color);
-      box-shadow: var(--shadow-large);
+      box-shadow: var(--shadow-vercel);
       margin-top: 1rem;
     }
+    
     .table-scroll-vert {
       max-height: 70vh;
       overflow-y: auto;
       overflow-x: hidden;
       position: relative;
       width: 100%;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
     }
+    
     .table-scroll-vert::-webkit-scrollbar {
-      display: none;
+      width: 6px;
     }
+    
+    .table-scroll-vert::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .table-scroll-vert::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 3px;
+    }
+    
+    .table-scroll-vert::-webkit-scrollbar-thumb:hover {
+      background-color: var(--border-hover);
+    }
+    
     table {
       background: var(--card-bg);
       color: var(--text-primary);
@@ -205,12 +255,13 @@
       border-collapse: collapse;
       table-layout: fixed;
     }
+    
     th, td {
       background: transparent;
       color: var(--text-primary);
       border: none;
-      font-size: 1rem;
-      padding: 1.05rem 0.9rem;
+      font-size: 0.95rem;
+      padding: 1rem 0.9rem;
       vertical-align: middle;
       transition: background 0.18s;
       text-align: left;
@@ -219,6 +270,7 @@
       text-overflow: ellipsis;
       max-width: 200px;
     }
+    
     th {
       background: var(--bg-secondary);
       color: var(--text-secondary);
@@ -228,108 +280,51 @@
       position: sticky;
       top: 0;
       z-index: 10;
+      font-size: 0.85rem;
+      text-transform: uppercase;
     }
+    
     tbody tr {
       border-bottom: 1px solid var(--border-color);
-      transition: background 0.18s, box-shadow 0.18s;
+      transition: all 0.2s ease;
     }
+    
     tbody tr:last-child {
       border-bottom: none;
     }
+    
     tbody tr:hover {
       background: rgba(255,255,255,0.03);
-      box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
     }
-    .status-badge {
+    
+    .batch-badge {
       display: inline-flex;
       align-items: center;
       padding: 0.35rem 0.75rem;
       border-radius: 6px;
       font-size: 0.75rem;
-      font-weight: 500;
-      letter-spacing: 0.025em;
-      text-transform: uppercase;
-    }
-    .status-active {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
-      color: #10b981;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-    .status-paused {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
-      color: #f59e0b;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-    .status-completed {
-      background: linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(52, 211, 153, 0.1) 100%);
-      color: #34d399;
-      border: 1px solid rgba(52, 211, 153, 0.3);
-    }
-    .status-dropped {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
-      color: #ef4444;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-    }
-    .batch-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.7rem;
       font-weight: 600;
       letter-spacing: 0.025em;
       text-transform: uppercase;
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%);
+      background: rgba(99, 102, 241, 0.1);
       color: #6366f1;
-      border: 1px solid rgba(99, 102, 241, 0.3);
+      border: 1px solid rgba(99, 102, 241, 0.2);
     }
+    
     .table-row {
       transition: opacity 0.3s ease;
     }
+    
     .table-row.hidden {
       display: none;
     }
+    
     .no-results {
       text-align: center;
-      padding: 2rem;
+      padding: 3rem;
       color: var(--text-secondary);
       font-style: italic;
-    }
-    .stats-section {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 16px;
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-      box-shadow: var(--shadow-large);
-    }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-    .stat-item {
-      background: var(--bg-secondary);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 1rem;
-      text-align: center;
-      transition: all 0.2s ease;
-    }
-    .stat-item:hover {
-      border-color: var(--border-hover);
-      background: rgba(255, 255, 255, 0.02);
-    }
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--accent);
-      margin-bottom: 0.5rem;
-    }
-    .stat-label {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-      font-weight: 500;
     }
     
     /* Notes field styling */
@@ -337,7 +332,7 @@
       position: relative;
       background: var(--bg-secondary);
       border: 1px solid var(--border-color);
-      border-radius: 8px;
+      border-radius: 6px;
       padding: 0.75rem;
       min-height: 45px;
       cursor: pointer;
@@ -349,19 +344,18 @@
       white-space: nowrap;
       font-size: 0.9rem;
       line-height: 1.4;
+      box-shadow: var(--shadow-vercel);
     }
     
     .notes-field:hover {
-      background: var(--card-bg);
+      background: var(--bg-tertiary);
       border-color: var(--border-hover);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
     
     .notes-field:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
-      background: var(--card-bg);
+      border-color: var(--blue-accent);
+      background: var(--bg-tertiary);
       cursor: text;
       white-space: normal;
       word-wrap: break-word;
@@ -376,17 +370,6 @@
     .notes-field.empty:focus {
       color: var(--text-primary);
       font-style: normal;
-    }
-    
-    .notes-field::before {
-      content: "";
-      margin-right: 0.5rem;
-      font-size: 0.8rem;
-      opacity: 0.7;
-    }
-    
-    .notes-field:focus::before {
-      opacity: 1;
     }
     
     /* Modal styling */
@@ -415,6 +398,25 @@
       position: relative;
     }
     
+    /* Custom scrollbar for modal */
+    .modal-content::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    .modal-content::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+      border-radius: 4px;
+    }
+    
+    .modal-content::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+    
+    .modal-content::-webkit-scrollbar-thumb:hover {
+      background: var(--border-hover);
+    }
+    
     .modal-header {
       padding: 1.5rem;
       border-bottom: 1px solid var(--border-color);
@@ -424,30 +426,31 @@
     }
     
     .modal-title {
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 600;
       margin: 0;
+      color: var(--text-primary);
     }
     
     .close-modal {
       background: transparent;
       border: none;
       color: var(--text-secondary);
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       cursor: pointer;
-      padding: 0;
-      width: 30px;
-      height: 30px;
+      padding: 0.25rem;
+      width: 32px;
+      height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 50%;
+      border-radius: 6px;
       transition: all 0.2s ease;
     }
     
     .close-modal:hover {
       color: var(--text-primary);
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
     }
     
     .modal-body {
@@ -455,7 +458,7 @@
     }
     
     .form-group {
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
     }
     
     .form-label {
@@ -463,37 +466,40 @@
       margin-bottom: 0.5rem;
       font-weight: 500;
       color: var(--text-primary);
+      font-size: 0.9rem;
     }
     
     .form-control {
       width: 100%;
       padding: 0.75rem;
-      background: var(--bg-secondary);
+      background: var(--bg-tertiary);
       border: 1px solid var(--border-color);
-      border-radius: 8px;
+      border-radius: 6px;
       color: var(--text-primary);
-      font-size: 1rem;
+      font-size: 0.95rem;
       transition: all 0.2s ease;
+      box-shadow: var(--shadow-vercel);
     }
     
     .form-control:focus {
       outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+      border-color: var(--blue-accent);
+      box-shadow: 0 0 0 1px var(--blue-accent);
     }
     
     .form-errors {
       color: #ef4444;
-      font-size: 0.875rem;
+      font-size: 0.8rem;
       margin-top: 0.25rem;
     }
     
     .modal-footer {
-      padding: 1.5rem;
+      padding: 1.25rem 1.5rem;
       border-top: 1px solid var(--border-color);
       display: flex;
       justify-content: flex-end;
-      gap: 1rem;
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.2);
     }
     
     .btn-outline {
@@ -507,26 +513,6 @@
       border-color: var(--border-hover);
     }
     
-    @media (max-width: 1200px) {
-      .dashboard-container { padding: 1rem; }
-      .dashboard-header { flex-direction: column; align-items: flex-start; }
-      .header-controls { flex-direction: column; align-items: stretch; gap: 0.5rem; }
-      th, td { padding: 0.75rem 0.5rem; font-size: 0.9rem; }
-      .search-box { min-width: 250px; }
-      .filter-select { min-width: 140px; }
-    }
-    @media (max-width: 768px) {
-      .dashboard-container { padding: 0.5rem; }
-      .dashboard-header { gap: 0.6rem; }
-      th, td { padding: 0.5rem 0.3rem; font-size: 0.8rem; }
-      .table-scroll-vert { max-height: 60vh; }
-      .search-box { min-width: 200px; padding: 0.4rem; }
-      .search-input { font-size: 0.8rem; }
-      .filter-select { height: 36px; min-width: 100px; font-size: 0.8rem; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .btn { padding: 0.5rem 1rem; font-size: 0.75rem; }
-    }
-    
     .action-buttons {
       display: flex;
       gap: 0.5rem;
@@ -536,14 +522,15 @@
       background: transparent;
       border: 1px solid var(--border-color);
       border-radius: 6px;
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       color: var(--text-secondary);
       transition: all 0.2s ease;
+      box-shadow: var(--shadow-vercel);
     }
     
     .btn-icon:hover {
@@ -554,58 +541,102 @@
     }
     
     .delete-btn:hover {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+      background: rgba(239, 68, 68, 0.1);
       color: #ef4444;
       border-color: rgba(239, 68, 68, 0.3);
     }
     
     .view-btn:hover {
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+      background: rgba(59, 130, 246, 0.1);
       color: #3b82f6;
       border-color: rgba(59, 130, 246, 0.3);
+    }
+    
+    .phone-display {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+    }
+    
+    @media (max-width: 1200px) {
+      .dashboard-container { padding: 1.5rem; }
+      .dashboard-header { flex-direction: column; align-items: flex-start; }
+      .header-controls { flex-direction: column; align-items: stretch; gap: 0.75rem; }
+      th, td { padding: 0.75rem 0.5rem; font-size: 0.9rem; }
+      .search-box { min-width: 250px; }
+      .filter-select { min-width: 120px; }
+    }
+    
+    @media (max-width: 768px) {
+      .dashboard-container { padding: 1rem; }
+      .dashboard-header { gap: 1rem; }
+      th, td { padding: 0.6rem 0.4rem; font-size: 0.85rem; }
+      .table-scroll-vert { max-height: 60vh; }
+      .search-box { min-width: 200px; padding: 0.4rem; }
+      .search-input { font-size: 0.85rem; }
+      .filter-select { height: 36px; min-width: 100px; font-size: 0.85rem; }
+      .btn { padding: 0.5rem 1rem; font-size: 0.75rem; }
+      .modal-content { margin: 1rem; }
+    }
+    
+    /* Vercel-style loading animation */
+    .vercel-loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: var(--blue-accent);
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body>
   <div class="dashboard-container">
     <div class="dashboard-header">
-      <h1 class="dashboard-title">STUDENTS</h1>
+      <h1 class="dashboard-title">Students</h1>
       <div class="header-controls">
         <div class="search-container">
           <div class="search-box">
             <i class="fas fa-search search-icon"></i>
-            <input type="text" id="searchInput" placeholder="Search..." class="search-input">
+            <input type="text" id="searchInput" placeholder="Search students..." class="search-input">
             <button id="clearSearch" class="clear-search" style="display: none;">
               <i class="fas fa-times"></i>
             </button>
           </div>
           <div class="filter-container">
             <select id="batchFilter" class="filter-select">
-              <option value="">Batches</option>
+              <option value="">All Batches</option>
               <option value="A1">A1</option>
               <option value="A2">A2</option>
               <option value="B1">B1</option>
               <option value="B2">B2</option>
             </select>
           </div>
-         <button class="btn" style="height:40px;border:1px solid rgba(128, 128, 128, 0.267)" id="addStudentBtn"><i class="fa-solid fa-plus" style="font-weight:bold;font-size:0.9rem;"></i></button>
+          <button class="btn btn-primary" id="addStudentBtn">
+            <i class="fa-solid fa-plus" style="font-weight:bold;font-size:0.9rem;"></i>
+            
+          </button>
         </div>
       </div>
     </div>
 
-    
     <!-- Students Table -->
-    <div class="table-container">
+    <div class="table-container" style="margin-top: 70px;">
       <div class="table-scroll-vert">
         <table>
           <thead>
             <tr>
               <th>Name</th>
               <th>Batch</th>
-              <th>Status</th>
+              <th>Phone</th>
               <th>Admission Date</th>
               <th>Notes</th>
-              <th>Action</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -620,8 +651,8 @@
                 <span class="batch-badge">{{ student.get_batch_display }}</span>
               </td>
               <td>
-                <span class="status-badge status-{{ student.phone_number }}">
-                  {{ student.get_phone_number_display }}
+                <span class="phone-display">
+                  {{ student.phone_number|default:"-" }}
                 </span>
               </td>
               <td>{{ student.admission_date|date:"M d, Y" }}</td>
@@ -634,7 +665,7 @@
                   {% if student.notes %}
                     {{ student.notes|truncatechars:50 }}
                   {% else %}
-                    <span class="empty">Click to add notes...</span>
+                    <span class="empty">Add notes...</span>
                   {% endif %}
                 </div>
               </td>
@@ -660,95 +691,98 @@
     </div>
   </div>
   
-<!-- Add Student Modal -->
-<div id="addStudentModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2 class="modal-title">Add New Student</h2>
-      <button class="close-modal">&times;</button>
-    </div>
-    <div class="modal-body">
-      <form id="addStudentForm">
-        {% csrf_token %}
-        <div class="form-group">
-          <label class="form-label" for="id_name">Name *</label>
-          <input type="text" id="id_name" name="name" class="form-control" placeholder="Enter student name" required>
-          <div id="name-error" class="form-errors"></div>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label" for="id_email">Email</label>
-          <input type="email" id="id_email" name="email" class="form-control" placeholder="Enter student email">
-          <div id="email-error" class="form-errors"></div>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label" for="id_phone_number">Phone Number</label>
-          <input type="tel" id="id_phone_number" name="phone_number" class="form-control" placeholder="Enter phone number">
-          <div id="phone_number-error" class="form-errors"></div>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label" for="id_batch">Batch *</label>
-          <select id="id_batch" name="batch" class="form-control" required>
-            <option value="">Select Batch</option>
-            <option value="A1">A1 (Beginner)</option>
-            <option value="A2">A2 (Elementary)</option>
-            <option value="B1">B1 (Intermediate)</option>
-            <option value="B2">B2 (Upper Intermediate)</option>
-          </select>
-          <div id="batch-error" class="form-errors"></div>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label" for="id_student_class">Class</label>
-          <select id="id_student_class" name="student_class" class="form-control">
-            <option value="">Select Class</option>
-            <option value="C1">C1</option>
-            <option value="C2">C2</option>
-            <option value="C3">C3</option>
-            <option value="C4">C4</option>
-            <option value="ONLINE">Online</option>
-          </select>
-          <div id="student_class-error" class="form-errors"></div>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label" for="id_status">Status *</label>
-          <select id="id_status" name="status" class="form-control" required>
-            <option value="ACTIVE">Active</option>
-            <option value="PAUSED">Paused</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="DROPPED">Dropped</option>
-          </select>
-          <div id="status-error" class="form-errors"></div>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label" for="id_admission_date">Admission Date *</label>
-          <input type="date" id="id_admission_date" name="admission_date" class="form-control" required>
-          <div id="admission_date-error" class="form-errors"></div>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label" for="id_drive_link">Drive Link</label>
-          <input type="url" id="id_drive_link" name="drive_link" class="form-control" placeholder="https://drive.google.com/...">
-          <div id="drive_link-error" class="form-errors"></div>
-        </div>
-        
-        <div class="form-group">
-          <label class="form-label" for="id_notes">Notes</label>
-          <textarea id="id_notes" name="notes" class="form-control" rows="3" placeholder="Additional notes about the student"></textarea>
-          <div id="notes-error" class="form-errors"></div>
-        </div>
-      </form>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-outline close-modal-btn">Cancel</button>
-      <button class="btn btn-primary" id="submitStudentBtn">Add Student</button>
+  <!-- Add Student Modal -->
+  <div id="addStudentModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Add New Student</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="addStudentForm">
+          {% csrf_token %}
+          <div class="form-group">
+            <label class="form-label" for="id_name">Full Name</label>
+            <input type="text" id="id_name" name="name" class="form-control" placeholder="Enter student name" required>
+            <div id="name-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="id_email">Email Address</label>
+            <input type="email" id="id_email" name="email" class="form-control" placeholder="student@example.com">
+            <div id="email-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="id_phone_number">Phone Number</label>
+            <input type="tel" id="id_phone_number" name="phone_number" class="form-control" placeholder="+1 (555) 123-4567">
+            <div id="phone_number-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="id_batch">Batch</label>
+            <select id="id_batch" name="batch" class="form-control" required>
+              <option value="">Select a batch</option>
+              <option value="A1">A1 (Beginner)</option>
+              <option value="A2">A2 (Elementary)</option>
+              <option value="B1">B1 (Intermediate)</option>
+              <option value="B2">B2 (Upper Intermediate)</option>
+            </select>
+            <div id="batch-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="id_student_class">Class Type</label>
+            <select id="id_student_class" name="student_class" class="form-control">
+              <option value="">Select class type</option>
+              <option value="C1">C1</option>
+              <option value="C2">C2</option>
+              <option value="C3">C3</option>
+              <option value="C4">C4</option>
+              <option value="ONLINE">Online</option>
+            </select>
+            <div id="student_class-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="id_status">Status</label>
+            <select id="id_status" name="status" class="form-control" required>
+              <option value="ACTIVE">Active</option>
+              <option value="PAUSED">Paused</option>
+              <option value="COMPLETED">Completed</option>
+              <option value="DROPPED">Dropped</option>
+            </select>
+            <div id="status-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="id_admission_date">Admission Date</label>
+            <input type="date" id="id_admission_date" name="admission_date" class="form-control" required>
+            <div id="admission_date-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="id_drive_link">Google Drive Folder</label>
+            <input type="url" id="id_drive_link" name="drive_link" class="form-control" placeholder="https://drive.google.com/drive/folders/...">
+            <div id="drive_link-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="id_notes">Notes</label>
+            <textarea id="id_notes" name="notes" class="form-control" rows="3" placeholder="Additional notes about the student..."></textarea>
+            <div id="notes-error" class="form-errors"></div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline close-modal-btn">Cancel</button>
+        <button class="btn btn-primary" id="submitStudentBtn">
+          <span id="submitText">Add Student</span>
+          <span id="submitLoading" class="vercel-loading" style="display: none;"></span>
+        </button>
+      </div>
     </div>
   </div>
-</div>
 
   <script>
     // Configure axios
@@ -798,7 +832,7 @@
         if (!noResultsRow) {
           noResultsRow = document.createElement('tr');
           noResultsRow.className = 'no-results-row';
-          noResultsRow.innerHTML = '<td colspan="5" class="no-results">No students found matching your criteria</td>';
+          noResultsRow.innerHTML = '<td colspan="6" class="no-results">No students found matching your criteria</td>';
           document.querySelector('tbody').appendChild(noResultsRow);
         }
       } else if (noResultsRow) {
@@ -828,8 +862,8 @@
         position: fixed;
         top: 20px;
         right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 12px;
+        padding: 0.75rem 1.25rem;
+        border-radius: 8px;
         color: white;
         font-weight: 500;
         z-index: 10000;
@@ -837,9 +871,10 @@
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.9rem;
         ${type === 'success' ? 
-          'background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%);' : 
-          'background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%);'
+          'background: rgba(16, 185, 129, 0.9);' : 
+          'background: rgba(239, 68, 68, 0.9);'
         }
       `;
       document.body.appendChild(toast);
@@ -862,7 +897,7 @@
         field.addEventListener('focus', function() {
           this.dataset.originalNotes = this.textContent.trim();
           // Remove placeholder text when focusing
-          if (this.textContent.includes('Click to add notes...')) {
+          if (this.textContent.includes('Add notes...')) {
             this.textContent = '';
             this.classList.remove('empty');
           }
@@ -877,7 +912,7 @@
           if (newNotes === originalNotes) {
             // Restore placeholder if empty
             if (!newNotes) {
-              this.innerHTML = '<span class="empty">Click to add notes...</span>';
+              this.innerHTML = '<span class="empty">Add notes...</span>';
               this.classList.add('empty');
             }
             return;
@@ -900,7 +935,7 @@
                 newNotes.substring(0, 50) + '...' : 
                 newNotes;
             } else {
-              this.innerHTML = '<span class="empty">Click to add notes...</span>';
+              this.innerHTML = '<span class="empty">Add notes...</span>';
               this.classList.add('empty');
             }
             this.dataset.originalNotes = newNotes;
@@ -913,7 +948,7 @@
             // Revert to original content
             this.textContent = originalNotes || '';
             if (!originalNotes) {
-              this.innerHTML = '<span class="empty">Click to add notes...</span>';
+              this.innerHTML = '<span class="empty">Add notes...</span>';
               this.classList.add('empty');
             }
             showToast('Failed to update notes', 'error');
@@ -935,6 +970,8 @@
       const closeModalBtns = document.querySelectorAll('.close-modal, .close-modal-btn');
       const submitStudentBtn = document.getElementById('submitStudentBtn');
       const addStudentForm = document.getElementById('addStudentForm');
+      const submitText = document.getElementById('submitText');
+      const submitLoading = document.getElementById('submitLoading');
       
       // Open modal
       addStudentBtn.addEventListener('click', function() {
@@ -965,12 +1002,22 @@
         // Get CSRF token
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
+        // Show loading state
+        submitText.style.display = 'none';
+        submitLoading.style.display = 'inline-block';
+        submitStudentBtn.disabled = true;
+        
         // Create form data
         const formData = new FormData();
         formData.append('name', document.getElementById('id_name').value);
+        formData.append('email', document.getElementById('id_email').value);
+        formData.append('phone_number', document.getElementById('id_phone_number').value);
         formData.append('batch', document.getElementById('id_batch').value);
+        formData.append('student_class', document.getElementById('id_student_class').value);
         formData.append('status', document.getElementById('id_status').value);
         formData.append('admission_date', document.getElementById('id_admission_date').value);
+        formData.append('drive_link', document.getElementById('id_drive_link').value);
+        formData.append('notes', document.getElementById('id_notes').value);
         formData.append('csrfmiddlewaretoken', csrfToken);
         
         axios.post('{% url "trainers:add_student" %}', formData)
@@ -995,6 +1042,12 @@
         .catch(error => {
           console.error('Error adding student:', error);
           showToast('Failed to add student', 'error');
+        })
+        .finally(() => {
+          // Reset button state
+          submitText.style.display = 'inline-block';
+          submitLoading.style.display = 'none';
+          submitStudentBtn.disabled = false;
         });
       });
       
@@ -1017,28 +1070,21 @@
       }
       
       // Action buttons functionality
-      // Add event listeners for view buttons
       document.querySelectorAll('.view-btn').forEach(button => {
         button.addEventListener('click', function() {
           const studentId = this.dataset.studentId;
           // You can implement view functionality here
-          // For now, we'll show an alert as a placeholder
           alert('View student with ID: ' + studentId);
-          // In a real implementation, you might redirect to a student detail page:
-          // window.location.href = `/trainers/student/${studentId}/`;
         });
       });
       
-      // Add event listeners for delete buttons
       document.querySelectorAll('.delete-btn').forEach(button => {
         button.addEventListener('click', function() {
           const studentId = this.dataset.studentId;
           const studentName = this.closest('tr').querySelector('td:first-child').textContent;
           const row = this.closest('tr');
           
-          // Show confirmation alert
           if (confirm(`Are you sure you want to delete ${studentName}? This action cannot be undone.`)) {
-            // Make AJAX call to delete the student
             axios.post('{% url "trainers:delete_student" %}', {
               student_id: studentId
             }, {
@@ -1049,7 +1095,6 @@
             })
             .then(response => {
               if (response.data.status === 'success') {
-                // Remove the row from the table
                 row.remove();
                 showToast(response.data.message, 'success');
               } else {
@@ -1063,22 +1108,6 @@
           }
         });
       });
-      
-      // Helper function to get CSRF token
-      function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-          const cookies = document.cookie.split(';');
-          for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-              break;
-            }
-          }
-        }
-        return cookieValue;
-      }
     });
     
     // Add CSS animations for toast
