@@ -108,7 +108,11 @@ def add_student(request):
                     'batch': student.get_batch_display(),
                     'status': student.get_status_display(),
                     'admission_date': student.admission_date.strftime('%b %d, %Y'),
-                    'notes': student.notes
+                    'notes': student.notes,
+                    'email': student.email or '',
+                    'phone_number': student.phone_number or '',
+                    'drive_link': student.drive_link or '',
+                    'student_class': student.get_student_class_display() if student.student_class else ''
                 }
             })
         else:

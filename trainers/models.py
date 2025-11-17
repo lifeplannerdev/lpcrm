@@ -25,6 +25,9 @@ class Trainer(models.Model):
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.username}"
 
+from django.db import models
+from django.core.validators import MinLengthValidator
+
 class Student(models.Model):
     BATCH_CHOICES = [
         ('A1', 'A1 (Beginner)'),
@@ -38,6 +41,14 @@ class Student(models.Model):
         ('PAUSED', 'Paused'),
         ('COMPLETED', 'Completed'),
         ('DROPPED', 'Dropped'),
+    ]
+    
+    CLASS_CHOICES = [
+        ('C1', 'C1'),
+        ('C2', 'C2'),
+        ('C3', 'C3'),
+        ('C4', 'C4'),
+        ('ONLINE', 'Online'),
     ]
     
     name = models.CharField(
@@ -62,6 +73,31 @@ class Student(models.Model):
     notes = models.TextField(
         blank=True,
         help_text="General notes about the student"
+    )
+    
+    # New fields
+    email = models.EmailField(
+        blank=True,
+        null=True,
+        help_text="Student's email address"
+    )
+    phone_number = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        help_text="Student's phone number"
+    )
+    drive_link = models.URLField(
+        blank=True,
+        null=True,
+        help_text="Google Drive folder link for student materials"
+    )
+    student_class = models.CharField(
+        max_length=10,
+        choices=CLASS_CHOICES,
+        blank=True,
+        null=True,
+        help_text="Class type for the student"
     )
     
     class Meta:
