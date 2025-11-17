@@ -5,8 +5,10 @@ from django.views.generic import ListView
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
 import json
 from .models import Trainer, Student
+from .forms import StudentForm
 
 @login_required
 def trainer_dashboard(request):
@@ -33,6 +35,9 @@ def trainer_dashboard(request):
     paused_students = students.filter(status='PAUSED').count()
     completed_students = students.filter(status='COMPLETED').count()
     
+    # Create form instance for the modal
+    form = StudentForm()
+    
     return render(request, 'trainers/dashboard.html', {
         'trainer': trainer,
         'batches': batches,
@@ -40,7 +45,8 @@ def trainer_dashboard(request):
         'total_students': total_students,
         'active_students': active_students,
         'paused_students': paused_students,
-        'completed_students': completed_students
+        'completed_students': completed_students,
+        'form': form
     })
 
 @login_required
@@ -72,6 +78,44 @@ def update_student_notes(request):
             'status': 'error',
             'message': str(e)
         }, status=400)
+
+@login_required
+@require_http_methods(["POST"])
+def add_student(request):
+    if request.user.role != 'TRAINER':
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+    
+    try:
+        trainer = Trainer.objects.get(user=request.user)
+        form = StudentForm(request.POST)
+        
+        if form.is_valid():
+            student = form.save(commit=False)
+            student.trainer = trainer
+            student.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Student added successfully',
+                'student': {
+                    'id': student.id,
+                    'name': student.name,
+                    'batch': student.get_batch_display(),
+                    'status': student.get_status_display(),
+                    'admission_date': student.admission_date.strftime('%b %d, %Y'),
+                    'notes': student.notes
+                }
+            })
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'errors': form.errors
+            }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
 
 class StudentListView(LoginRequiredMixin, ListView):
     model = Student
