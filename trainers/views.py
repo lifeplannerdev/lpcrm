@@ -9,6 +9,7 @@ from django.contrib import messages
 import json
 from .models import Trainer, Student
 from .forms import StudentForm
+from tasks.models import Task
 
 @login_required
 def trainer_dashboard(request):
@@ -35,6 +36,9 @@ def trainer_dashboard(request):
     paused_students = students.filter(status='PAUSED').count()
     completed_students = students.filter(status='COMPLETED').count()
     
+    # Get tasks assigned by this trainer
+    assigned_tasks = Task.objects.filter(assigned_by=request.user).order_by('-priority', '-created_at')
+    
     # Create form instance for the modal
     form = StudentForm()
     
@@ -46,6 +50,7 @@ def trainer_dashboard(request):
         'active_students': active_students,
         'paused_students': paused_students,
         'completed_students': completed_students,
+        'assigned_tasks': assigned_tasks,  # Added for task listing
         'form': form
     })
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trainer Dashboard - LP CRM</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.6/dist/basecoat.cdn.min.css">
-<script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.6/dist/js/all.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/basecoat-css@0.3.6/dist/js/all.min.js" defer></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" integrity="sha512-DxV+EoADOkOygM4IR9yXP8Sb2qwgidEmeqAEmDKIOfPRQZOWbXCzLC6vjbZyy0vPisbH2SyW27+ddLVCN+OMzQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -44,7 +44,7 @@
       padding: 2rem;
     }
     .dashboard-header {
-      margin-bottom: 3rem;
+      margin-bottom: 2rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -182,6 +182,25 @@
       border-color: var(--accent);
       box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
     }
+    
+    /* Main layout */
+    .main-content {
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-top: 50px;
+    }
+    
+    .students-section, .tasks-section {
+      flex: 1;
+      min-width: 300px;
+    }
+    
+    /* Student table styling */
+    .students-section {
+      height: 70vh; /* Fixed height for the section */
+    }
+    
     .table-container {
       background: var(--card-bg);
       border-radius: 16px;
@@ -189,19 +208,38 @@
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow-large);
       margin-top: 1rem;
+      height: 100%; /* Full height of parent */
+      display: flex;
+      flex-direction: column;
     }
+    
     .table-scroll-vert {
-      max-height: 70vh;
+      flex: 1; /* Take remaining space */
       overflow-y: auto;
       overflow-x: hidden;
       position: relative;
       width: 100%;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
     }
+    
     .table-scroll-vert::-webkit-scrollbar {
-      display: none;
+      width: 6px;
     }
+    
+    .table-scroll-vert::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .table-scroll-vert::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 3px;
+    }
+    
+    .table-scroll-vert::-webkit-scrollbar-thumb:hover {
+      background-color: var(--border-hover);
+    }
+    
     table {
       background: var(--card-bg);
       color: var(--text-primary);
@@ -211,6 +249,7 @@
       border-collapse: collapse;
       table-layout: fixed;
     }
+    
     th, td {
       background: transparent;
       color: var(--text-primary);
@@ -225,6 +264,7 @@
       text-overflow: ellipsis;
       max-width: 200px;
     }
+    
     th {
       background: var(--bg-secondary);
       color: var(--text-secondary);
@@ -235,47 +275,21 @@
       top: 0;
       z-index: 10;
     }
+    
     tbody tr {
       border-bottom: 1px solid var(--border-color);
       transition: background 0.18s, box-shadow 0.18s;
     }
+    
     tbody tr:last-child {
       border-bottom: none;
     }
+    
     tbody tr:hover {
       background: rgba(255,255,255,0.03);
       box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
     }
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.35rem 0.75rem;
-      border-radius: 6px;
-      font-size: 0.75rem;
-      font-weight: 500;
-      letter-spacing: 0.025em;
-      text-transform: uppercase;
-    }
-    .status-active {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
-      color: #10b981;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-    }
-    .status-paused {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
-      color: #f59e0b;
-      border: 1px solid rgba(245, 158, 11, 0.3);
-    }
-    .status-completed {
-      background: linear-gradient(135deg, rgba(52, 211, 153, 0.2) 0%, rgba(52, 211, 153, 0.1) 100%);
-      color: #34d399;
-      border: 1px solid rgba(52, 211, 153, 0.3);
-    }
-    .status-dropped {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
-      color: #ef4444;
-      border: 1px solid rgba(239, 68, 68, 0.3);
-    }
+    
     .batch-badge {
       display: inline-flex;
       align-items: center;
@@ -289,56 +303,199 @@
       color: #6366f1;
       border: 1px solid rgba(99, 102, 241, 0.3);
     }
+    
     .table-row {
       transition: opacity 0.3s ease;
     }
+    
     .table-row.hidden {
       display: none;
     }
+    
     .no-results {
       text-align: center;
       padding: 2rem;
       color: var(--text-secondary);
       font-style: italic;
     }
-    .stats-section {
-      background: transparent;
+    
+    /* Task section styling */
+    .tasks-section {
+      height: 70vh; /* Fixed height for the section */
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .tasks-container {
+      flex: 1; /* Take remaining space */
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
       border-radius: 16px;
-      margin-bottom: 2rem;
-      margin-top: 5rem;
+      overflow: hidden;
       box-shadow: var(--shadow-large);
-      width:70%;
+      margin-top: 1rem;
     }
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 0.7rem;
-      
+    
+    .tasks-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.5rem;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
     }
-    .stat-item {
-      background: rgba(67, 139, 105, 0.253);
+    
+    .tasks-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .tasks-scroll-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
+    }
+    
+    .tasks-scroll-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .tasks-scroll-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .tasks-scroll-container::-webkit-scrollbar-thumb {
+      background-color: var(--border-color);
+      border-radius: 3px;
+    }
+    
+    .tasks-scroll-container::-webkit-scrollbar-thumb:hover {
+      background-color: var(--border-hover);
+    }
+    
+    .task-item {
+      background: var(--bg-secondary);
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      padding: 0.5rem;
-      text-align: center;
-      color:white;
+      padding: 1rem;
+      margin-bottom: 1rem;
       transition: all 0.2s ease;
     }
-    .stat-item:hover {
+    
+    .task-item:hover {
       border-color: var(--border-hover);
       background: rgba(255, 255, 255, 0.02);
     }
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 700;
-      color: var(--accent);
+    
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 0.5rem;
     }
-    .stat-label {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
-      font-weight: 500;
+    
+    .task-title {
+      font-weight: 600;
+      color: var(--text-primary);
+      font-size: 1.1rem;
     }
+    
+    .task-priority {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+    
+    .priority-urgent {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .priority-high {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(245, 158, 11, 0.1) 100%);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    
+    .priority-medium {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%);
+      color: #6366f1;
+      border: 1px solid rgba(99, 102, 241, 0.3);
+    }
+    
+    .priority-low {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .task-description {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      line-height: 1.5;
+    }
+    
+    .task-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: var(--text-tertiary);
+    }
+    
+    .task-status {
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+    
+    .status-pending {
+      background: linear-gradient(135deg, rgba(156, 163, 175, 0.2) 0%, rgba(156, 163, 175, 0.1) 100%);
+      color: #9ca3af;
+      border: 1px solid rgba(156, 163, 175, 0.3);
+    }
+    
+    .status-in-progress {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    
+    .status-completed {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    
+    .status-cancelled {
+      background: linear-gradient(135deg, rgba(156, 163, 175, 0.2) 0%, rgba(156, 163, 175, 0.1) 100%);
+      color: #9ca3af;
+      border: 1px solid rgba(156, 163, 175, 0.3);
+    }
+    
+    .status-overdue {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+    
+    .no-tasks {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+    
     @media (max-width: 1200px) {
       .dashboard-container { padding: 1rem; }
       .dashboard-header { flex-direction: column; align-items: flex-start; }
@@ -347,194 +504,20 @@
       th, td { padding: 0.75rem 0.5rem; font-size: 0.9rem; }
       .search-box { min-width: 250px; }
       .filter-select { min-width: 120px; }
+      .main-content { flex-direction: column; }
+      .students-section, .tasks-section { height: auto; min-height: 50vh; }
     }
+    
     @media (max-width: 768px) {
       .dashboard-container { padding: 0.5rem; }
       .dashboard-header { gap: 0.6rem; }
       .search-container { gap: 0.5rem; }
       th, td { padding: 0.5rem 0.3rem; font-size: 0.8rem; }
-      .table-scroll-vert { max-height: 60vh; }
       .search-box { min-width: 200px; padding: 0.4rem; height: 36px; }
       .search-input { font-size: 0.8rem; }
       .filter-select { height: 36px; min-width: 100px; font-size: 0.8rem; }
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .btn { padding: 0.5rem 1rem; font-size: 0.75rem; }
     }
-
-         /* Notes field styling */
-     .notes-field {
-       position: relative;
-       background: var(--bg-secondary);
-       border: 1px solid var(--border-color);
-       border-radius: 8px;
-       padding: 0.75rem;
-       min-height: 45px;
-       cursor: pointer;
-       transition: all 0.2s ease;
-       display: flex;
-       align-items: center;
-       overflow: hidden;
-       text-overflow: ellipsis;
-       white-space: nowrap;
-       font-size: 0.9rem;
-       line-height: 1.4;
-     }
-     
-     .notes-field:hover {
-       background: var(--card-bg);
-       border-color: var(--border-hover);
-       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-     }
-     
-     .notes-field:focus {
-       outline: none;
-       border-color: var(--accent);
-       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
-       background: var(--card-bg);
-       cursor: text;
-       white-space: normal;
-       word-wrap: break-word;
-       overflow: visible;
-     }
-     
-     .notes-field.empty {
-       color: var(--text-tertiary);
-       font-style: italic;
-     }
-     
-     .notes-field.empty:focus {
-       color: var(--text-primary);
-       font-style: normal;
-     }
-     
-     .notes-field::before {
-       content: "";
-       margin-right: 0.5rem;
-       font-size: 0.8rem;
-       opacity: 0.7;
-     }
-     
-     .notes-field:focus::before {
-       opacity: 1;
-     }
-     
-     /* Modal styling */
-     .modal {
-       display: none;
-       position: fixed;
-       top: 0;
-       left: 0;
-       width: 100%;
-       height: 100%;
-       background: rgba(0, 0, 0, 0.7);
-       z-index: 1000;
-       justify-content: center;
-       align-items: center;
-     }
-     
-     .modal-content {
-       background: var(--card-bg);
-       border-radius: 16px;
-       border: 1px solid var(--border-color);
-       box-shadow: var(--shadow-large);
-       width: 90%;
-       max-width: 500px;
-       max-height: 90vh;
-       overflow-y: auto;
-       position: relative;
-     }
-     
-     .modal-header {
-       padding: 1.5rem;
-       border-bottom: 1px solid var(--border-color);
-       display: flex;
-       justify-content: space-between;
-       align-items: center;
-     }
-     
-     .modal-title {
-       font-size: 1.5rem;
-       font-weight: 600;
-       margin: 0;
-     }
-     
-     .close-modal {
-       background: transparent;
-       border: none;
-       color: var(--text-secondary);
-       font-size: 1.5rem;
-       cursor: pointer;
-       padding: 0;
-       width: 30px;
-       height: 30px;
-       display: flex;
-       align-items: center;
-       justify-content: center;
-       border-radius: 50%;
-       transition: all 0.2s ease;
-     }
-     
-     .close-modal:hover {
-       color: var(--text-primary);
-       background: rgba(255, 255, 255, 0.1);
-     }
-     
-     .modal-body {
-       padding: 1.5rem;
-     }
-     
-     .form-group {
-       margin-bottom: 1.5rem;
-     }
-     
-     .form-label {
-       display: block;
-       margin-bottom: 0.5rem;
-       font-weight: 500;
-       color: var(--text-primary);
-     }
-     
-     .form-control {
-       width: 100%;
-       padding: 0.75rem;
-       background: var(--bg-secondary);
-       border: 1px solid var(--border-color);
-       border-radius: 8px;
-       color: var(--text-primary);
-       font-size: 1rem;
-       transition: all 0.2s ease;
-     }
-     
-     .form-control:focus {
-       outline: none;
-       border-color: var(--accent);
-       box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
-     }
-     
-     .form-errors {
-       color: #ef4444;
-       font-size: 0.875rem;
-       margin-top: 0.25rem;
-     }
-     
-     .modal-footer {
-       padding: 1.5rem;
-       border-top: 1px solid var(--border-color);
-       display: flex;
-       justify-content: flex-end;
-       gap: 1rem;
-     }
-     
-     .btn-outline {
-       background: transparent;
-       color: var(--text-primary);
-       border: 1px solid var(--border-color);
-     }
-     
-     .btn-outline:hover {
-       background: rgba(255, 255, 255, 0.05);
-       border-color: var(--border-hover);
-     }
   </style>
 </head>
 <body>
@@ -549,9 +532,10 @@
         </a>
         {% endif %}
         <div class="search-container">
-          
-          
-          
+          <a href="{% url 'trainers:student_list' %}">
+          <button class="btn"><i class="fa-solid fa-graduation-cap"></i> View Students</button>
+          </a>
+          <button class="btn"><i class="fa-solid fa-pen-to-square"></i> Attendance</button>
           <button class="btn"><i class="fa-solid fa-bars" style="font-size:0.9rem;"></i>Tasks</button>
           <a href="{% url 'accounts:staff_reports' %}">
           <button class="btn"><i class="fa-regular fa-file" style="font-size:0.9rem;"></i> Reports</button>
@@ -561,120 +545,77 @@
       </div>
     </div>
 
-    <!-- Stats Section -->
-     
-    <div class="stats-section">
-      <div class="stats-grid">
-        <div class="stat-item">
-          
-          <div class="stat-label">Total Students : {{ total_students }}</div>
-        </div>
-        <div class="stat-item">
-          
-          <div class="stat-label">Active Students : {{ active_students }}</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">Attendance <i class="fa-solid fa-arrow-up-right-from-square ml-2"></i></div>
-        </div>
-        <div class="stat-item">
-          <a href="{% url 'trainers:student_list' %}">
-          <div class="stat-label">View Students <i class="fa-solid fa-arrow-up-right-from-square ml-2"></i></div>
-        </a>
+    <!-- Main Content Area -->
+    <div class="main-content">
+      <!-- Students Section -->
+      <div class="students-section">
+        <div class="table-container">
+          <div class="table-scroll-vert">
+            <table>
+              <thead>
+                <tr>
+                  <th>Recent Admissions</th>
+                  <th></th>
+                  <th>Admission Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for student in all_students %}
+                <tr class="table-row" 
+                    data-name="{{ student.name|lower }}"
+                    data-batch="{{ student.get_batch_display|lower }}"
+                    data-batch-value="{{ student.batch }}">
+                  <td>{{ student.name }}</td>
+                  <td>
+                    <span class="batch-badge">{{ student.get_batch_display }}</span>
+                  </td>
+                  <td>{{ student.admission_date|date:"M d, Y" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="3" class="no-results">No students found</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-    </div>
-    
 
-    <!-- Students Table -->
-    <div class="table-container">
-      <div class="table-scroll-vert">
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Batch</th>
-              <th>Status</th>
-              <th>Admission Date</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for student in all_students %}
-            <tr class="table-row" 
-                data-name="{{ student.name|lower }}"
-                data-batch="{{ student.get_batch_display|lower }}"
-                data-status="{{ student.get_status_display|lower }}"
-                data-batch-value="{{ student.batch }}">
-              <td>{{ student.name }}</td>
-              <td>
-                <span class="batch-badge">{{ student.get_batch_display }}</span>
-              </td>
-              <td>
-                <span class="status-badge status-{{ student.status|lower }}">
-                  {{ student.get_status_display }}
-                </span>
-              </td>
-              <td>{{ student.admission_date|date:"M d, Y" }}</td>
-                            <td>
-                <div class="notes-field" 
-                     data-student-id="{{ student.id }}" 
-                     contenteditable="true"
-                     tabindex="0"
-                     title="Click to edit notes">
-                  {% if student.notes %}
-                    {{ student.notes|truncatechars:50 }}
-                  {% else %}
-                    <span class="empty">Click to add notes...</span>
-                  {% endif %}
+      <!-- Tasks Section -->
+      <div class="tasks-section">
+        <div class="tasks-container">
+          <div class="tasks-header">
+            <h2 class="tasks-title">Assigned Tasks</h2>
+          </div>
+          <div class="tasks-scroll-container">
+            {% if assigned_tasks %}
+              {% for task in assigned_tasks %}
+              <div class="task-item">
+                <div class="task-header">
+                  <div class="task-title">{{ task.title }}</div>
+                  <div class="task-priority priority-{{ task.priority|lower }}">
+                    {{ task.get_priority_display }}
+                  </div>
                 </div>
-              </td>
-            </tr>
-            {% empty %}
-            <tr>
-              <td colspan="5" class="no-results">No students found</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- Add Student Modal -->
-  <div id="addStudentModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title">Add New Student</h2>
-        <button class="close-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form id="addStudentForm">
-          {% csrf_token %}
-          <div class="form-group">
-            <label class="form-label" for="id_name">Name</label>
-            {{ form.name }}
-            <div id="name-error" class="form-errors"></div>
+                <div class="task-description">
+                  {{ task.description|truncatewords:20 }}
+                </div>
+                <div class="task-meta">
+                  <div class="task-status status-{{ task.status|lower }}">
+                    {{ task.get_status_display }}
+                  </div>
+                  <div>Deadline: {{ task.deadline|date:"M d, Y" }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="no-tasks">
+                No tasks assigned yet.
+              </div>
+            {% endif %}
           </div>
-          <div class="form-group">
-            <label class="form-label" for="id_batch">Batch</label>
-            {{ form.batch }}
-            <div id="batch-error" class="form-errors"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="id_status">Status</label>
-            {{ form.status }}
-            <div id="status-error" class="form-errors"></div>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="id_admission_date">Admission Date</label>
-            {{ form.admission_date }}
-            <div id="admission_date-error" class="form-errors"></div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-outline close-modal-btn">Cancel</button>
-        <button class="btn btn-primary" id="submitStudentBtn">Add Student</button>
+        </div>
       </div>
     </div>
   </div>
@@ -701,12 +642,10 @@
       tableRows.forEach(row => {
         const name = row.dataset.name;
         const batch = row.dataset.batch;
-        const status = row.dataset.status;
         const batchValue = row.dataset.batchValue;
 
         const matchesSearch = name.includes(searchTerm) ||
-                            batch.includes(searchTerm) ||
-                            status.includes(searchTerm);
+                            batch.includes(searchTerm);
         
         const matchesBatch = !selectedBatch || batchValue === selectedBatch;
         
@@ -727,7 +666,7 @@
         if (!noResultsRow) {
           noResultsRow = document.createElement('tr');
           noResultsRow.className = 'no-results-row';
-          noResultsRow.innerHTML = '<td colspan="5" class="no-results">No students found matching your criteria</td>';
+          noResultsRow.innerHTML = '<td colspan="3" class="no-results">No students found matching your criteria</td>';
           document.querySelector('tbody').appendChild(noResultsRow);
         }
       } else if (noResultsRow) {
@@ -780,84 +719,8 @@
       }, 3000);
     }
 
-    // Notes functionality
+    // Modal functionality
     document.addEventListener('DOMContentLoaded', function() {
-      const notesFields = document.querySelectorAll('.notes-field');
-      
-      notesFields.forEach(field => {
-        const studentId = field.dataset.studentId;
-        
-        // Store original notes on focus
-        field.addEventListener('focus', function() {
-          this.dataset.originalNotes = this.textContent.trim();
-          // Remove placeholder text when focusing
-          if (this.textContent.includes('Click to add notes...')) {
-            this.textContent = '';
-            this.classList.remove('empty');
-          }
-        });
-        
-        // Save on blur (when clicking away)
-        field.addEventListener('blur', function() {
-          const newNotes = this.textContent.trim();
-          const originalNotes = this.dataset.originalNotes || '';
-          
-          // Skip if content didn't change
-          if (newNotes === originalNotes) {
-            // Restore placeholder if empty
-            if (!newNotes) {
-              this.innerHTML = '<span class="empty">Click to add notes...</span>';
-              this.classList.add('empty');
-            }
-            return;
-          }
-          
-          // Save to server
-          axios.post('{% url "trainers:update_notes" %}', {
-            student_id: studentId,
-            notes: newNotes
-          }, {
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': '{{ csrf_token }}'
-            }
-          })
-          .then(response => {
-            // Update UI with formatted notes
-            if (newNotes) {
-              this.textContent = newNotes.length > 50 ? 
-                newNotes.substring(0, 50) + '...' : 
-                newNotes;
-            } else {
-              this.innerHTML = '<span class="empty">Click to add notes...</span>';
-              this.classList.add('empty');
-            }
-            this.dataset.originalNotes = newNotes;
-            
-            // Show success feedback
-            showToast('Notes updated successfully!', 'success');
-          })
-          .catch(error => {
-            console.error('Error saving notes:', error);
-            // Revert to original content
-            this.textContent = originalNotes || '';
-            if (!originalNotes) {
-              this.innerHTML = '<span class="empty">Click to add notes...</span>';
-              this.classList.add('empty');
-            }
-            showToast('Failed to update notes', 'error');
-          });
-        });
-        
-        // Handle Enter key to save
-        field.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            this.blur();
-          }
-        });
-      });
-      
       // Modal functionality
       const addStudentBtn = document.getElementById('addStudentBtn');
       const addStudentModal = document.getElementById('addStudentModal');
