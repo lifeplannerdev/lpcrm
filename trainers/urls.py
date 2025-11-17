@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import trainer_dashboard, StudentListView, update_student_notes, add_student
+from .views import trainer_dashboard, StudentListView, update_student_notes, add_student, delete_student
 
 app_name = 'trainers'
 
@@ -8,4 +8,5 @@ urlpatterns = [
     path('students/', StudentListView.as_view(), name='student_list'),
     path('update-notes/', update_student_notes, name='update_notes'),
     path('add-student/', add_student, name='add_student'),
+    path('delete-student/', delete_student, name='delete_student'),
 ]

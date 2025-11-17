@@ -513,7 +513,7 @@
       .header-controls { flex-direction: column; align-items: stretch; gap: 0.5rem; }
       th, td { padding: 0.75rem 0.5rem; font-size: 0.9rem; }
       .search-box { min-width: 250px; }
-      .filter-select { min-width: 120px; }
+      .filter-select { min-width: 140px; }
     }
     @media (max-width: 768px) {
       .dashboard-container { padding: 0.5rem; }
@@ -525,6 +525,44 @@
       .filter-select { height: 36px; min-width: 100px; font-size: 0.8rem; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .btn { padding: 0.5rem 1rem; font-size: 0.75rem; }
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .btn-icon {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s ease;
+    }
+    
+    .btn-icon:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-color: var(--border-hover);
+      transform: translateY(-1px);
+    }
+    
+    .delete-btn:hover {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(239, 68, 68, 0.1) 100%);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+    
+    .view-btn:hover {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+      color: #3b82f6;
+      border-color: rgba(59, 130, 246, 0.3);
     }
   </style>
 </head>
@@ -567,6 +605,7 @@
               <th>Status</th>
               <th>Admission Date</th>
               <th>Notes</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -599,10 +638,20 @@
                   {% endif %}
                 </div>
               </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-icon view-btn" data-student-id="{{ student.id }}" title="View Student">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn-icon delete-btn" data-student-id="{{ student.id }}" title="Delete Student">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
             </tr>
             {% empty %}
             <tr>
-              <td colspan="5" class="no-results">No students found</td>
+              <td colspan="6" class="no-results">No students found</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -925,6 +974,70 @@
             errorElement.textContent = errors[field].join(', ');
           }
         }
+      }
+      
+      // Action buttons functionality
+      // Add event listeners for view buttons
+      document.querySelectorAll('.view-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const studentId = this.dataset.studentId;
+          // You can implement view functionality here
+          // For now, we'll show an alert as a placeholder
+          alert('View student with ID: ' + studentId);
+          // In a real implementation, you might redirect to a student detail page:
+          // window.location.href = `/trainers/student/${studentId}/`;
+        });
+      });
+      
+      // Add event listeners for delete buttons
+      document.querySelectorAll('.delete-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const studentId = this.dataset.studentId;
+          const studentName = this.closest('tr').querySelector('td:first-child').textContent;
+          const row = this.closest('tr');
+          
+          // Show confirmation alert
+          if (confirm(`Are you sure you want to delete ${studentName}? This action cannot be undone.`)) {
+            // Make AJAX call to delete the student
+            axios.post('{% url "trainers:delete_student" %}', {
+              student_id: studentId
+            }, {
+              headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '{{ csrf_token }}'
+              }
+            })
+            .then(response => {
+              if (response.data.status === 'success') {
+                // Remove the row from the table
+                row.remove();
+                showToast(response.data.message, 'success');
+              } else {
+                showToast(response.data.message || 'Failed to delete student', 'error');
+              }
+            })
+            .catch(error => {
+              console.error('Error deleting student:', error);
+              showToast('Failed to delete student', 'error');
+            });
+          }
+        });
+      });
+      
+      // Helper function to get CSRF token
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
       }
     });
     

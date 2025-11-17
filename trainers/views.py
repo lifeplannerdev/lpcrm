@@ -122,6 +122,39 @@ def add_student(request):
             'message': str(e)
         }, status=500)
 
+@login_required
+@require_http_methods(["POST"])
+def delete_student(request):
+    if request.user.role != 'TRAINER':
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        student_id = data.get('student_id')
+        
+        # Verify the student belongs to the requesting trainer
+        student = get_object_or_404(
+            Student,
+            id=student_id,
+            trainer__user=request.user
+        )
+        
+        # Store student name for response message before deletion
+        student_name = student.name
+        
+        # Delete the student
+        student.delete()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Student {student_name} deleted successfully'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
 class StudentListView(LoginRequiredMixin, ListView):
     model = Student
     template_name = 'trainers/student_list.html'
