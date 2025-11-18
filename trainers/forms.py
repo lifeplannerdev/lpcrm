@@ -5,7 +5,7 @@ from django.core.validators import MinLengthValidator
 class StudentForm(forms.ModelForm):
     class Meta:
         model = Student
-        fields = ['name', 'batch', 'status', 'admission_date','email', 'phone_number', 'drive_link', 'student_class']
+        fields = ['name', 'batch', 'status', 'admission_date','email', 'phone_number', 'drive_link', 'student_class','notes']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -32,6 +32,11 @@ class StudentForm(forms.ModelForm):
             'drive_link': forms.URLInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Enter Google Drive link'
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'placeholder': 'Additional notes about the student...',
+                'rows': 3
             }),
             'student_class': forms.TextInput(attrs={
                 'class': 'form-control',
