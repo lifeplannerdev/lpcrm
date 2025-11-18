@@ -159,6 +159,28 @@ def delete_student(request):
             'message': str(e)
         }, status=500)
 
+@login_required
+@require_http_methods(["GET"])
+def student_details(request, student_id):
+    # Check if user has trainer role
+    if request.user.role != 'TRAINER':
+        return redirect('accounts:landing')
+    
+    # Get or create trainer profile
+    trainer, created = Trainer.objects.get_or_create(user=request.user)
+    
+    # Verify the student belongs to the requesting trainer
+    student = get_object_or_404(
+        Student,
+        id=student_id,
+        trainer=trainer
+    )
+    
+    return render(request, 'trainers/student_details.html', {
+        'student': student,
+        'trainer': trainer
+    })
+
 class StudentListView(LoginRequiredMixin, ListView):
     model = Student
     template_name = 'trainers/student_list.html'

@@ -1073,8 +1073,8 @@
       document.querySelectorAll('.view-btn').forEach(button => {
         button.addEventListener('click', function() {
           const studentId = this.dataset.studentId;
-          // You can implement view functionality here
-          alert('View student with ID: ' + studentId);
+          // Redirect to student details page
+          window.location.href = '{% url "trainers:student_details" student_id=99999 %}'.replace('99999', studentId);
         });
       });
       
