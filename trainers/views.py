@@ -206,6 +206,38 @@ def delete_student(request):
         }, status=500)
 
 @login_required
+@require_http_methods(["GET", "POST"])
+def delete_student2(request, student_id):
+    if request.user.role != 'TRAINER':
+        messages.error(request, 'Unauthorized')
+        return redirect('trainers:student_list')
+    
+    # Verify the student belongs to the requesting trainer
+    student = get_object_or_404(
+        Student,
+        id=student_id,
+        trainer__user=request.user
+    )
+    
+    if request.method == 'POST':
+        try:
+            # Store student name for response message before deletion
+            student_name = student.name
+            
+            # Delete the student
+            student.delete()
+            
+            messages.success(request, f'Student {student_name} deleted successfully')
+            return redirect('trainers:student_list')
+        except Exception as e:
+            messages.error(request, f'Error deleting student: {str(e)}')
+            return redirect('trainers:student_list')
+    else:
+        # For GET requests, show confirmation page or redirect back
+        messages.warning(request, f'Please confirm deletion of student {student.name}')
+        return redirect('trainers:student_details', student_id=student_id)
+
+@login_required
 @require_http_methods(["GET"])
 def student_details(request, student_id):
     # Check if user has trainer role

@@ -625,6 +625,9 @@
         <button id="editStudentBtn" class="btn btn-secondary">
           <i class="fas fa-edit"></i> Edit
         </button>
+        <button id="deleteStudentBtn" class="btn btn-secondary" style="background: #ef4444; border-color: #ef4444; color: white;">
+          <i class="fas fa-trash"></i> Delete
+        </button>
         {% if student.drive_link %}
         <a href="{{ student.drive_link }}" target="_blank" class="btn btn-secondary" title="Open Google Drive Folder">
           <i class="fab fa-google-drive"></i> Drive Folder
@@ -1036,6 +1039,28 @@
       }
     `;
     document.head.appendChild(style);
+    
+    // Delete Student Functionality
+    document.getElementById('deleteStudentBtn').addEventListener('click', function() {
+      if (confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
+        // Create a form element to submit via POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "trainers:delete_student2" student.id %}';
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        // Add form to document and submit
+        document.body.appendChild(form);
+        form.submit();
+      }
+    });
   </script>
 </body>
 </html>
