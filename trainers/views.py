@@ -128,6 +128,52 @@ def add_student(request):
 
 @login_required
 @require_http_methods(["POST"])
+def edit_student(request, student_id):
+    if request.user.role != 'TRAINER':
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+    
+    try:
+        # Verify the student belongs to the requesting trainer
+        student = get_object_or_404(
+            Student,
+            id=student_id,
+            trainer__user=request.user
+        )
+        
+        form = StudentForm(request.POST, instance=student)
+        
+        if form.is_valid():
+            student = form.save()
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Student updated successfully',
+                'student': {
+                    'id': student.id,
+                    'name': student.name,
+                    'batch': student.get_batch_display(),
+                    'status': student.get_status_display(),
+                    'admission_date': student.admission_date.strftime('%b %d, %Y'),
+                    'notes': student.notes,
+                    'email': student.email or '',
+                    'phone_number': student.phone_number or '',
+                    'drive_link': student.drive_link or '',
+                    'student_class': student.get_student_class_display() if student.student_class else ''
+                }
+            })
+        else:
+            return JsonResponse({
+                'status': 'error',
+                'errors': form.errors
+            }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+@login_required
+@require_http_methods(["POST"])
 def delete_student(request):
     if request.user.role != 'TRAINER':
         return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)

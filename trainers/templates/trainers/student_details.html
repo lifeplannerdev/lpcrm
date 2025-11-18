@@ -426,6 +426,142 @@
     .contact-link:hover {
       color: var(--text-primary);
     }
+
+    /* Modal Styling */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+
+    .modal-content {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      animation: modalSlideIn 0.2s ease-out;
+    }
+
+    @keyframes modalSlideIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0;
+      color: var(--text-primary);
+    }
+
+    .close-modal {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 0.25rem;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .close-modal:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-vercel);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--blue-accent);
+      box-shadow: 0 0 0 1px var(--blue-accent);
+    }
+
+    .form-errors {
+      color: #ef4444;
+      font-size: 0.8rem;
+      margin-top: 0.25rem;
+    }
+
+    .modal-footer {
+      padding: 1.25rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--border-hover);
+    }
     
     @media (max-width: 768px) {
       .dashboard-container { padding: 1rem; }
@@ -456,14 +592,16 @@
       <div>
         <h1 class="dashboard-title">Student Details</h1>
         
-        
       </div>
       <div class="header-controls">
         <a href="{% url 'trainers:student_list' %}" class="btn btn-secondary">
           <i class="fas fa-arrow-left"></i> Back
         </a>
+        <button id="editStudentBtn" class="btn btn-secondary">
+          <i class="fas fa-edit"></i> Edit
+        </button>
         {% if student.drive_link %}
-        <a href="{{ student.drive_link }}" target="_blank" class="btn" title="Open Google Drive Folder">
+        <a href="{{ student.drive_link }}" target="_blank" class="btn btn-secondary" title="Open Google Drive Folder">
           <i class="fab fa-google-drive"></i> Drive Folder
         </a>
         {% endif %}
@@ -541,8 +679,6 @@
                 {% endif %}
               </div>
             </div>
-            
-            
           </div>
         </div>
       </div>
@@ -615,22 +751,259 @@
                   <td>Vocabulary Test</td>
                   <td>Scored 92%</td>
                 </tr>
-                <!-- Add more rows as needed -->
               </tbody>
             </table>
           </div>
-
-          <!-- Empty State (commented out for now) -->
-          <!--
-          <div class="empty-state">
-            <i class="fas fa-calendar-times"></i>
-            <p>No attendance records found</p>
-            <p class="text-tertiary">Attendance data will appear here once recorded</p>
-          </div>
-          -->
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Edit Student Modal -->
+  <div id="editStudentModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">Edit Student</h2>
+        <button class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="editStudentForm">
+          {% csrf_token %}
+          <input type="hidden" id="edit_student_id" name="student_id" value="{{ student.id }}">
+          <div class="form-group">
+            <label class="form-label" for="edit_name">Full Name</label>
+            <input type="text" id="edit_name" name="name" class="form-control" placeholder="Enter student name" value="{{ student.name }}" required>
+            <div id="edit_name-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit_email">Email Address</label>
+            <input type="email" id="edit_email" name="email" class="form-control" placeholder="student@example.com" value="{{ student.email|default:'' }}">
+            <div id="edit_email-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit_phone_number">Phone Number</label>
+            <input type="tel" id="edit_phone_number" name="phone_number" class="form-control" placeholder="+1 (555) 123-4567" value="{{ student.phone_number|default:'' }}">
+            <div id="edit_phone_number-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit_batch">Batch</label>
+            <select id="edit_batch" name="batch" class="form-control" required>
+              <option value="">Select a batch</option>
+              <option value="A1" {% if student.batch == 'A1' %}selected{% endif %}>A1 (Beginner)</option>
+              <option value="A2" {% if student.batch == 'A2' %}selected{% endif %}>A2 (Elementary)</option>
+              <option value="B1" {% if student.batch == 'B1' %}selected{% endif %}>B1 (Intermediate)</option>
+              <option value="B2" {% if student.batch == 'B2' %}selected{% endif %}>B2 (Upper Intermediate)</option>
+            </select>
+            <div id="edit_batch-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit_student_class">Class Type</label>
+            <select id="edit_student_class" name="student_class" class="form-control">
+              <option value="">Select class type</option>
+              <option value="C1" {% if student.student_class == 'C1' %}selected{% endif %}>C1</option>
+              <option value="C2" {% if student.student_class == 'C2' %}selected{% endif %}>C2</option>
+              <option value="C3" {% if student.student_class == 'C3' %}selected{% endif %}>C3</option>
+              <option value="C4" {% if student.student_class == 'C4' %}selected{% endif %}>C4</option>
+              <option value="ONLINE" {% if student.student_class == 'ONLINE' %}selected{% endif %}>Online</option>
+            </select>
+            <div id="edit_student_class-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit_status">Status</label>
+            <select id="edit_status" name="status" class="form-control" required>
+              <option value="ACTIVE" {% if student.status == 'ACTIVE' %}selected{% endif %}>Active</option>
+              <option value="PAUSED" {% if student.status == 'PAUSED' %}selected{% endif %}>Paused</option>
+              <option value="COMPLETED" {% if student.status == 'COMPLETED' %}selected{% endif %}>Completed</option>
+              <option value="DROPPED" {% if student.status == 'DROPPED' %}selected{% endif %}>Dropped</option>
+            </select>
+            <div id="edit_status-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit_admission_date">Admission Date</label>
+            <input type="date" id="edit_admission_date" name="admission_date" class="form-control" value="{{ student.admission_date|date:'Y-m-d' }}" required>
+            <div id="edit_admission_date-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit_drive_link">Google Drive Folder</label>
+            <input type="url" id="edit_drive_link" name="drive_link" class="form-control" placeholder="https://drive.google.com/drive/folders/..." value="{{ student.drive_link|default:'' }}">
+            <div id="edit_drive_link-error" class="form-errors"></div>
+          </div>
+          
+          <div class="form-group">
+            <label class="form-label" for="edit_notes">Notes</label>
+            <textarea id="edit_notes" name="notes" class="form-control" rows="3" placeholder="Additional notes about the student...">{{ student.notes }}</textarea>
+            <div id="edit_notes-error" class="form-errors"></div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline close-modal-btn">Cancel</button>
+        <button class="btn" id="submitEditStudentBtn" style="background:white;color:black">
+          <span id="editSubmitText">Update</span>
+          <span id="editSubmitLoading" class="vercel-loading" style="display: none;"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    // Toast notification functionality
+    function showToast(message, type = 'info') {
+      const toast = document.createElement('div');
+      toast.className = `toast-notification ${type}`;
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 0.75rem 1.25rem;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        font-size: 0.9rem;
+        ${type === 'success' ? 
+          'background: rgba(16, 185, 129, 0.9);' : 
+          'background: rgba(239, 68, 68, 0.9);'
+        }
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+        toast.addEventListener('animationend', () => {
+          toast.remove();
+        });
+      }, 3000);
+    }
+
+    // Edit Student Modal Functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const editStudentBtn = document.getElementById('editStudentBtn');
+      const editStudentModal = document.getElementById('editStudentModal');
+      const closeEditModalBtns = document.querySelectorAll('#editStudentModal .close-modal, #editStudentModal .close-modal-btn');
+      const submitEditStudentBtn = document.getElementById('submitEditStudentBtn');
+      const editStudentForm = document.getElementById('editStudentForm');
+      const editSubmitText = document.getElementById('editSubmitText');
+      const editSubmitLoading = document.getElementById('editSubmitLoading');
+      
+      // Open edit modal
+      editStudentBtn.addEventListener('click', function() {
+        editStudentModal.style.display = 'flex';
+      });
+      
+      // Close edit modal
+      closeEditModalBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+          editStudentModal.style.display = 'none';
+          clearEditFormErrors();
+        });
+      });
+      
+      // Close edit modal when clicking outside
+      window.addEventListener('click', function(event) {
+        if (event.target === editStudentModal) {
+          editStudentModal.style.display = 'none';
+          clearEditFormErrors();
+        }
+      });
+      
+      // Handle edit form submission
+      submitEditStudentBtn.addEventListener('click', function() {
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Show loading state
+        editSubmitText.style.display = 'none';
+        editSubmitLoading.style.display = 'inline-block';
+        submitEditStudentBtn.disabled = true;
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('student_id', document.getElementById('edit_student_id').value);
+        formData.append('name', document.getElementById('edit_name').value);
+        formData.append('email', document.getElementById('edit_email').value);
+        formData.append('phone_number', document.getElementById('edit_phone_number').value);
+        formData.append('batch', document.getElementById('edit_batch').value);
+        formData.append('student_class', document.getElementById('edit_student_class').value);
+        formData.append('status', document.getElementById('edit_status').value);
+        formData.append('admission_date', document.getElementById('edit_admission_date').value);
+        formData.append('drive_link', document.getElementById('edit_drive_link').value);
+        formData.append('notes', document.getElementById('edit_notes').value);
+        formData.append('csrfmiddlewaretoken', csrfToken);
+        
+        // You'll need to create this endpoint in your Django views
+        axios.post('{% url "trainers:edit_student" student.id %}', formData)
+        .then(response => {
+          if (response.data.status === 'success') {
+            showToast(response.data.message, 'success');
+            editStudentModal.style.display = 'none';
+            clearEditFormErrors();
+            
+            // Reload the page to show updated student details
+            setTimeout(() => {
+              location.reload();
+            }, 1000);
+          } else {
+            // Display form errors
+            displayEditFormErrors(response.data.errors);
+          }
+        })
+        .catch(error => {
+          console.error('Error updating student:', error);
+          showToast('Failed to update student', 'error');
+        })
+        .finally(() => {
+          // Reset button state
+          editSubmitText.style.display = 'inline-block';
+          editSubmitLoading.style.display = 'none';
+          submitEditStudentBtn.disabled = false;
+        });
+      });
+      
+      // Clear edit form errors
+      function clearEditFormErrors() {
+        document.querySelectorAll('#editStudentModal .form-errors').forEach(el => {
+          el.textContent = '';
+        });
+      }
+      
+      // Display edit form errors
+      function displayEditFormErrors(errors) {
+        clearEditFormErrors();
+        for (const field in errors) {
+          const errorElement = document.getElementById(`edit_${field}-error`);
+          if (errorElement) {
+            errorElement.textContent = errors[field].join(', ');
+          }
+        }
+      }
+    });
+
+    // Add CSS animations for toast
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideIn {
+        from { transform: translateX(100%) scale(0.95); opacity: 0; }
+        to { transform: translateX(0) scale(1); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0) scale(1); opacity: 1; }
+        to { transform: translateX(100%) scale(0.95); opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+  </script>
 </body>
 </html>
