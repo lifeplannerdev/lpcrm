@@ -17,6 +17,7 @@ def trainer_dashboard(request):
     if request.user.role != 'TRAINER':
         return redirect('accounts:landing')
     
+    Task.update_overdue_tasks()
     # Get or create trainer profile
     trainer, created = Trainer.objects.get_or_create(user=request.user)
     
@@ -36,8 +37,8 @@ def trainer_dashboard(request):
     paused_students = students.filter(status='PAUSED').count()
     completed_students = students.filter(status='COMPLETED').count()
     
-    # Get tasks assigned by this trainer
-    assigned_tasks = Task.objects.filter(assigned_by=request.user).order_by('-priority', '-created_at')
+    # Get tasks assigned to this trainer
+    assigned_tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
     
     # Create form instance for the modal
     form = StudentForm()

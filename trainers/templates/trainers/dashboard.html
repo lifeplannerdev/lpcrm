@@ -521,6 +521,7 @@
   </style>
 </head>
 <body>
+  {% csrf_token %}
   <div class="dashboard-container">
     <div class="dashboard-header">
       <h1 class="dashboard-title">TRAINER DASHBOARD</h1>
@@ -602,11 +603,23 @@
                   {{ task.description|truncatewords:20 }}
                 </div>
                 <div class="task-meta">
-                  <div class="task-status status-{{ task.status|lower }}">
-                    {{ task.get_status_display }}
+                  <div>
+                    <div class="task-status status-{{ task.status|lower }}">
+                      {{ task.get_status_display }}
+                    </div>
+                    <div style="color: var(--text-tertiary); font-size: 0.8rem; margin-top: 0.25rem;">
+                      <i class="fas fa-user"></i> Assigned by {{ task.assigned_by.get_full_name|default:task.assigned_by.username }}
+                    </div>
                   </div>
-                  <div>Deadline: {{ task.deadline|date:"M d, Y" }}</div>
+                  <div>Deadline: {{ task.deadline|date:"M d, Y g:i A" }}</div>
                 </div>
+                {% if task.status == 'PENDING' or task.status == 'IN_PROGRESS' %}
+                <div style="margin-top: 0.75rem; display: flex; justify-content: flex-end;">
+                  <button class="btn btn-secondary update-status-btn" data-task-id="{{ task.id }}" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                    Mark as Completed
+                  </button>
+                </div>
+                {% endif %}
               </div>
               {% endfor %}
             {% else %}
@@ -802,6 +815,52 @@
           }
         }
       }
+      
+      // Task status update functionality
+      document.querySelectorAll('.update-status-btn').forEach(button => {
+        button.addEventListener('click', function() {
+          const taskId = this.dataset.taskId;
+          const taskItem = this.closest('.task-item');
+          
+          // Confirm before updating
+          if (!confirm('Mark this task as completed?')) {
+            return;
+          }
+          
+          // Send AJAX request to update task status
+          fetch(`/tasks/${taskId}/update-status/`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: JSON.stringify({
+              status: 'COMPLETED',
+              notes: 'Task completed by trainer'
+            })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.status === 'success') {
+              showToast('Task marked as completed!', 'success');
+              
+              // Update the task status display
+              const statusElement = taskItem.querySelector('.task-status');
+              statusElement.className = 'task-status status-completed';
+              statusElement.textContent = 'Completed';
+              
+              // Remove the update button
+              this.remove();
+            } else {
+              showToast('Error updating task: ' + data.message, 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showToast('Error updating task', 'error');
+          });
+        });
+      });
     });
     
     // Add CSS animations for toast
