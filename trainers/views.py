@@ -243,7 +243,7 @@ class StudentListView(LoginRequiredMixin, ListView):
         trainer, created = Trainer.objects.get_or_create(user=self.request.user)
         return Student.objects.filter(
             trainer=trainer
-        ).order_by('batch', 'name')
+        ).order_by('-admission_date', 'batch', 'name')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
