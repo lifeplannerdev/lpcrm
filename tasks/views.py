@@ -88,7 +88,14 @@ def my_tasks_ajax(request):
 def update_task_status(request, task_id):
     """Update task status with notes"""
     try:
-        task = get_object_or_404(Task, id=task_id, assigned_to=request.user)
+        # Allow both assigned_to user and assigned_by user to update task status
+        task = get_object_or_404(Task, id=task_id)
+        
+        # Check if user has permission to update this task
+        # Either the user is assigned to the task or they assigned the task
+        if not (request.user == task.assigned_to or request.user == task.assigned_by):
+            return JsonResponse({'status': 'error', 'message': 'You do not have permission to update this task'}, status=403)
+        
         data = json.loads(request.body)
         new_status = data.get('status')
         notes = data.get('notes', '')
@@ -128,6 +135,7 @@ def task_detail(request, task_id):
     task = get_object_or_404(Task, id=task_id)
     
     # Check if user has permission to view this task
+    # Allow assigned_to user, assigned_by user, or business heads to view
     if not (request.user == task.assigned_to or request.user == task.assigned_by or is_business_head(request.user)):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({

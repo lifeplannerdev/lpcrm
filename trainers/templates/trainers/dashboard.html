@@ -888,6 +888,37 @@
       font-size: 1.25rem;
     }
   }
+
+  .status-switcher {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+}
+
+.status-select {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.status-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.status-select option {
+    background: var(--card-bg);
+    color: var(--text-primary);
+    padding: 0.5rem;
+}
 </style>
 
 <!-- Updated Task Detail Modal -->
@@ -906,13 +937,199 @@
 </div>
 
 <script>
+  // Toast notification functionality
+  function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.textContent = message;
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      color: white;
+      font-weight: 500;
+      z-index: 10000;
+      animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      ${type === 'success' ? 
+        'background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%);' : 
+        'background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%);'
+      }
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      toast.style.animation = 'slideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+      toast.addEventListener('animationend', () => {
+        toast.remove();
+      });
+    }, 3000);
+  }
+
+  // Add CSS animations for toast
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from { transform: translateX(100%) scale(0.95); opacity: 0; }
+      to { transform: translateX(0) scale(1); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(0) scale(1); opacity: 1; }
+      to { transform: translateX(100%) scale(0.95); opacity: 0; }
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Function to update task status
+  function updateTaskStatus(taskId, newStatus) {
+    const statusBadge = document.getElementById('taskStatusBadge');
+    const statusSelect = document.getElementById('statusSelect');
+    
+    if (!statusBadge || !statusSelect) {
+      console.error('Status elements not found');
+      return;
+    }
+    
+    // Show loading state
+    statusSelect.disabled = true;
+    const originalStatus = statusSelect.value;
+    
+    // Update badge appearance temporarily
+    const originalBadgeText = statusBadge.textContent;
+    const originalBadgeClass = statusBadge.className;
+    statusBadge.textContent = 'Updating...';
+    statusBadge.className = `task-status status-pending`;
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    console.log(`Updating task ${taskId} to status: ${newStatus}`);
+    
+    // Use the correct URL - remove /trainers/ prefix since it might be included in the base URL
+    fetch(`/tasks/${taskId}/update-status/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest',
+        },
+        body: JSON.stringify({
+            status: newStatus
+        })
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            // Try to get more details from the response
+            return response.text().then(text => {
+                throw new Error(`HTTP ${response.status}: ${text}`);
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.status === 'success') {
+            // Update the status badge with the correct data structure
+            const statusBadge = document.getElementById('taskStatusBadge');
+            if (statusBadge) {
+                statusBadge.textContent = data.task_status;
+                // Extract status from the display text (this is a workaround)
+                const statusClass = data.task_status.toLowerCase().replace(' ', '-');
+                statusBadge.className = `task-status status-${statusClass}`;
+            }
+            
+            // Update the select to match the new status
+            const statusSelect = document.getElementById('statusSelect');
+            if (statusSelect) {
+                // We need to map the display status back to the value
+                const statusMap = {
+                    'Pending': 'PENDING',
+                    'In Progress': 'IN_PROGRESS',
+                    'Completed': 'COMPLETED',
+                    'Cancelled': 'CANCELLED',
+                    'Overdue': 'OVERDUE'
+                };
+                statusSelect.value = statusMap[data.task_status] || data.task_status.toUpperCase();
+            }
+            
+            // Show success message
+            showToast('Task status updated successfully!', 'success');
+            
+            // Update the task list in the background to reflect the change
+            // We need to extract the status from the display text
+            const statusClass = data.task_status.toLowerCase().replace(' ', '-');
+            updateTaskInList(taskId, statusClass, data.task_status);
+            
+        } else {
+            throw new Error(data.message || 'Failed to update status');
+        }
+    })
+    .catch(error => {
+        console.error('Error updating task status:', error);
+        showToast('Failed to update task status', 'error');
+        
+        // Revert the select to original state
+        statusSelect.value = originalStatus;
+        statusBadge.textContent = originalBadgeText;
+        statusBadge.className = originalBadgeClass;
+    })
+    .finally(() => {
+        statusSelect.disabled = false;
+    });
+  }
+
+  // Helper function to update the task in the task list
+  function updateTaskInList(taskId, newStatus, statusDisplay) {
+    // Find the task item in the list and update its status
+    const taskItems = document.querySelectorAll('.task-item');
+    taskItems.forEach(item => {
+        const viewBtn = item.querySelector('.view-task-btn');
+        if (viewBtn && viewBtn.dataset.taskId == taskId) {
+            const statusBadge = item.querySelector('.task-status');
+            if (statusBadge) {
+                statusBadge.textContent = statusDisplay;
+                // Use the newStatus parameter directly as it's already formatted correctly
+                statusBadge.className = `task-status status-${newStatus}`;
+            }
+        }
+    });
+  }
+
+  // Function to attach event listeners to dynamically created elements
+  function attachStatusChangeListener() {
+    const statusSelect = document.getElementById('statusSelect');
+    if (statusSelect) {
+        // Remove any existing event listeners by cloning the element
+        const newSelect = statusSelect.cloneNode(true);
+        statusSelect.parentNode.replaceChild(newSelect, statusSelect);
+        
+        // Add event listener to the new select element
+        newSelect.addEventListener('change', function() {
+            const newStatus = this.value;
+            const taskId = this.dataset.taskId;
+            updateTaskStatus(taskId, newStatus);
+        });
+    }
+  }
+
   // Updated JavaScript for enhanced modal
   document.addEventListener('DOMContentLoaded', function() {
+    // Task detail modal functionality
     document.querySelectorAll('.view-task-btn').forEach(button => {
       button.addEventListener('click', function() {
         const taskId = this.dataset.taskId;
         const modal = document.getElementById('taskDetailModal');
         const modalBody = modal.querySelector('.task-detail-content');
+        
+        console.log('Opening modal for task:', taskId);
         
         // Show loading state
         modalBody.innerHTML = `
@@ -920,18 +1137,12 @@
             <div style="display: inline-block; width: 40px; height: 40px; border: 3px solid var(--border-color); border-top: 3px solid var(--accent); border-radius: 50%; animation: spin 1s linear infinite;"></div>
             <p style="margin-top: 1rem; color: var(--text-secondary);">Loading task details...</p>
           </div>
-          <style>
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          </style>
         `;
         
         // Show modal
         modal.classList.add('show');
         
-        // Fetch task details via AJAX
+        // Fetch task details via AJAX - use the correct task detail URL
         fetch(`/tasks/${taskId}/`, {
           method: 'GET',
           headers: {
@@ -940,12 +1151,14 @@
           }
         })
         .then(response => {
+          console.log('Task details response status:', response.status);
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
           return response.json();
         })
         .then(data => {
+          console.log('Task details data:', data);
           if (data.status === 'success') {
             // Enhanced task details display
             modalBody.innerHTML = `
@@ -956,7 +1169,7 @@
                     <span class="task-priority priority-${data.task.priority.toLowerCase()}">
                       ${data.task.priority_display}
                     </span>
-                    <span class="task-status status-${data.task.status.toLowerCase()}">
+                    <span class="task-status status-${data.task.status.toLowerCase()}" id="taskStatusBadge">
                       ${data.task.status_display}
                     </span>
                   </div>
@@ -1028,34 +1241,57 @@
               </div>
               
               <div class="task-actions">
-                <button class="btn btn-secondary btn-small" onclick="markTaskAsComplete(${taskId})">
-                  <i class="fas fa-check"></i> Mark Complete
-                </button>
-                <button class="btn btn-secondary btn-small">
-                  <i class="fas fa-edit"></i> Edit Task
-                </button>
-                <button class="btn btn-primary btn-small" onclick="this.closest('.modal').classList.remove('show')">
+                <div class="status-switcher">
+                  <select class="status-select" id="statusSelect" data-task-id="${taskId}">
+                    <option value="PENDING" ${data.task.status === 'PENDING' ? 'selected' : ''}>Pending</option>
+                    <option value="IN_PROGRESS" ${data.task.status === 'IN_PROGRESS' ? 'selected' : ''}>In Progress</option>
+                    <option value="COMPLETED" ${data.task.status === 'COMPLETED' ? 'selected' : ''}>Completed</option>
+                    <option value="CANCELLED" ${data.task.status === 'CANCELLED' ? 'selected' : ''}>Cancelled</option>
+                    <option value="OVERDUE" ${data.task.status === 'OVERDUE' ? 'selected' : ''}>Overdue</option>
+                  </select>
+                </div>
+                <button class="btn btn-primary btn-small close-modal-btn">
                   <i class="fas fa-times"></i> Close
                 </button>
               </div>
             `;
+
+            // Attach event listener to the newly created status select
+            setTimeout(() => {
+              attachStatusChangeListener();
+            }, 100);
+
+            // Add event listener to close button
+            const closeBtn = modalBody.querySelector('.close-modal-btn');
+            if (closeBtn) {
+              closeBtn.addEventListener('click', function() {
+                modal.classList.remove('show');
+              });
+            }
+
           } else {
             modalBody.innerHTML = `
               <div style="text-align: center; padding: 3rem; color: #ef4444;">
                 <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
                 <h4 style="margin: 0 0 0.5rem 0;">Error Loading Task</h4>
                 <p style="margin: 0; color: var(--text-secondary);">${data.message}</p>
+                <button class="btn btn-primary btn-small" style="margin-top: 1rem;" onclick="this.closest('.modal').classList.remove('show')">
+                  <i class="fas fa-times"></i> Close
+                </button>
               </div>
             `;
           }
         })
         .catch(error => {
-          console.error('Error:', error);
+          console.error('Error loading task details:', error);
           modalBody.innerHTML = `
             <div style="text-align: center; padding: 3rem; color: #ef4444;">
               <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 1rem;"></i>
               <h4 style="margin: 0 0 0.5rem 0;">Network Error</h4>
               <p style="margin: 0; color: var(--text-secondary);">Unable to load task details. Please check your connection and try again.</p>
+              <button class="btn btn-primary btn-small" style="margin-top: 1rem;" onclick="this.closest('.modal').classList.remove('show')">
+                <i class="fas fa-times"></i> Close
+              </button>
             </div>
           `;
         });
@@ -1089,11 +1325,11 @@
     });
   });
 
-  // Example function for marking task as complete
-  function markTaskAsComplete(taskId) {
-    // Implement your task completion logic here
-    console.log('Marking task as complete:', taskId);
-    showToast('Task marked as complete!', 'success');
+  // Global function to close modal (for inline onclick handlers)
+  function closeModal() {
+    document.querySelectorAll('.modal.show').forEach(modal => {
+      modal.classList.remove('show');
+    });
   }
 </script>
   

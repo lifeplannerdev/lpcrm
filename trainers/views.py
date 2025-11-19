@@ -60,6 +60,61 @@ def trainer_dashboard(request):
 
 @login_required
 @require_http_methods(["POST"])
+@csrf_exempt
+def update_task_status(request, task_id):
+    try:
+        # Parse JSON data
+        data = json.loads(request.body)
+        new_status = data.get('status')
+        
+        print(f"Updating task {task_id} to status: {new_status}")  # Debug log
+        
+        # Get the task and verify the user is assigned to it
+        task = get_object_or_404(
+            Task,
+            id=task_id,
+            assigned_to=request.user
+        )
+        
+        # Validate the status
+        valid_statuses = ['pending', 'in_progress', 'completed', 'cancelled']
+        if new_status not in valid_statuses:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'Invalid status: {new_status}'
+            }, status=400)
+        
+        # Update the status
+        task.status = new_status
+        if new_status == 'completed':
+            task.mark_completed()
+        else:
+            task.completed_at = None  # Reset completed date if status changed from completed
+            task.save()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Task status updated successfully',
+            'task': {
+                'status': task.status,
+                'status_display': task.get_status_display(),
+                'completed_at': task.completed_at.strftime('%b %d, %Y %I:%M %p') if task.completed_at else None
+            }
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Invalid JSON data'
+        }, status=400)
+    except Exception as e:
+        print(f"Error updating task status: {str(e)}")  # Debug log
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=400) 
+
+@login_required
+@require_http_methods(["POST"])
 @csrf_exempt  # Only if you're having CSRF issues with AJAX
 def update_student_notes(request):
     try:
