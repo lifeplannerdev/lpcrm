@@ -129,16 +129,43 @@ def task_detail(request, task_id):
     
     # Check if user has permission to view this task
     if not (request.user == task.assigned_to or request.user == task.assigned_by or is_business_head(request.user)):
-        messages.error(request, 'You do not have permission to view this task.')
-        return redirect('tasks:my_tasks')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'error',
+                'message': 'You do not have permission to view this task.'
+            }, status=403)
+        else:
+            messages.error(request, 'You do not have permission to view this task.')
+            return redirect('tasks:my_tasks')
     
-    updates = task.updates.all().order_by('-created_at')
-    
-    context = {
-        'task': task,
-        'updates': updates,
-    }
-    return render(request, 'tasks/task_detail.html', context)
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        # Return JSON data for AJAX requests
+        return JsonResponse({
+            'status': 'success',
+            'task': {
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'status': task.status,
+                'status_display': task.get_status_display(),
+                'priority': task.priority,
+                'priority_display': task.get_priority_display(),
+                'deadline': task.deadline.strftime('%b %d, %Y %I:%M %p'),
+                'created_at': task.created_at.strftime('%b %d, %Y'),
+                'completed_at': task.completed_at.strftime('%b %d, %Y %I:%M %p') if task.completed_at else None,
+                'assigned_by': task.assigned_by.get_full_name() or task.assigned_by.username,
+                'assigned_to': task.assigned_to.get_full_name() or task.assigned_to.username,
+            }
+        })
+    else:
+        # Return HTML page for regular requests
+        updates = task.updates.all().order_by('-created_at')
+        
+        context = {
+            'task': task,
+            'updates': updates,
+        }
+        return render(request, 'tasks/task_detail.html', context)
 
 @login_required
 def all_assigned_tasks_ajax(request):

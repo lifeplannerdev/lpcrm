@@ -1,3 +1,6 @@
+from typing import Any
+
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -32,7 +35,7 @@ def trainer_dashboard(request):
     }
     
     # Calculate stats for the dashboard
-    total_students = students.count()
+    total_students: Any = students.count()
     active_students = students.filter(status='ACTIVE').count()
     paused_students = students.filter(status='PAUSED').count()
     completed_students = students.filter(status='COMPLETED').count()
