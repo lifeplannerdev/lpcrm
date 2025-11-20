@@ -118,3 +118,32 @@ class Student(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.get_batch_display()})"
+
+
+
+class Attendance(models.Model):
+    STATUS_CHOICES = [
+        ('PRESENT', 'Present'),
+        ('ABSENT', 'Absent'),
+        ('NO_SESSION', 'No Session'),
+    ]
+    
+    date = models.DateField()
+    trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE, related_name='attendance_records')
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendance_records')
+    status = models.CharField(
+        max_length=15,
+        choices=STATUS_CHOICES,
+        default='PRESENT'
+    )
+    marked_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['date', 'student']
+        ordering = ['-date', 'student__name']
+        indexes = [
+            models.Index(fields=['date', 'trainer']),
+        ]
+    
+    def __str__(self):
+        return f"{self.student.name} - {self.date} - {self.status}"        

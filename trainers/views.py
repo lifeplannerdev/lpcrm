@@ -13,6 +13,11 @@ import json
 from .models import Trainer, Student
 from .forms import StudentForm
 from tasks.models import Task
+from django.utils import timezone
+from .models import Attendance
+from .forms import AttendanceForm
+from datetime import date, timedelta
+
 
 @login_required
 def trainer_dashboard(request):
@@ -345,3 +350,166 @@ class StudentListView(LoginRequiredMixin, ListView):
             'completed_count': queryset.filter(status='COMPLETED').count()
         })
         return context
+
+
+@login_required
+def attendance_view(request):
+    if request.user.role != 'TRAINER':
+        return redirect('accounts:landing')
+    
+    trainer = Trainer.objects.get(user=request.user)
+    students = trainer.students.filter(status='ACTIVE').order_by('batch', 'name')
+    today = timezone.now().date()
+    
+    # Get attendance history (last 30 days)
+    thirty_days_ago = today - timedelta(days=30)
+    attendance_dates = Attendance.objects.filter(
+        trainer=trainer,
+        date__gte=thirty_days_ago
+    ).values('date').distinct().order_by('-date')
+    
+    # Prepare initial data for today's attendance
+    initial_data = {}
+    for student in students:
+        field_name = f'student_{student.id}'
+        try:
+            # Get existing attendance for today
+            existing_attendance = Attendance.objects.get(
+                date=today,
+                trainer=trainer,
+                student=student
+            )
+            initial_data[field_name] = existing_attendance.status
+        except Attendance.DoesNotExist:
+            initial_data[field_name] = 'PRESENT'  # Default to present
+    
+    if request.method == 'POST':
+        # Process attendance form
+        attendance_date = request.POST.get('attendance_date', today)
+        
+        try:
+            if isinstance(attendance_date, str):
+                attendance_date = date.fromisoformat(attendance_date)
+        except ValueError:
+            attendance_date = today
+        
+        attendance_count = 0
+        for student in students:
+            status_key = f'student_{student.id}'
+            status = request.POST.get(status_key)
+            
+            if status in ['PRESENT', 'ABSENT', 'NO_SESSION']:
+                Attendance.objects.update_or_create(
+                    date=attendance_date,
+                    trainer=trainer,
+                    student=student,
+                    defaults={'status': status}
+                )
+                attendance_count += 1
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'status': 'success',
+                'message': f'Attendance marked for {attendance_count} students!'
+            })
+        else:
+            messages.success(request, f'Attendance marked for {attendance_count} students!')
+            return redirect('trainers:attendance')
+    
+    return render(request, 'trainers/attendance.html', {
+        'trainer': trainer,
+        'students': students,
+        'today': today,
+        'initial_data': initial_data,  # Pass initial data directly
+        'attendance_dates': attendance_dates
+    })
+
+    
+@login_required
+def get_attendance_detail(request):
+    """AJAX view to get attendance details for modal"""
+    if request.user.role != 'TRAINER':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    date_str = request.GET.get('date')
+    if not date_str:
+        return JsonResponse({'error': 'Date parameter required'}, status=400)
+    
+    try:
+        target_date = date.fromisoformat(date_str)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid date format'}, status=400)
+    
+    trainer = Trainer.objects.get(user=request.user)
+    
+    # Get attendance records for the specific date
+    attendance_records = Attendance.objects.filter(
+        trainer=trainer,
+        date=target_date
+    ).select_related('student').order_by('student__batch', 'student__name')
+    
+    # Count statistics
+    present_count = attendance_records.filter(status='PRESENT').count()
+    absent_count = attendance_records.filter(status='ABSENT').count()
+    no_session_count = attendance_records.filter(status='NO_SESSION').count()
+    total_count = present_count + absent_count + no_session_count
+    
+    # Prepare data for JSON response
+    attendance_data = []
+    for record in attendance_records:
+        attendance_data.append({
+            'student_name': record.student.name,
+            'batch': record.student.get_batch_display(),
+            'status': record.status,
+            'status_display': record.get_status_display(),
+            'marked_at': record.marked_at.strftime('%I:%M %p') if record.marked_at else 'N/A'
+        })
+    
+    return JsonResponse({
+        'date': target_date.strftime('%B %d, %Y'),
+        'attendance_data': attendance_data,
+        'stats': {
+            'present': present_count,
+            'absent': absent_count,
+            'no_session': no_session_count,
+            'total': total_count
+        }
+    })
+
+@login_required
+def quick_mark_attendance(request):
+    """Quick mark all students as present/absent/no_session"""
+    if request.user.role != 'TRAINER':
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+    
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        status = data.get('status')
+        attendance_date = data.get('date')
+        
+        if status not in ['PRESENT', 'ABSENT', 'NO_SESSION']:
+            return JsonResponse({'error': 'Invalid status'}, status=400)
+        
+        try:
+            if isinstance(attendance_date, str):
+                attendance_date = date.fromisoformat(attendance_date)
+        except ValueError:
+            attendance_date = timezone.now().date()
+        
+        trainer = Trainer.objects.get(user=request.user)
+        students = trainer.students.filter(status='ACTIVE')
+        
+        attendance_count = 0
+        for student in students:
+            Attendance.objects.update_or_create(
+                date=attendance_date,
+                trainer=trainer,
+                student=student,
+                defaults={'status': status}
+            )
+            attendance_count += 1
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Marked all {attendance_count} students as {status.lower().replace("_", " ")}'
+        })        
