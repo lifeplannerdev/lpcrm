@@ -25,7 +25,7 @@ from datetime import date, timedelta
 @login_required
 def trainer_dashboard(request):
     # Check if user has trainer role
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'ADMIN':
         return redirect('accounts:landing')
     
     Task.update_overdue_tasks()
@@ -125,17 +125,25 @@ def update_task_status(request, task_id):
 @require_http_methods(["POST"])
 @csrf_exempt  # Only if you're having CSRF issues with AJAX
 def update_student_notes(request):
+    # Check if user has trainer or admin role
+    if request.user.role != 'TRAINER' and request.user.role != 'ADMIN':
+        return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
+    
     try:
         data = json.loads(request.body)
         student_id = data.get('student_id')
         notes = data.get('notes', '')
         
-        # Verify the student belongs to the requesting trainer
-        student = get_object_or_404(
-            Student,
-            id=student_id,
-            trainer__user=request.user
-        )
+        # For admin users, allow access to any student
+        if request.user.role == 'ADMIN':
+            student = get_object_or_404(Student, id=student_id)
+        else:
+            # Verify the student belongs to the requesting trainer
+            student = get_object_or_404(
+                Student,
+                id=student_id,
+                trainer__user=request.user
+            )
         
         student.notes = notes
         student.save()
@@ -154,7 +162,7 @@ def update_student_notes(request):
 @login_required
 @require_http_methods(["POST"])
 def add_student(request):
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'ADMIN':
         return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
     
     try:
@@ -196,16 +204,20 @@ def add_student(request):
 @login_required
 @require_http_methods(["POST"])
 def edit_student(request, student_id):
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'ADMIN':
         return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
     
     try:
-        # Verify the student belongs to the requesting trainer
-        student = get_object_or_404(
-            Student,
-            id=student_id,
-            trainer__user=request.user
-        )
+        # For admin users, allow access to any student
+        if request.user.role == 'ADMIN':
+            student = get_object_or_404(Student, id=student_id)
+        else:
+            # Verify the student belongs to the requesting trainer
+            student = get_object_or_404(
+                Student,
+                id=student_id,
+                trainer__user=request.user
+            )
         
         form = StudentForm(request.POST, instance=student)
         
@@ -242,19 +254,23 @@ def edit_student(request, student_id):
 @login_required
 @require_http_methods(["POST"])
 def delete_student(request):
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'ADMIN':
         return JsonResponse({'status': 'error', 'message': 'Unauthorized'}, status=403)
     
     try:
         data = json.loads(request.body)
         student_id = data.get('student_id')
         
-        # Verify the student belongs to the requesting trainer
-        student = get_object_or_404(
-            Student,
-            id=student_id,
-            trainer__user=request.user
-        )
+        # For admin users, allow access to any student
+        if request.user.role == 'ADMIN':
+            student = get_object_or_404(Student, id=student_id)
+        else:
+            # Verify the student belongs to the requesting trainer
+            student = get_object_or_404(
+                Student,
+                id=student_id,
+                trainer__user=request.user
+            )
         
         # Store student name for response message before deletion
         student_name = student.name
@@ -275,16 +291,20 @@ def delete_student(request):
 @login_required
 @require_http_methods(["GET", "POST"])
 def delete_student2(request, student_id):
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'ADMIN':
         messages.error(request, 'Unauthorized')
         return redirect('trainers:student_list')
     
-    # Verify the student belongs to the requesting trainer
-    student = get_object_or_404(
-        Student,
-        id=student_id,
-        trainer__user=request.user
-    )
+    # For admin users, allow access to any student
+    if request.user.role == 'ADMIN':
+        student = get_object_or_404(Student, id=student_id)
+    else:
+        # Verify the student belongs to the requesting trainer
+        student = get_object_or_404(
+            Student,
+            id=student_id,
+            trainer__user=request.user
+        )
     
     if request.method == 'POST':
         try:
@@ -307,8 +327,8 @@ def delete_student2(request, student_id):
 @login_required
 @require_http_methods(["GET"])
 def student_details(request, student_id):
-    # Check if user has trainer role
-    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD':
+    # Check if user has trainer, business head, or admin role
+    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD' and request.user.role != 'ADMIN':
         return redirect('accounts:landing')
     
     # Get or create trainer profile (only for trainers)
@@ -317,8 +337,8 @@ def student_details(request, student_id):
     else:
         trainer = None
     
-    # For HOB users, allow access to any student
-    if request.user.role == 'BUSINESS_HEAD':
+    # For HOB and ADMIN users, allow access to any student
+    if request.user.role == 'BUSINESS_HEAD' or request.user.role == 'ADMIN':
         student = get_object_or_404(Student, id=student_id)
     else:
         # For trainers, verify the student belongs to the requesting trainer
@@ -342,8 +362,8 @@ def student_details(request, student_id):
 @login_required
 @require_http_methods(["GET"])
 def attendance_records(request, student_id):
-    # Check if user has trainer role
-    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD':
+    # Check if user has trainer, business head, or admin role
+    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD' and request.user.role != 'ADMIN':
         return redirect('accounts:landing')
     
     # Get or create trainer profile (only for trainers)
@@ -352,8 +372,8 @@ def attendance_records(request, student_id):
     else:
         trainer = None
     
-    # For HOB users, allow access to any student
-    if request.user.role == 'BUSINESS_HEAD':
+    # For HOB and ADMIN users, allow access to any student
+    if request.user.role == 'BUSINESS_HEAD' or request.user.role == 'ADMIN':
         student = get_object_or_404(Student, id=student_id)
     else:
         # For trainers, verify the student belongs to the requesting trainer
@@ -377,8 +397,8 @@ def attendance_records(request, student_id):
 
 @login_required
 def export_student_attendance(request, student_id):
-    # Check if user has trainer role
-    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD':
+    # Check if user has trainer, business head, or admin role
+    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD' and request.user.role != 'ADMIN':
         return redirect('accounts:landing')
     
     # Get or create trainer profile (only for trainers)
@@ -387,8 +407,8 @@ def export_student_attendance(request, student_id):
     else:
         trainer = None
     
-    # For HOB users, allow access to any student
-    if request.user.role == 'BUSINESS_HEAD':
+    # For HOB and ADMIN users, allow access to any student
+    if request.user.role == 'BUSINESS_HEAD' or request.user.role == 'ADMIN':
         student = get_object_or_404(Student, id=student_id)
     else:
         # For trainers, verify the student belongs to the requesting trainer
@@ -450,14 +470,14 @@ class StudentListView(LoginRequiredMixin, ListView):
     context_object_name = 'students'
     
     def dispatch(self, request, *args, **kwargs):
-        # Check if user has trainer or business head role
-        if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD':
+        # Check if user has trainer, business head, or admin role
+        if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD' and request.user.role != 'ADMIN':
             return redirect('accounts:landing')
         return super().dispatch(request, *args, **kwargs)
     
     def get_queryset(self):
-        # For HOB users, show all students
-        if self.request.user.role == 'BUSINESS_HEAD':
+        # For HOB and ADMIN users, show all students
+        if self.request.user.role == 'BUSINESS_HEAD' or self.request.user.role == 'ADMIN':
             return Student.objects.all().order_by('-admission_date', 'batch', 'name')
         else:
             # For trainers, show only their students
@@ -479,13 +499,13 @@ class StudentListView(LoginRequiredMixin, ListView):
 
 @login_required
 def attendance_view(request):
-    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD':
+    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD' and request.user.role != 'ADMIN':
         return redirect('accounts:landing')
     
-    # For HOB users, we might want to show all students or handle differently
-    if request.user.role == 'BUSINESS_HEAD':
-        # HOB can view attendance but might not have a trainer profile
-        # For now, we'll redirect HOB to student list or show a message
+    # For HOB and ADMIN users, we might want to show all students or handle differently
+    if request.user.role == 'BUSINESS_HEAD' or request.user.role == 'ADMIN':
+        # HOB and ADMIN can view attendance but might not have a trainer profile
+        # For now, we'll redirect HOB/ADMIN to student list or show a message
         messages.info(request, 'Attendance marking is only available for trainers.')
         return redirect('trainers:student_list')
     
@@ -560,7 +580,7 @@ def attendance_view(request):
 @login_required
 def get_attendance_detail(request):
     """AJAX view to get attendance details for modal"""
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'ADMIN':
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     
     date_str = request.GET.get('date')
@@ -611,7 +631,7 @@ def get_attendance_detail(request):
 @login_required
 def quick_mark_attendance(request):
     """Quick mark all students as present/absent/no_session"""
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'ADMIN':
         return JsonResponse({'error': 'Unauthorized'}, status=403)
     
     if request.method == 'POST':

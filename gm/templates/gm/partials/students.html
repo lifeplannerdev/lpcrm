@@ -1,0 +1,672 @@
+<div class="table-container">
+    <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span id="visibleStudentCount" style="font-size: 1.0rem;color: white;font-weight: 600;">&nbsp;</span>
+        </div>
+        
+        <!-- Search and Filters -->
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <!-- Search Bar -->
+            <div style="position: relative;">
+                <input type="text" id="studentNameSearch" oninput="filterStudents()" placeholder="Search by name..." 
+                       style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem 2.5rem 0.5rem 2.5rem; font-size: 0.9rem; min-width: 200px;">
+                <i class="fas fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.9rem;"></i>
+                <button type="button" onclick="clearStudentSearch()" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.25rem; border-radius: 4px; display: none;" id="clearStudentSearchBtn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Batch Filter -->
+            <select id="batchFilter" onchange="filterStudents()" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; font-size: 0.9rem;">
+                <option value="">All Batches</option>
+                <option value="A1">A1</option>
+                <option value="A2">A2</option>
+                <option value="B1">B1</option>
+                <option value="B2">B2</option>
+                <option value="A1 ONLINE">A1 ONLINE</option>
+                <option value="A2 ONLINE">A2 ONLINE</option>
+                <option value="B1 ONLINE">B1 ONLINE</option>
+                <option value="B2 ONLINE">B2 ONLINE</option>
+                <option value="A1 EXAM PREPERATION">A1 EXAM PREPERATION</option>
+                <option value="A2 EXAM PREPERATION">A2 EXAM PREPERATION</option>
+                <option value="B1 EXAM PREPERATION">B1 EXAM PREPERATION</option>
+                <option value="B2 EXAM PREPERATION">B2 EXAM PREPERATION</option>
+            </select>
+            
+            <!-- Trainer Filter -->
+            <select id="trainerFilter" onchange="filterStudents()" style="background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.5rem; font-size: 0.9rem;">
+                <option value="">All Trainers</option>
+                <option value="unassigned">Unassigned</option>
+                {% for trainer in trainers %}
+                    <option value="{{ trainer.id }}">{{ trainer.user.get_full_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+    <div class="table-scroll-vert">
+        <table class="bc-table bc-table-striped" id="studentsTable">
+            <thead>
+                <tr>
+                    <th style="width: 60px">#</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Batch</th>
+                    <th>Trainer</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="studentsTableBody">
+                {% for student in students %}
+                <tr class="student-row" 
+                    data-name="{{ student.name|lower }}"
+                    data-batch="{{ student.batch }}"
+                    data-trainer="{{ student.trainer.id|default:'' }}">
+                    <td style="text-align: center; font-weight: 600; color: var(--text-secondary);">{{ forloop.counter }}</td>
+                    <td>
+                        <span style="font-weight: 500;">{{ student.name }}</span>
+                    </td>
+                    <td>{{ student.phone_number|default:"-" }}</td>
+                    <td>
+                        <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; background: rgba(99, 102, 241, 0.2); color: #93c5fd;">
+                            {{ student.get_batch_display }}
+                        </span>
+                    </td>
+                    
+                    <!-- Trainer Assignment Column -->
+                    <td>
+                        <select class="editable-select assign-select gm-student-assignment" 
+                                data-student-id="{{ student.id }}"
+                                data-field="trainer">
+                            <option value="">Unassigned</option>
+                            {% for trainer in all_trainers %}
+                                <option value="{{ trainer.id }}" 
+                                        {% if student.trainer == trainer %}selected{% endif %}>
+                                    {{ trainer.user.get_full_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                    
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <!-- View Button -->
+                            <a href="{% url 'trainers:student_details' student.id %}" 
+                               class="btn-icon view-btn" 
+                               title="View Student Details"
+                               style="background: transparent; border: 1px solid var(--border-color); border-radius: 6px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); transition: all 0.2s ease; box-shadow: var(--shadow-vercel);">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            
+                            <!-- Delete Button -->
+                            <button class="btn-icon delete-btn" 
+                                    data-student-id="{{ student.id }}"
+                                    title="Delete Student"
+                                    style="background: transparent; border: 1px solid var(--border-color); border-radius: 6px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); transition: all 0.2s ease; box-shadow: var(--shadow-vercel);">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr id="noStudentsRow">
+                    <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                        No students found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Get CSRF token helper
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+// Filter students based on search and filters
+function filterStudents() {
+    const nameFilter = document.getElementById('studentNameSearch').value.toLowerCase();
+    const batchFilter = document.getElementById('batchFilter').value;
+    const trainerFilter = document.getElementById('trainerFilter').value;
+
+    const tableBody = document.getElementById('studentsTableBody');
+    const rows = tableBody.querySelectorAll('.student-row');
+    const noStudentsRow = document.getElementById('noStudentsRow');
+    let visibleCount = 0;
+
+    // Show/hide clear search button
+    const clearSearchBtn = document.getElementById('clearStudentSearchBtn');
+    if (clearSearchBtn) {
+        clearSearchBtn.style.display = nameFilter ? 'block' : 'none';
+    }
+
+    // First, hide the "no students" row if it exists
+    if (noStudentsRow) {
+        noStudentsRow.style.display = 'none';
+    }
+
+    // Filter each row and update serial numbers
+    rows.forEach((row, index) => {
+        const name = row.dataset.name || '';
+        const batch = row.dataset.batch || '';
+        const trainer = row.dataset.trainer || '';
+
+        const nameMatch = !nameFilter || name.includes(nameFilter);
+        const batchMatch = !batchFilter || batch === batchFilter;
+        
+        // Handle trainer filter including 'unassigned' option
+        let trainerMatch = true;
+        if (trainerFilter) {
+            if (trainerFilter === 'unassigned') {
+                trainerMatch = trainer === '';
+            } else {
+                trainerMatch = trainer === trainerFilter;
+            }
+        }
+
+        if (nameMatch && batchMatch && trainerMatch) {
+            row.style.display = '';
+            // Update the serial number for visible rows
+            const serialCell = row.querySelector('td:first-child');
+            if (serialCell) {
+                serialCell.textContent = visibleCount + 1;
+            }
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Update visible count
+    const totalCount = rows.length;
+    const countEl = document.getElementById('visibleStudentCount');
+    if (countEl) {
+        if (visibleCount === totalCount) {
+            countEl.textContent = `(${totalCount} students)`;
+        } else {
+            countEl.textContent = `(Showing ${visibleCount} of ${totalCount})`;
+        }
+    }
+
+    // Show appropriate message based on results
+    if (visibleCount === 0) {
+        // Check if we have any students at all
+        if (totalCount === 0) {
+            // No students in the system
+            if (noStudentsRow) {
+                noStudentsRow.style.display = '';
+            }
+        } else {
+            // Students exist but none match filters
+            let noResultsRow = tableBody.querySelector('.no-results-message');
+            if (!noResultsRow) {
+                noResultsRow = document.createElement('tr');
+                noResultsRow.className = 'no-results-message';
+                noResultsRow.innerHTML = '<td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">No students match the selected filters</td>';
+                tableBody.appendChild(noResultsRow);
+            }
+            noResultsRow.style.display = '';
+        }
+    } else {
+        // Remove no results message if it exists
+        const noResultsRow = tableBody.querySelector('.no-results-message');
+        if (noResultsRow) {
+            noResultsRow.style.display = 'none';
+        }
+    }
+}
+
+function clearStudentSearch() {
+    document.getElementById('studentNameSearch').value = '';
+    filterStudents();
+}
+
+// Reset student filters
+function resetStudentFilters() {
+    document.getElementById('studentNameSearch').value = '';
+    document.getElementById('batchFilter').value = '';
+    document.getElementById('trainerFilter').value = '';
+    filterStudents();
+}
+
+// GM Student Assignment functionality
+function initializeGMStudentAssignment() {
+    // Handle all field updates (trainer assignment, etc.)
+    document.querySelectorAll('.gm-student-assignment').forEach(element => {
+        if (element.tagName === 'SELECT') {
+            // Store initial value
+            element.dataset.previousValue = element.value;
+            
+            element.addEventListener('change', function() {
+                console.log('[GM] select changed', {
+                    studentId: this.dataset.studentId,
+                    field: this.dataset.field,
+                    value: this.value
+                });
+                handleGMStudentFieldUpdate(this);
+            });
+        }
+    });
+}
+
+// Generic function to handle student field updates
+function handleGMStudentFieldUpdate(selectElement) {
+    const studentId = selectElement.dataset.studentId;
+    const field = selectElement.dataset.field;
+    const value = selectElement.value;
+    console.log('[GM] handleGMStudentFieldUpdate', { studentId, field, value });
+    
+    updateGMStudentField(studentId, field, value)
+        .then((response) => {
+            console.log('[GM] updateGMStudentField success', response);
+            console.log(`${field} updated successfully`);
+            
+            // Update the data attributes for search functionality
+            const row = selectElement.closest('tr');
+            updateGMStudentRowSearchData(row, field, value);
+            
+            // Update stored value
+            selectElement.dataset.previousValue = value;
+            
+            // Show success message
+            let fieldName = field.replace('_', ' ');
+            fieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+            showGMToast(`${fieldName} updated successfully`, 'success');
+        })
+        .catch((error) => {
+            console.error(`[GM] Error updating ${field}:`, error?.response?.data || error);
+            // Show error message
+            if (error.response && error.response.data && error.response.data.message) {
+                showGMToast(error.response.data.message, 'error');
+            } else {
+                showGMToast(`Failed to update ${field}`, 'error');
+            }
+            // Revert to previous value
+            selectElement.value = selectElement.dataset.previousValue;
+        });
+}
+
+// AJAX function to update student fields - GM specific
+function updateGMStudentField(studentId, field, value) {
+    return new Promise((resolve, reject) => {
+        console.log('[GM] POST -> gm_assign_student', { studentId, field, value });
+        fetch('{% url "gm:gm_assign_student" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                student_id: studentId,
+                field: field,
+                value: value
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                console.log('[GM] assign response', data);
+                resolve(data);
+            } else {
+                throw new Error(data.message || 'Unknown error');
+            }
+        })
+        .catch(error => {
+            console.error('[GM] assign error', error);
+            reject(error);
+        });
+    });
+}
+
+// Update row search data when fields change
+function updateGMStudentRowSearchData(row, field, value) {
+    if (field === 'trainer') {
+        if (value === '') {
+            row.dataset.trainer = '';
+        } else {
+            row.dataset.trainer = value;
+        }
+    }
+    
+    // Re-run search if there's an active filter
+    filterStudents();
+}
+
+// Toast notification for GM
+function showGMToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${type}`;
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        color: white;
+        font-weight: 500;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+    `;
+    
+    if (type === 'success') {
+        toast.style.background = 'linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(16, 185, 129, 0.8) 100%)';
+    } else if (type === 'error') {
+        toast.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%)';
+    }
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Handle delete student
+document.addEventListener('click', function(e) {
+    if (e.target.closest('.delete-btn')) {
+        const button = e.target.closest('.delete-btn');
+        const studentId = button.dataset.studentId;
+        const studentName = button.closest('tr').querySelector('td:nth-child(2)').textContent.trim();
+        
+        if (confirm(`Are you sure you want to delete ${studentName}? This action cannot be undone.`)) {
+            fetch('{% url "gm:gm_delete_student" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    student_id: studentId
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.status === 'success') {
+                    // Remove the row from the table
+                    button.closest('tr').remove();
+                    showGMToast(data.message, 'success');
+                    // Update the filter count
+                    filterStudents();
+                } else {
+                    showGMToast(data.message || 'Failed to delete student', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting student:', error);
+                showGMToast('Failed to delete student', 'error');
+            });
+        }
+    }
+});
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    filterStudents();
+    initializeGMStudentAssignment();
+    
+    // Add better event listeners with debouncing
+    let filterTimeout;
+    function debouncedFilter() {
+        clearTimeout(filterTimeout);
+        filterTimeout = setTimeout(filterStudents, 150);
+    }
+    
+    document.getElementById('studentNameSearch').addEventListener('input', debouncedFilter);
+});
+</script>
+
+<style>
+/* Search bar styles */
+#studentNameSearch {
+    transition: all 0.2s ease;
+}
+
+#studentNameSearch:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+#clearStudentSearchBtn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* Students table layout improvements */
+.table-scroll-vert {
+    max-height: 65vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    width: 100%;
+    padding-right: 8px; /* prevent scrollbar overlay */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.table-scroll-vert::-webkit-scrollbar {
+    width: 6px;
+}
+.table-scroll-vert::-webkit-scrollbar-track {
+    background: transparent;
+}
+.table-scroll-vert::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+/* Sticky header for better readability */
+.bc-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Column sizing and text behavior */
+.bc-table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Updated Column width definitions */
+.bc-table th:first-child, 
+.bc-table td:first-child { 
+    width: 60px; 
+    text-align: center; 
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.bc-table th:nth-child(2), 
+.bc-table td:nth-child(2) { 
+    width: 25%; 
+}
+
+.bc-table th:nth-child(3), 
+.bc-table td:nth-child(3) { 
+    width: 15%; 
+}
+
+.bc-table th:nth-child(4), 
+.bc-table td:nth-child(4) { 
+    width: 20%; 
+}
+
+.bc-table th:nth-child(5), 
+.bc-table td:nth-child(5) { 
+    width: 25%; 
+}
+
+.bc-table th:nth-child(6), 
+.bc-table td:nth-child(6) { 
+    width: 15%; 
+    text-align: center;
+}
+
+.bc-table th,
+.bc-table td {
+    padding: 0.85rem 0.75rem;
+    vertical-align: middle;
+    border: none;
+}
+
+.bc-table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: transparent;
+}
+
+/* Ensure proper text alignment */
+.bc-table th {
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bc-table th:first-child {
+    text-align: center;
+}
+
+/* Badge refinements */
+.bc-table td span[style*="background: rgba(99, 102, 241"] {
+    display: inline-block;
+    border: 1px solid rgba(99,102,241,0.35);
+    min-width: 70px;
+    text-align: center;
+}
+
+/* Row hover and striping */
+.bc-table-striped tbody tr:nth-child(odd) {
+    background: rgba(255,255,255,0.01);
+}
+
+.bc-table tbody tr:hover td {
+    background: rgba(255,255,255,0.03) !important;
+}
+
+/* Ensure proper alignment for serial numbers */
+.bc-table td:first-child {
+    background: rgba(255, 255, 255, 0.02);
+    border-right: 1px solid var(--border-color);
+}
+
+/* GM Assignment Styles */
+.gm-student-assignment {
+    transition: all 0.2s ease;
+}
+
+.gm-student-assignment:focus {
+    outline: 2px solid var(--accent);
+    border-color: var(--accent);
+}
+
+.editable-select {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.35rem 1.5rem 0.35rem 0.7rem;
+    font-size: 0.9rem;
+    appearance: none;
+    cursor: pointer;
+    transition: all 0.18s;
+    width: 100%;
+    max-width: 180px;
+}
+
+/* Button hover effects */
+.btn-icon:hover {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-hover) !important;
+    transform: translateY(-1px);
+}
+
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #ef4444 !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+.view-btn:hover {
+    background: rgba(59, 130, 246, 0.1) !important;
+    color: #3b82f6 !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Toast animations */
+@keyframes slideIn {
+    from { 
+        transform: translateX(100%) scale(0.95); 
+        opacity: 0; 
+    }
+    to { 
+        transform: translateX(0) scale(1); 
+        opacity: 1; 
+    }
+}
+
+@keyframes slideOut {
+    from { 
+        transform: translateX(0) scale(1); 
+        opacity: 1; 
+    }
+    to { 
+        transform: translateX(100%) scale(0.95); 
+        opacity: 0; 
+    }
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    /* Hide some columns on medium screens */
+    .bc-table th:nth-child(6), 
+    .bc-table td:nth-child(6) { 
+        display: none; 
+    }
+    
+    /* Redistribute widths for remaining columns */
+    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 30%; }
+    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 20%; }
+    .bc-table th:nth-child(4), .bc-table td:nth-child(4) { width: 25%; }
+    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 25%; }
+}
+
+@media (max-width: 768px) {
+    /* Hide more columns on small screens */
+    .bc-table th:nth-child(4), 
+    .bc-table td:nth-child(4),
+    .bc-table th:nth-child(6), 
+    .bc-table td:nth-child(6) { 
+        display: none; 
+    }
+    
+    /* Further adjust remaining columns */
+    .bc-table th:nth-child(2), .bc-table td:nth-child(2) { width: 40%; }
+    .bc-table th:nth-child(3), .bc-table td:nth-child(3) { width: 30%; }
+    .bc-table th:nth-child(5), .bc-table td:nth-child(5) { width: 30%; }
+}
+</style>
