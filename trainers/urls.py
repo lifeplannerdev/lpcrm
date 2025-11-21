@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import trainer_dashboard, StudentListView, update_student_notes, add_student, edit_student, delete_student, delete_student2, student_details, attendance_view, get_attendance_detail, quick_mark_attendance
+from .views import trainer_dashboard, StudentListView, update_student_notes, add_student, edit_student, delete_student, delete_student2, student_details, attendance_view, get_attendance_detail, quick_mark_attendance, attendance_records,export_student_attendance
 
 
 app_name = 'trainers'
@@ -16,4 +16,6 @@ urlpatterns = [
     path('attendance/', attendance_view, name='attendance'),
     path('attendance/detail/', get_attendance_detail, name='attendance_detail'),
     path('attendance/quick-mark/', quick_mark_attendance, name='quick_mark_attendance'),
+    path('student/<int:student_id>/attendance-records/',attendance_records, name='attendance_records'),
+    path('student/<int:student_id>/export-attendance/',export_student_attendance, name='export_student_attendance'),
 ]

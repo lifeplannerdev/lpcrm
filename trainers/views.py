@@ -10,6 +10,9 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 import json
+import pandas as pd
+from django.http import HttpResponse
+from django.utils import timezone
 from .models import Trainer, Student
 from .forms import StudentForm
 from tasks.models import Task
@@ -321,13 +324,104 @@ def student_details(request, student_id):
     # Get attendance records for this specific student
     attendance_records = Attendance.objects.filter(
         student=student
-    ).order_by('-date', '-marked_at')
+    ).order_by('-date', '-marked_at')[:14]
     
     return render(request, 'trainers/student_details.html', {
         'student': student,
         'trainer': trainer,
         'attendance_records': attendance_records  
     })
+
+@login_required
+@require_http_methods(["GET"])
+def attendance_records(request, student_id):
+    # Check if user has trainer role
+    if request.user.role != 'TRAINER':
+        return redirect('accounts:landing')
+    
+    # Get or create trainer profile
+    trainer, created = Trainer.objects.get_or_create(user=request.user)
+    
+    # Verify the student belongs to the requesting trainer
+    student = get_object_or_404(
+        Student,
+        id=student_id,
+        trainer=trainer
+    )
+    
+    # Get ALL attendance records for this specific student
+    attendance_records = Attendance.objects.filter(
+        student=student
+    ).order_by('-date', '-marked_at')
+    
+    return render(request, 'trainers/attendance_records.html', {
+        'student': student,
+        'trainer': trainer,
+        'attendance_records': attendance_records  
+    })    
+
+
+@login_required
+def export_student_attendance(request, student_id):
+    # Check if user has trainer role
+    if request.user.role != 'TRAINER':
+        return redirect('accounts:landing')
+    
+    # Get or create trainer profile
+    trainer, created = Trainer.objects.get_or_create(user=request.user)
+    
+    # Verify the student belongs to the requesting trainer
+    student = get_object_or_404(
+        Student,
+        id=student_id,
+        trainer=trainer
+    )
+    
+    # Get ALL attendance records for this specific student
+    attendance_records = Attendance.objects.filter(
+        student=student
+    ).order_by('-date', '-marked_at')
+    
+    # Prepare data for Excel
+    data = []
+    for record in attendance_records:
+        data.append({
+            'Date': record.date.strftime('%Y-%m-%d'),
+            'Day': record.date.strftime('%A'),
+            'Status': record.get_status_display(),
+            'Marked At': record.marked_at.strftime('%Y-%m-%d %H:%M:%S') if record.marked_at else 'Not Recorded',
+            'Marked Time': record.marked_at.strftime('%I:%M %p') if record.marked_at else 'Not Recorded'
+        })
+    
+    # Create DataFrame
+    df = pd.DataFrame(data)
+    
+    # Create HttpResponse with Excel MIME type
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    
+    # Create filename with student name and current date
+    filename = f"attendance_{student.name.replace(' ', '_')}_{timezone.now().strftime('%Y%m%d')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Write DataFrame to Excel
+    with pd.ExcelWriter(response, engine='openpyxl') as writer:
+        df.to_excel(writer, sheet_name='Attendance Records', index=False)
+        
+        # Get the worksheet and auto-adjust column widths
+        worksheet = writer.sheets['Attendance Records']
+        for column in worksheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+    
+    return response    
 
 class StudentListView(LoginRequiredMixin, ListView):
     model = Student

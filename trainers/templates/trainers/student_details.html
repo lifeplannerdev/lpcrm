@@ -713,11 +713,17 @@
 
 <!-- Attendance Records Card -->
 <div class="card">
-  <div class="card-header">
+  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
     <h2 class="card-title">
       <i class="fas fa-calendar-check"></i>
       Attendance Records 
+      <span style="font-size: 0.8rem; color: var(--text-secondary); margin-left: 0.5rem;">
+        (Latest {{ attendance_records|length }})
+      </span>
     </h2>
+    <a href="{% url 'trainers:attendance_records' student.id %}" class="btn btn-secondary" style="text-decoration: none;">
+      <i class="fas fa-list"></i> View All
+    </a>
   </div>
   <div class="card-body">
     <!-- Attendance Table -->
