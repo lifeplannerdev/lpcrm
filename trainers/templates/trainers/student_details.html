@@ -392,7 +392,7 @@
       border: 1px solid rgba(239, 68, 68, 0.2);
     }
     
-    .late {
+    .no-session {
       background: rgba(245, 158, 11, 0.1);
       color: #f59e0b;
       border: 1px solid rgba(245, 158, 11, 0.2);
@@ -712,80 +712,51 @@
       </div>
 
       <!-- Attendance Records Card -->
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">
-            <i class="fas fa-calendar-check"></i>
-            Attendance Records
-          </h2>
-        </div>
-        <div class="card-body">
-          <!-- Attendance Statistics -->
-          <div class="attendance-stats">
-            <div class="stat-card">
-              <div class="stat-value">85%</div>
-              <div class="stat-label">Overall</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">24</div>
-              <div class="stat-label">Present</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-value">4</div>
-              <div class="stat-label">Absent</div>
-            </div>
-          </div>
-
-          <!-- Attendance Table -->
-          <div style="max-height: 400px; overflow-y: auto;">
-            <table class="attendance-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th>Class</th>
-                  <th>Notes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Sample attendance data - replace with actual data -->
-                <tr>
-                  <td>Nov 15, 2023</td>
-                  <td><span class="attendance-badge present">Present</span></td>
-                  <td>Grammar & Speaking</td>
-                  <td>-</td>
-                </tr>
-                <tr>
-                  <td>Nov 14, 2023</td>
-                  <td><span class="attendance-badge present">Present</span></td>
-                  <td>Reading Practice</td>
-                  <td>Active participation</td>
-                </tr>
-                <tr>
-                  <td>Nov 12, 2023</td>
-                  <td><span class="attendance-badge late">Late</span></td>
-                  <td>Writing Workshop</td>
-                  <td>15 minutes late</td>
-                </tr>
-                <tr>
-                  <td>Nov 10, 2023</td>
-                  <td><span class="attendance-badge absent">Absent</span></td>
-                  <td>Listening Exercise</td>
-                  <td>Medical leave</td>
-                </tr>
-                <tr>
-                  <td>Nov 8, 2023</td>
-                  <td><span class="attendance-badge present">Present</span></td>
-                  <td>Vocabulary Test</td>
-                  <td>Scored 92%</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+<!-- Attendance Records Card -->
+<div class="card">
+  <div class="card-header">
+    <h2 class="card-title">
+      <i class="fas fa-calendar-check"></i>
+      Attendance Records
+    </h2>
+  </div>
+  <div class="card-body">
+    <!-- Attendance Table -->
+    <div style="max-height: 500px; overflow-y: auto;">
+      <table class="attendance-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Marked At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for record in attendance_records %}
+          <tr>
+            <td>{{ record.date|date:"M d, Y" }}</td>
+            <td>
+              <span class="attendance-badge {{ record.status|lower }}">
+                {{ record.get_status_display }}
+              </span>
+            </td>
+            <td>{{ record.marked_at|date:"g:i A" }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" style="text-align: center; padding: 2rem;">
+              <div class="empty-state">
+                <i class="fas fa-calendar-times"></i>
+                <p>No attendance records found</p>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
+</div>
 
   <!-- Edit Student Modal -->
   <div id="editStudentModal" class="modal">

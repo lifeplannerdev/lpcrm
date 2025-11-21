@@ -318,9 +318,16 @@ def student_details(request, student_id):
         trainer=trainer
     )
     
+    # Get attendance records for this student using the Attendance model
+    # This ensures we're actually querying the database for attendance data
+    attendance_records = Attendance.objects.filter(
+        student=student
+    ).order_by('-date', '-marked_at')
+    
     return render(request, 'trainers/student_details.html', {
         'student': student,
-        'trainer': trainer
+        'trainer': trainer,
+        'attendance_records': attendance_records  
     })
 
 class StudentListView(LoginRequiredMixin, ListView):
