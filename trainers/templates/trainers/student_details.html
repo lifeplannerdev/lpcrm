@@ -711,43 +711,70 @@
         </div>
       </div>
 
-      <!-- Attendance Records Card -->
 <!-- Attendance Records Card -->
 <div class="card">
   <div class="card-header">
     <h2 class="card-title">
       <i class="fas fa-calendar-check"></i>
-      Attendance Records
+      Attendance Records 
+      <span style="font-size: 0.8rem; color: var(--text-secondary); margin-left: 0.5rem;">
+        ({{ attendance_records|length }} records)
+      </span>
     </h2>
   </div>
   <div class="card-body">
+
+  
     <!-- Attendance Table -->
     <div style="max-height: 500px; overflow-y: auto;">
-      <table class="attendance-table">
+      <table class="attendance-table" style="width: 100%; border-collapse: collapse;">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Marked At</th>
+            <th style="padding: 12px; text-align: left; background: #1a1a1a;">Date</th>
+            <th style="padding: 12px; text-align: left; background: #1a1a1a;">Status</th>
+            <th style="padding: 12px; text-align: left; background: #1a1a1a;">Day</th>
+            <th style="padding: 12px; text-align: left; background: #1a1a1a;">Marked Time</th>
           </tr>
         </thead>
         <tbody>
           {% for record in attendance_records %}
-          <tr>
-            <td>{{ record.date|date:"M d, Y" }}</td>
-            <td>
+          <tr style="border-bottom: 1px solid #262626;">
+            <!-- Attendance Date Column -->
+            <td style="padding: 12px;">
+              <strong style="color: white;">{{ record.date }}</strong>
+            </td>
+            
+            <!-- Status Column -->
+            <td style="padding: 12px;">
               <span class="attendance-badge {{ record.status|lower }}">
                 {{ record.get_status_display }}
               </span>
             </td>
-            <td>{{ record.marked_at|date:"g:i A" }}</td>
+            
+            <!-- Day Column -->
+            <td style="padding: 12px; color: #a1a1aa;">
+              {% if record.marked_at %}
+                {{ record.marked_at|date:"l" }}
+              {% else %}
+                <span style="color: #71717a;">Not recorded</span>
+              {% endif %}
+            </td>
+            
+            <!-- Marked Time Column -->
+            <td style="padding: 12px; color: #a1a1aa;">
+              {% if record.marked_at %}
+                {{ record.marked_at|date:"g:i A" }}
+              {% else %}
+                <span style="color: #71717a;">-</span>
+              {% endif %}
+            </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="3" style="text-align: center; padding: 2rem;">
+            <td colspan="4" style="text-align: center; padding: 3rem;">
               <div class="empty-state">
-                <i class="fas fa-calendar-times"></i>
-                <p>No attendance records found</p>
+                <i class="fas fa-calendar-times" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">No attendance records found</p>
               </div>
             </td>
           </tr>

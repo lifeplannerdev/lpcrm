@@ -318,8 +318,7 @@ def student_details(request, student_id):
         trainer=trainer
     )
     
-    # Get attendance records for this student using the Attendance model
-    # This ensures we're actually querying the database for attendance data
+    # Get attendance records for this specific student
     attendance_records = Attendance.objects.filter(
         student=student
     ).order_by('-date', '-marked_at')
