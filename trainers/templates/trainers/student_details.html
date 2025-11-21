@@ -717,14 +717,9 @@
     <h2 class="card-title">
       <i class="fas fa-calendar-check"></i>
       Attendance Records 
-      <span style="font-size: 0.8rem; color: var(--text-secondary); margin-left: 0.5rem;">
-        ({{ attendance_records|length }} records)
-      </span>
     </h2>
   </div>
   <div class="card-body">
-
-  
     <!-- Attendance Table -->
     <div style="max-height: 500px; overflow-y: auto;">
       <table class="attendance-table" style="width: 100%; border-collapse: collapse;">
@@ -744,11 +739,25 @@
               <strong style="color: white;">{{ record.date }}</strong>
             </td>
             
-            <!-- Status Column -->
+            <!-- Status Column - FIXED -->
             <td style="padding: 12px;">
-              <span class="attendance-badge {{ record.status|lower }}">
-                {{ record.get_status_display }}
-              </span>
+              {% if record.status == 'PRESENT' %}
+                <span class="attendance-badge present">
+                  {{ record.get_status_display }}
+                </span>
+              {% elif record.status == 'ABSENT' %}
+                <span class="attendance-badge absent">
+                  {{ record.get_status_display }}
+                </span>
+              {% elif record.status == 'NO_SESSION' %}
+                <span class="attendance-badge no-session">
+                  {{ record.get_status_display }}
+                </span>
+              {% else %}
+                <span style="padding: 4px 8px; border-radius: 4px; background: #6b7280; color: white; font-size: 0.8rem;">
+                  {{ record.get_status_display }}
+                </span>
+              {% endif %}
             </td>
             
             <!-- Day Column -->
