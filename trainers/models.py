@@ -31,6 +31,14 @@ class Student(models.Model):
         ('A2', 'A2 (Elementary)'),
         ('B1', 'B1 (Intermediate)'),
         ('B2', 'B2 (Upper Intermediate)'),
+        ('A1 ONLINE', 'A1 (Online)'),
+        ('A2 ONLINE', 'A2 (Online)'),
+        ('B1 ONLINE', 'B1 (Online)'),
+        ('B2 ONLINE', 'B2 (Online)'),
+        ('A1 EXAM PREPERATION','A1 (Exam Preparation)'),
+        ('A2 EXAM PREPERATION','A2 (Exam Preparation)'),
+        ('B1 EXAM PREPERATION','B1 (Exam Preparation)'),
+        ('B2 EXAM PREPERATION','B2 (Exam Preparation)'),
     ]
     
     STATUS_CHOICES = [
@@ -69,7 +77,7 @@ class Student(models.Model):
         validators=[MinLengthValidator(3)]
     )
     batch = models.CharField(
-        max_length=2,
+        max_length=200,
         choices=BATCH_CHOICES
     )
     trainer = models.ForeignKey(

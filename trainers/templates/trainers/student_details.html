@@ -837,6 +837,14 @@
               <option value="A2" {% if student.batch == 'A2' %}selected{% endif %}>A2 (Elementary)</option>
               <option value="B1" {% if student.batch == 'B1' %}selected{% endif %}>B1 (Intermediate)</option>
               <option value="B2" {% if student.batch == 'B2' %}selected{% endif %}>B2 (Upper Intermediate)</option>
+              <option value="A1 ONLINE" {% if student.batch == 'A1 ONLINE' %}selected{% endif %}>A1 (Online)</option>
+              <option value="A2 ONLINE" {% if student.batch == 'A2 ONLINE' %}selected{% endif %}>A2 (Online)</option>
+              <option value="B1 ONLINE" {% if student.batch == 'B1 ONLINE' %}selected{% endif %}>B1 (Online)</option>
+              <option value="B2 ONLINE" {% if student.batch == 'B2 ONLINE' %}selected{% endif %}>B2 (Online)</option>
+              <option value="A1 EXAM PREPERATION" {% if student.batch == 'A1 EXAM PREPERATION' %}selected{% endif %}>A1 (Exam Preparation)</option>
+              <option value="A2 EXAM PREPERATION" {% if student.batch == 'A2 EXAM PREPERATION' %}selected{% endif %}>A2 (Exam Preparation)</option>
+              <option value="B1 EXAM PREPERATION" {% if student.batch == 'B1 EXAM PREPERATION' %}selected{% endif %}>B1 (Exam Preparation)</option>
+              <option value="B2 EXAM PREPERATION" {% if student.batch == 'B2 EXAM PREPERATION' %}selected{% endif %}>B2 (Exam Preparation)</option>
             </select>
             <div id="edit_batch-error" class="form-errors"></div>
           </div>
