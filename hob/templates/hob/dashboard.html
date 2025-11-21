@@ -345,6 +345,10 @@
                         <i class="fas fa-chart-bar"></i>
                         Reports
                     </button>
+                    <button class="tab-btn" data-tab="students">
+                        <i class="fas fa-graduation-cap"></i>
+                        Students
+                    </button>
                      <button class="tab-btn" onclick="window.open('https://x.voxbay.com/admin/dashboard', '_blank')">
                         <i class="fa-solid fa-phone-volume"></i>
                         Voxbay Dashboard
@@ -382,6 +386,9 @@
             </div>
             <div id="reports" class="tab-content">
                 <!-- Reports content will be loaded here -->
+            </div>
+            <div id="students" class="tab-content">
+                <!-- Students content will be loaded here -->
             </div>
         </div>
     </div>
@@ -433,7 +440,8 @@
                 'leads': '{% url "hob:leads_tab" %}',
                 'staff': '{% url "hob:staff_tab" %}',
                 'tasks': '{% url "hob:tasks_tab" %}',
-                'reports': '{% url "hob:reports_tab" %}'
+                'reports': '{% url "hob:reports_tab" %}',
+                'students': '{% url "hob:students_tab" %}'
             };
             
             axios.get(urls[tabId])
@@ -472,6 +480,11 @@
                         if (tabId === 'tasks') {
                             if (window.initializeMyTasksSidebar) window.initializeMyTasksSidebar();
                             console.log('[HOB] Tasks tab initialized');
+                        }
+                        if (tabId === 'students') {
+                            if (window.initializeHOBStudentAssignment) window.initializeHOBStudentAssignment();
+                            if (window.filterStudents) window.filterStudents();
+                            console.log('[HOB] Students tab initialized');
                         }
                     } catch (e) {
                         console.error('[HOB] Tab init error:', e);

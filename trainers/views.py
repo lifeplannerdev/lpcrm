@@ -308,18 +308,25 @@ def delete_student2(request, student_id):
 @require_http_methods(["GET"])
 def student_details(request, student_id):
     # Check if user has trainer role
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD':
         return redirect('accounts:landing')
     
-    # Get or create trainer profile
-    trainer, created = Trainer.objects.get_or_create(user=request.user)
+    # Get or create trainer profile (only for trainers)
+    if request.user.role == 'TRAINER':
+        trainer, created = Trainer.objects.get_or_create(user=request.user)
+    else:
+        trainer = None
     
-    # Verify the student belongs to the requesting trainer
-    student = get_object_or_404(
-        Student,
-        id=student_id,
-        trainer=trainer
-    )
+    # For HOB users, allow access to any student
+    if request.user.role == 'BUSINESS_HEAD':
+        student = get_object_or_404(Student, id=student_id)
+    else:
+        # For trainers, verify the student belongs to the requesting trainer
+        student = get_object_or_404(
+            Student,
+            id=student_id,
+            trainer=trainer
+        )
     
     # Get attendance records for this specific student
     attendance_records = Attendance.objects.filter(
@@ -336,18 +343,25 @@ def student_details(request, student_id):
 @require_http_methods(["GET"])
 def attendance_records(request, student_id):
     # Check if user has trainer role
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD':
         return redirect('accounts:landing')
     
-    # Get or create trainer profile
-    trainer, created = Trainer.objects.get_or_create(user=request.user)
+    # Get or create trainer profile (only for trainers)
+    if request.user.role == 'TRAINER':
+        trainer, created = Trainer.objects.get_or_create(user=request.user)
+    else:
+        trainer = None
     
-    # Verify the student belongs to the requesting trainer
-    student = get_object_or_404(
-        Student,
-        id=student_id,
-        trainer=trainer
-    )
+    # For HOB users, allow access to any student
+    if request.user.role == 'BUSINESS_HEAD':
+        student = get_object_or_404(Student, id=student_id)
+    else:
+        # For trainers, verify the student belongs to the requesting trainer
+        student = get_object_or_404(
+            Student,
+            id=student_id,
+            trainer=trainer
+        )
     
     # Get ALL attendance records for this specific student
     attendance_records = Attendance.objects.filter(
@@ -364,18 +378,25 @@ def attendance_records(request, student_id):
 @login_required
 def export_student_attendance(request, student_id):
     # Check if user has trainer role
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD':
         return redirect('accounts:landing')
     
-    # Get or create trainer profile
-    trainer, created = Trainer.objects.get_or_create(user=request.user)
+    # Get or create trainer profile (only for trainers)
+    if request.user.role == 'TRAINER':
+        trainer, created = Trainer.objects.get_or_create(user=request.user)
+    else:
+        trainer = None
     
-    # Verify the student belongs to the requesting trainer
-    student = get_object_or_404(
-        Student,
-        id=student_id,
-        trainer=trainer
-    )
+    # For HOB users, allow access to any student
+    if request.user.role == 'BUSINESS_HEAD':
+        student = get_object_or_404(Student, id=student_id)
+    else:
+        # For trainers, verify the student belongs to the requesting trainer
+        student = get_object_or_404(
+            Student,
+            id=student_id,
+            trainer=trainer
+        )
     
     # Get ALL attendance records for this specific student
     attendance_records = Attendance.objects.filter(
@@ -429,17 +450,21 @@ class StudentListView(LoginRequiredMixin, ListView):
     context_object_name = 'students'
     
     def dispatch(self, request, *args, **kwargs):
-        # Check if user has trainer role
-        if request.user.role != 'TRAINER':
+        # Check if user has trainer or business head role
+        if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD':
             return redirect('accounts:landing')
         return super().dispatch(request, *args, **kwargs)
     
     def get_queryset(self):
-        # Get or create trainer profile
-        trainer, created = Trainer.objects.get_or_create(user=self.request.user)
-        return Student.objects.filter(
-            trainer=trainer
-        ).order_by('-admission_date', 'batch', 'name')
+        # For HOB users, show all students
+        if self.request.user.role == 'BUSINESS_HEAD':
+            return Student.objects.all().order_by('-admission_date', 'batch', 'name')
+        else:
+            # For trainers, show only their students
+            trainer, created = Trainer.objects.get_or_create(user=self.request.user)
+            return Student.objects.filter(
+                trainer=trainer
+            ).order_by('-admission_date', 'batch', 'name')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -454,8 +479,15 @@ class StudentListView(LoginRequiredMixin, ListView):
 
 @login_required
 def attendance_view(request):
-    if request.user.role != 'TRAINER':
+    if request.user.role != 'TRAINER' and request.user.role != 'BUSINESS_HEAD':
         return redirect('accounts:landing')
+    
+    # For HOB users, we might want to show all students or handle differently
+    if request.user.role == 'BUSINESS_HEAD':
+        # HOB can view attendance but might not have a trainer profile
+        # For now, we'll redirect HOB to student list or show a message
+        messages.info(request, 'Attendance marking is only available for trainers.')
+        return redirect('trainers:student_list')
     
     trainer = Trainer.objects.get(user=request.user)
     students = trainer.students.filter(status='ACTIVE').order_by('batch', 'name')

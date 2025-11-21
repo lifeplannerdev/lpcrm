@@ -12,7 +12,7 @@ import json
 from accounts.models import User
 from leads.models import Lead
 from tasks.models import Task, TaskUpdate
-
+from trainers.models import Student, Trainer
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +89,6 @@ def staff_tab(request):
         'staff_members': staff_members,
     }
     return render(request, 'hob/partials/staff.html', context)
-
 
 
 @login_required
@@ -432,5 +431,96 @@ def get_dashboard_context(request):
     }
     
     return context
+
+@login_required
+@user_passes_test(is_business_head)
+def students_tab(request):
+    """Students tab data"""
+    students = Student.objects.all().order_by('name')
+    
+    # Get all trainers for assignment dropdown
+    trainers = Trainer.objects.filter(user__is_active=True)
+    
+    context = {
+        'students': students,
+        'trainers': trainers,
+        'all_trainers': trainers,
+    }
+    return render(request, 'hob/partials/students.html', context)
+
+@login_required
+@user_passes_test(is_business_head)
+@require_POST
+def hob_assign_student(request):
+    """HOB-specific student assignment function"""
+    try:
+        data = json.loads(request.body)
+        student_id = data.get('student_id')
+        field = data.get('field')
+        value = data.get('value')
+        
+        if not student_id or not field:
+            return JsonResponse({'status': 'error', 'message': 'Missing required fields'}, status=400)
+            
+        student = Student.objects.get(id=student_id)
+        
+        # Validate and update fields
+        if field == 'trainer':
+            # Handle trainer assignment changes - HOB can assign to any trainer
+            if value == '' or value is None:
+                # Unassign the student
+                student.trainer = None
+            else:
+                try:
+                    trainer = Trainer.objects.get(id=value, user__is_active=True)
+                    student.trainer = trainer
+                except Trainer.DoesNotExist:
+                    return JsonResponse({'status': 'error', 'message': 'Invalid trainer assignment'}, status=400)
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid field'}, status=400)
+            
+        student.save()
+        
+        # Return success response
+        response_data = {
+            'status': 'success',
+            'trainer': {
+                'id': student.trainer.id if student.trainer else None,
+                'name': student.trainer.user.get_full_name() if student.trainer else 'Unassigned',
+            } if field == 'trainer' else None
+        }
+        
+        return JsonResponse(response_data)
+        
+    except Student.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Student not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+@login_required
+@user_passes_test(is_business_head)
+@require_POST
+def hob_delete_student(request):
+    """HOB-specific student deletion function"""
+    try:
+        data = json.loads(request.body)
+        student_id = data.get('student_id')
+        
+        if not student_id:
+            return JsonResponse({'status': 'error', 'message': 'Missing student ID'}, status=400)
+            
+        student = Student.objects.get(id=student_id)
+        student_name = student.name
+        student.delete()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Student {student_name} deleted successfully'
+        })
+        
+    except Student.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Student not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 # Create your views here.
