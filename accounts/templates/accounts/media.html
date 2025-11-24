@@ -532,6 +532,10 @@
            <i class="fa-solid fa-file-lines"></i>
             <span>Reports</span>
           </a>
+          <a  id="tasksBtn" class="files-btn" style="margin-left: 0.5rem;">
+           <i class="fas fa-tasks"></i>
+            <span>Tasks</span>
+          </a>
           <a href="{% url 'accounts:all_leads' %}" class="files-btn" style="margin-left: 0.5rem;">
             <i class="fa-solid fa-eye"></i>
             <span>View All Leads</span>
@@ -610,11 +614,7 @@
           <button type="submit" class="btn-primary">
             Save Lead
           </button>
-          <button type="button" class="btn-primary" id="tasksBtn" style="background: var(--border-color); color: var(--text-primary);">
-            <i class="fas fa-tasks"></i>
-            My Tasks
-            <span id="taskCount" class="task-count" style="display: none; background: var(--accent); color: var(--bg-primary); padding: 0.2rem 0.5rem; border-radius: 10px; font-size: 0.8rem; margin-left: 0.5rem;">0</span>
-          </button>
+          
         </div>
       </form>
     </div>
