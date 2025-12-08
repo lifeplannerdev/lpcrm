@@ -31,7 +31,13 @@ SECRET_KEY = 'django-insecure-$pb1a&_gjg$k2e02i4awf#=(f_8rhtjky3*(k9jt-c)0uzw7@&
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    "lpcrm2-924spxfh.b4a.run",
+    "*.b4a.run",
+    "localhost",
+    "127.0.0.1",
+    "*"
+]
 
 AUTH_USER_MODEL = 'accounts.User' 
 
@@ -85,6 +91,17 @@ SESSION_COOKIE_AGE = 86400
 SESSION_SAVE_EVERY_REQUEST = True 
 
 
+# CSRF Settings
+CSRF_COOKIE_SECURE = True  # Set to True in production with HTTPS
+CSRF_COOKIE_HTTPONLY = False  # Must be False for CSRF token to be available in templates
+CSRF_COOKIE_SAMESITE = 'Lax'  # or 'Strict' for stricter security
+CSRF_TRUSTED_ORIGINS = [
+    'https://lpcrm2-924spxfh.b4a.run',
+    'http://lpcrm2-924spxfh.b4a.run',
+    'https://*.b4a.run',
+    'http://*.b4a.run',
+]
+
 # Session settings
 SESSION_COOKIE_NAME = 'frontend_sessionid'
 SESSION_COOKIE_PATH = '/'
@@ -101,9 +118,11 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.csrf',
             ],
         },
     },
