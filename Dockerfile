@@ -1,5 +1,5 @@
 # Multi-stage build for optimized production image
-FROM python:3.9-slim as builder
+FROM python:3.10-slim as builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ RUN pip install --user --no-cache-dir -r requirements.txt
 
 
 # Final production stage
-FROM python:3.9-slim
+FROM python:3.10-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
