@@ -146,7 +146,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2 class="modal-title">Add New Lead</h2>
-            <button class="modal-close" onclick="closeAddLeadModal()">
+            <button class="modal-close" type="button" aria-label="Close">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -207,7 +207,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-notes" onclick="closeAddLeadModal()">Cancel</button>
+                <button type="button" class="btn btn-notes" data-modal-close>Cancel</button>
                 <button type="submit" class="btn btn-contact" id="addLeadButton">
                     <i class="fas fa-plus mr-1"></i> Add Lead
                 </button>
@@ -246,6 +246,8 @@
     <option value="Hot">
 </datalist>
 
+<!-- Add the rest of your HTML exactly as before, but replace the script section with this: -->
+
 <script>
 // CSRF helper for axios
 function getCookie(name) {
@@ -259,57 +261,90 @@ axios.defaults.headers.common['X-CSRFToken'] = getCookie('csrftoken');
 axios.defaults.xsrfCookieName = 'csrftoken';
 axios.defaults.xsrfHeaderName = 'X-CSRFToken';
 
-// Add Lead Modal functionality
-const addLeadBtn = document.getElementById('addLeadBtn');
-const addLeadModal = document.getElementById('addLeadModal');
-const addLeadForm = document.getElementById('addLeadForm');
+// SIMPLE AND RELIABLE ADD LEAD BUTTON HANDLER - Use event delegation at document level
+document.addEventListener('click', function(e) {
+    // Handle add lead button click
+    const addBtn = e.target.closest('#addLeadBtn');
+    if (addBtn) {
+        console.log('Add lead button clicked (document delegation)');
+        const modal = document.getElementById('addLeadModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            resetAddLeadForm();
+        }
+        return;
+    }
+    
+    // Handle modal close buttons
+    const closeBtn = e.target.closest('.modal-close') || e.target.closest('[data-modal-close]');
+    if (closeBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const modal = closeBtn.closest('.modal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            resetAddLeadForm();
+        }
+        return;
+    }
+});
 
-// Open add lead modal
-if (addLeadBtn) {
-    addLeadBtn.addEventListener('click', function() {
-        console.log('Add lead button clicked');
-        addLeadModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    const modal = document.getElementById('addLeadModal');
+    if (modal && e.target === modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
         resetAddLeadForm();
-    });
-}
+    }
+});
 
-// Close add lead modal
-function closeAddLeadModal() {
-    console.log('Closing add lead modal');
-    addLeadModal.style.display = 'none';
-    document.body.style.overflow = 'auto';
-    resetAddLeadForm();
-}
+// Close modal with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('addLeadModal');
+        if (modal && modal.style.display === 'flex') {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            resetAddLeadForm();
+        }
+    }
+});
 
 function resetAddLeadForm() {
     const form = document.getElementById('addLeadForm');
     if (form) {
         form.reset();
         // Set default values
-        document.getElementById('leadStatus').value = 'ENQUIRY';
-        document.getElementById('leadPriority').value = 'MEDIUM';
+        const statusField = document.getElementById('leadStatus');
+        const priorityField = document.getElementById('leadPriority');
+        if (statusField) statusField.value = 'ENQUIRY';
+        if (priorityField) priorityField.value = 'MEDIUM';
+        
+        // Reset button state
+        const addButton = document.getElementById('addLeadButton');
+        if (addButton) {
+            addButton.disabled = false;
+            addButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Add Lead';
+        }
     }
 }
 
 // IMPROVED FILTER FUNCTION WITH BETTER UNASSIGNED HANDLING
 function filterLeads() {
-    const sourceFilter = document.getElementById('sourceFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value.toLowerCase();
-    const staffFilter = document.getElementById('staffFilter').value;
-    const nameSearch = document.getElementById('nameSearch').value.toLowerCase();
+    const sourceFilter = document.getElementById('sourceFilter')?.value || '';
+    const statusFilter = document.getElementById('statusFilter')?.value.toLowerCase() || '';
+    const staffFilter = document.getElementById('staffFilter')?.value || '';
+    const nameSearch = document.getElementById('nameSearch')?.value.toLowerCase() || '';
 
     const tableBody = document.getElementById('leadsTableBody');
+    if (!tableBody) return;
+    
     const rows = tableBody.querySelectorAll('.lead-row');
     const noLeadsRow = document.getElementById('noLeadsRow');
     let visibleCount = 0;
-
-    // Debug: Log filter values
-    console.log('=== FILTER DEBUG ===');
-    console.log('Staff Filter:', staffFilter);
-    console.log('Source Filter:', sourceFilter);
-    console.log('Status Filter:', statusFilter);
-    console.log('Name Search:', nameSearch);
 
     // Show/hide clear search button
     const clearSearchBtn = document.getElementById('clearSearchBtn');
@@ -327,14 +362,8 @@ function filterLeads() {
         const source = row.dataset.source || '';
         const status = row.dataset.status || '';
         const staff = row.dataset.staff || '';
-        const priority = row.dataset.priority || '';
         const program = row.dataset.program || '';
         const name = row.dataset.name || '';
-
-        // Debug first few rows
-        if (index < 3) {
-            console.log(`Row ${index}: staff="${staff}"`);
-        }
 
         const sourceMatch = !sourceFilter || source === sourceFilter;
         const statusMatch = !statusFilter || status.includes(statusFilter);
@@ -345,7 +374,6 @@ function filterLeads() {
             if (staffFilter === 'Unassigned') {
                 // More robust check for unassigned leads
                 staffMatch = !staff || staff.trim() === '' || staff === 'undefined' || staff === 'null';
-                console.log(`Row ${index} Unassigned Check: staff="${staff}", staffMatch=${staffMatch}`);
             } else {
                 staffMatch = staff === staffFilter;
             }
@@ -405,10 +433,10 @@ function handleEmptyStates(visibleCount, totalCount, tableBody) {
             message = 'No leads match the selected filters';
             
             // Check which filters are active to provide more specific message
-            const sourceFilter = document.getElementById('sourceFilter').value;
-            const statusFilter = document.getElementById('statusFilter').value;
-            const staffFilter = document.getElementById('staffFilter').value;
-            const nameSearch = document.getElementById('nameSearch').value;
+            const sourceFilter = document.getElementById('sourceFilter')?.value || '';
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+            const staffFilter = document.getElementById('staffFilter')?.value || '';
+            const nameSearch = document.getElementById('nameSearch')?.value || '';
             
             if (staffFilter === 'Unassigned') {
                 message = 'No unassigned leads found';
@@ -429,211 +457,129 @@ function handleEmptyStates(visibleCount, totalCount, tableBody) {
 }
 
 function clearSearch() {
-    document.getElementById('nameSearch').value = '';
-    filterLeads();
+    const nameSearch = document.getElementById('nameSearch');
+    if (nameSearch) {
+        nameSearch.value = '';
+        filterLeads();
+    }
 }
 
 function resetLeadFilters() {
-    document.getElementById('sourceFilter').value = '';
-    document.getElementById('statusFilter').value = '';
-    document.getElementById('staffFilter').value = '';
-    document.getElementById('nameSearch').value = '';
+    const sourceFilter = document.getElementById('sourceFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const staffFilter = document.getElementById('staffFilter');
+    const nameSearch = document.getElementById('nameSearch');
+    
+    if (sourceFilter) sourceFilter.value = '';
+    if (statusFilter) statusFilter.value = '';
+    if (staffFilter) staffFilter.value = '';
+    if (nameSearch) nameSearch.value = '';
+    
     filterLeads();
 }
 
-// Debug function to check lead data
-function debugLeadsData() {
-    const rows = document.querySelectorAll('.lead-row');
-    console.log('=== LEADS DATA DEBUG ===');
-    let unassignedCount = 0;
-    rows.forEach((row, index) => {
-        const staff = row.dataset.staff || '';
-        const isUnassigned = !staff || staff.trim() === '' || staff === 'undefined' || staff === 'null';
-        if (isUnassigned) unassignedCount++;
-        
-        console.log(`Lead ${index}:`, {
-            name: row.dataset.name,
-            staff: staff,
-            isUnassigned: isUnassigned,
-            source: row.dataset.source,
-            status: row.dataset.status
-        });
-    });
-    console.log(`Total unassigned leads: ${unassignedCount}`);
-}
+// SIMPLE FORM SUBMISSION HANDLER
+document.addEventListener('submit', function(e) {
+    if (e.target.id === 'addLeadForm') {
+        e.preventDefault();
+        handleAddLead();
+    }
+});
 
-// HOB Assignment functionality
-function initializeHOBAssignment() {
-    // Handle all field updates (priority, assignment, etc.)
-    document.querySelectorAll('.hob-assignment').forEach(element => {
-        if (element.tagName === 'SELECT') {
-            // Store initial value
-            element.dataset.previousValue = element.value;
-            
-            element.addEventListener('change', function() {
-                console.log('[HOB] select changed', {
-                    leadId: this.dataset.leadId,
-                    field: this.dataset.field,
-                    value: this.value
-                });
-                handleHOBFieldUpdate(this);
-            });
-        }
-    });
+// Handle add lead
+async function handleAddLead() {
+    const form = document.getElementById('addLeadForm');
+    const addButton = document.getElementById('addLeadButton');
     
-    // Handle free-text status input updates
-    document.querySelectorAll('.status-input.hob-assignment').forEach(input => {
-        input.dataset.originalValue = input.value;
-        
-        const commitChange = () => {
-            const leadId = input.dataset.leadId;
-            const newStatus = (input.value || '').trim();
-            
-            if (!newStatus) {
-                showHOBToast('Status cannot be empty', 'error');
-                input.value = input.dataset.originalValue;
-                return;
-            }
-            
-            updateHOBLeadField(leadId, 'status', newStatus)
-                .then(() => {
-                    input.dataset.originalValue = newStatus;
-                    // Update row dataset for search
-                    const row = input.closest('tr');
-                    if (row) {
-                        row.dataset.status = newStatus.toLowerCase();
-                    }
-                    showHOBToast('Status updated successfully', 'success');
-                })
-                .catch((error) => {
-                    input.value = input.dataset.originalValue;
-                    showHOBToast('Failed to update status', 'error');
-                });
-        };
-        
-        input.addEventListener('blur', commitChange);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                commitChange();
-                input.blur();
-            }
-            if (e.key === 'Escape') {
-                input.value = input.dataset.originalValue;
-                input.blur();
-            }
-        });
-    });
-    
-    // Handle program input updates
-    document.querySelectorAll('.program-input.hob-assignment').forEach(input => {
-        input.dataset.originalValue = input.value;
-        
-        input.addEventListener('change', function() {
-            const leadId = this.dataset.leadId;
-            const newProgram = this.value;
-            
-            updateHOBLeadField(leadId, 'program', newProgram)
-                .then(() => {
-                    this.dataset.originalValue = newProgram;
-                    const row = this.closest('tr');
-                    if (row) {
-                        row.dataset.program = newProgram.toLowerCase();
-                    }
-                    showHOBToast('Program updated successfully', 'success');
-                })
-                .catch((error) => {
-                    this.value = this.dataset.originalValue;
-                    showHOBToast('Failed to update program', 'error');
-                });
-        });
-    });
-}
-
-// Generic function to handle field updates
-function handleHOBFieldUpdate(selectElement) {
-    const leadId = selectElement.dataset.leadId;
-    const field = selectElement.dataset.field;
-    const value = selectElement.value;
-    console.log('[HOB] handleHOBFieldUpdate', { leadId, field, value });
-    
-    updateHOBLeadField(leadId, field, value)
-        .then((response) => {
-            console.log('[HOB] updateHOBLeadField success', response);
-            console.log(`${field} updated successfully`);
-            
-            // Update the data attributes for search functionality
-            const row = selectElement.closest('tr');
-            updateHOBRowSearchData(row, field, value);
-            
-            // Update stored value
-            selectElement.dataset.previousValue = value;
-            
-            // Show success message
-            let fieldName = field.replace('_', ' ');
-            fieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
-            showHOBToast(`${fieldName} updated successfully`, 'success');
-        })
-        .catch((error) => {
-            console.error(`[HOB] Error updating ${field}:`, error?.response?.data || error);
-            // Show error message
-            if (error.response && error.response.data && error.response.data.message) {
-                showHOBToast(error.response.data.message, 'error');
-            } else {
-                showHOBToast(`Failed to update ${field}`, 'error');
-            }
-            // Revert to previous value
-            selectElement.value = selectElement.dataset.previousValue;
-        });
-}
-
-// AJAX function to update lead fields - HOB specific
-function updateHOBLeadField(leadId, field, value) {
-    return new Promise((resolve, reject) => {
-        console.log('[HOB] POST -> hob_assign_lead', { leadId, field, value });
-        axios.post('{% url "hob:hob_assign_lead" %}', 
-            JSON.stringify({
-                lead_id: leadId,
-                field: field,
-                value: value
-            }),
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': getCookie('csrftoken')
-                }
-            }
-        )
-        .then(response => {
-            console.log('[HOB] assign response', response?.data);
-            resolve(response.data);
-        })
-        .catch(error => {
-            console.error('[HOB] assign error', error?.response?.data || error);
-            reject(error);
-        });
-    });
-}
-
-// Update row search data when fields change
-function updateHOBRowSearchData(row, field, value) {
-    if (field === 'assigned_to') {
-        if (value === '') {
-            row.dataset.staff = '';
-        } else {
-            row.dataset.staff = value;
-        }
-    } else if (field === 'priority') {
-        row.dataset.priority = value.toLowerCase();
+    if (!form || !addButton) {
+        showToast('Form error - please refresh the page', 'error');
+        return;
     }
     
-    // Re-run search if there's an active filter
-    filterLeads();
+    // Get form data
+    const formData = new FormData(form);
+    const leadData = {
+        name: formData.get('name'),
+        phone: formData.get('phone'),
+        email: formData.get('email') || '',
+        location: formData.get('location') || '',
+        program: formData.get('program') || '',
+        priority: formData.get('priority'),
+        status: formData.get('status'),
+        source: formData.get('source'),
+        remarks: formData.get('remarks') || ''
+    };
+    
+    // Validate required fields
+    if (!leadData.name || !leadData.phone) {
+        showToast('Name and phone are required', 'error');
+        return;
+    }
+    
+    if (leadData.phone.length < 10) {
+        showToast('Phone number must be at least 10 digits', 'error');
+        return;
+    }
+    
+    addButton.disabled = true;
+    addButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Adding...';
+    
+    try {
+        const csrfToken = getCookie('csrftoken');
+
+        const response = await fetch("{% url 'accounts:add_lead' %}", {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(leadData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.status === 'success') {
+            showToast('Lead added successfully!', 'success');
+            setTimeout(() => {
+                // Close modal
+                const modal = document.getElementById('addLeadModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+                resetAddLeadForm();
+                
+                // Reload only the Leads tab if tab loader is available
+                if (typeof window.loadTabContent === 'function') {
+                    window.loadTabContent('leads');
+                } else {
+                    window.location.reload();
+                }
+            }, 1500);
+        } else {
+            showToast(`Failed to add lead: ${data.message}`, 'error');
+            addButton.disabled = false;
+            addButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Add Lead';
+        }
+    } catch (error) {
+        console.error('Add lead error:', error);
+        showToast(`Error adding lead: ${error.message}`, 'error');
+        addButton.disabled = false;
+        addButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Add Lead';
+    }
 }
 
-// Toast notification for HOB
-function showHOBToast(message, type) {
+// Simple toast notification function
+function showToast(message, type) {
+    // Remove any existing toasts
+    document.querySelectorAll('.toast-notification').forEach(toast => toast.remove());
+    
     const toast = document.createElement('div');
     toast.className = `toast-notification ${type}`;
     toast.textContent = message;
@@ -663,107 +609,147 @@ function showHOBToast(message, type) {
     }, 3000);
 }
 
-// Handle add lead form submission
-if (addLeadForm) {
-    addLeadForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        console.log('Add lead form submitted');
-        handleAddLead();
+// GM Assignment functionality (similar to HOB implementation)
+function initializeGMAssignment() {
+    // Handle select updates (assignments, priority)
+    document.querySelectorAll('.hob-assignment').forEach(element => {
+        if (element.tagName === 'SELECT') {
+            element.dataset.previousValue = element.value;
+            element.addEventListener('change', function() {
+                console.debug('[GM] select changed', {
+                    leadId: this.dataset.leadId,
+                    field: this.dataset.field,
+                    value: this.value
+                });
+                handleGMFieldUpdate(this);
+            });
+        }
+    });
+
+    // Handle free-text status input updates
+    document.querySelectorAll('.status-input.hob-assignment').forEach(input => {
+        input.dataset.originalValue = input.value;
+        const commitChange = () => {
+            const leadId = input.dataset.leadId;
+            const newStatus = (input.value || '').trim();
+            if (!newStatus) {
+                showToast('Status cannot be empty', 'error');
+                input.value = input.dataset.originalValue;
+                return;
+            }
+            updateGMLeadField(leadId, 'status', newStatus)
+                .then(() => {
+                    input.dataset.originalValue = newStatus;
+                    const row = input.closest('tr');
+                    if (row) row.dataset.status = newStatus.toLowerCase();
+                    showToast('Status updated successfully', 'success');
+                })
+                .catch(() => {
+                    input.value = input.dataset.originalValue;
+                    showToast('Failed to update status', 'error');
+                });
+        };
+        input.addEventListener('blur', commitChange);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                commitChange();
+                input.blur();
+            }
+            if (e.key === 'Escape') {
+                input.value = input.dataset.originalValue;
+                input.blur();
+            }
+        });
+    });
+
+    // Handle program input updates
+    document.querySelectorAll('.program-input.hob-assignment').forEach(input => {
+        input.dataset.originalValue = input.value;
+        input.addEventListener('change', function() {
+            const leadId = this.dataset.leadId;
+            const newProgram = this.value;
+            updateGMLeadField(leadId, 'program', newProgram)
+                .then(() => {
+                    this.dataset.originalValue = newProgram;
+                    const row = this.closest('tr');
+                    if (row) row.dataset.program = newProgram.toLowerCase();
+                    showToast('Program updated successfully', 'success');
+                })
+                .catch(() => {
+                    this.value = this.dataset.originalValue;
+                    showToast('Failed to update program', 'error');
+                });
+        });
     });
 }
 
-// Handle add lead
-async function handleAddLead() {
-    console.log('Handling add lead');
-    
-    const form = document.getElementById('addLeadForm');
-    const addButton = document.getElementById('addLeadButton');
-    
-    if (!form || !addButton) {
-        console.error('Form elements not found');
-        showHOBToast('Form error - please refresh the page', 'error');
-        return;
-    }
-    
-    // Get form data
-    const formData = new FormData(form);
-    const leadData = {
-        name: formData.get('name'),
-        phone: formData.get('phone'),
-        email: formData.get('email') || '',
-        location: formData.get('location') || '',
-        program: formData.get('program') || '',
-        priority: formData.get('priority'),
-        status: formData.get('status'),
-        source: formData.get('source'),
-        remarks: formData.get('remarks') || ''
-    };
-    
-    // Validate required fields
-    if (!leadData.name || !leadData.phone) {
-        showHOBToast('Name and phone are required', 'error');
-        return;
-    }
-    
-    if (leadData.phone.length < 10) {
-        showHOBToast('Phone number must be at least 10 digits', 'error');
-        return;
-    }
-    
-    addButton.disabled = true;
-    addButton.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Adding...';
-    
-    try {
-        const csrfToken = getCookie('csrftoken');
-        console.log('Add lead CSRF Token:', csrfToken);
-        console.log('Lead data:', leadData);
+function handleGMFieldUpdate(selectElement) {
+    const leadId = selectElement.dataset.leadId;
+    const field = selectElement.dataset.field;
+    const value = selectElement.value;
+    console.debug('[GM] handleGMFieldUpdate', { leadId, field, value });
 
-        const response = await fetch("{% url 'accounts:add_lead' %}", {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(leadData)
+    updateGMLeadField(leadId, field, value)
+        .then((response) => {
+            console.debug('[GM] updateGMLeadField success', response);
+            const row = selectElement.closest('tr');
+            updateGMRowSearchData(row, field, value);
+            selectElement.dataset.previousValue = value;
+            let fieldName = field.replace('_', ' ');
+            fieldName = fieldName.charAt(0).toUpperCase() + fieldName.slice(1);
+            showToast(`${fieldName} updated successfully`, 'success');
+        })
+        .catch((error) => {
+            console.error(`[GM] Error updating ${field}:`, error?.response?.data || error);
+            if (error.response && error.response.data && error.response.data.message) {
+                showToast(error.response.data.message, 'error');
+            } else {
+                showToast(`Failed to update ${field}`, 'error');
+            }
+            selectElement.value = selectElement.dataset.previousValue;
         });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Add lead response:', data);
-        
-        if (data.status === 'success') {
-            showHOBToast('Lead added successfully!', 'success');
-            setTimeout(() => {
-                closeAddLeadModal();
-                // Reload only the Leads tab if tab loader is available
-                if (typeof window.loadTabContent === 'function') {
-                    window.loadTabContent('leads');
-                } else {
-                    window.location.reload();
-                }
-            }, 1500);
-        } else {
-            showHOBToast(`Failed to add lead: ${data.message}`, 'error');
-            addButton.disabled = false;
-            addButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Add Lead';
-        }
-    } catch (error) {
-        console.error('Add lead error:', error);
-        showHOBToast(`Error adding lead: ${error.message}`, 'error');
-        addButton.disabled = false;
-        addButton.innerHTML = '<i class="fas fa-plus mr-1"></i> Add Lead';
+}
+
+function updateGMLeadField(leadId, field, value) {
+    return new Promise((resolve, reject) => {
+        console.debug('[GM] POST -> gm_assign_lead', { leadId, field, value });
+        axios.post('{% url "gm:gm_assign_lead" %}', JSON.stringify({
+            lead_id: leadId,
+            field: field,
+            value: value
+        }), {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => {
+            console.debug('[GM] assign response', response?.data);
+            resolve(response.data);
+        })
+        .catch(error => {
+            console.error('[GM] assign error', error?.response?.data || error);
+            reject(error);
+        });
+    });
+}
+
+function updateGMRowSearchData(row, field, value) {
+    if (!row) return;
+    if (field === 'assigned_to') {
+        row.dataset.staff = value === '' ? '' : value;
+    } else if (field === 'priority') {
+        row.dataset.priority = value.toLowerCase();
     }
+    filterLeads();
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     filterLeads();
-    initializeHOBAssignment();
+    initializeGMAssignment();
     
     // Add better event listeners with debouncing
     let filterTimeout;
@@ -772,27 +758,24 @@ document.addEventListener('DOMContentLoaded', function() {
         filterTimeout = setTimeout(filterLeads, 150);
     }
     
-    document.getElementById('statusFilter').addEventListener('input', debouncedFilter);
-    document.getElementById('nameSearch').addEventListener('input', debouncedFilter);
+    const statusFilter = document.getElementById('statusFilter');
+    const nameSearch = document.getElementById('nameSearch');
     
-    // Close modal when clicking outside
-    if (addLeadModal) {
-        addLeadModal.addEventListener('click', function(e) {
-            if (e.target === addLeadModal) {
-                closeAddLeadModal();
-            }
+    if (statusFilter) {
+        statusFilter.addEventListener('input', debouncedFilter);
+    }
+    if (nameSearch) {
+        nameSearch.addEventListener('input', debouncedFilter);
+    }
+    
+    // Also bind the form submit event directly (as backup)
+    const addLeadForm = document.getElementById('addLeadForm');
+    if (addLeadForm) {
+        addLeadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleAddLead();
         });
     }
-
-    // Close modal with escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && addLeadModal.style.display === 'flex') {
-            closeAddLeadModal();
-        }
-    });
-
-    // Debug function - you can call this in browser console to check data
-    window.debugLeadsData = debugLeadsData;
 });
 </script>
 
