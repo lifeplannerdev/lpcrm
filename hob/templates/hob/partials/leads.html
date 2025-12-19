@@ -150,7 +150,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2 class="modal-title">Add New Lead</h2>
-            <button class="modal-close" onclick="closeAddLeadModal()">
+            <button type="button" class="modal-close" aria-label="Close add lead dialog">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -225,7 +225,7 @@
     <div class="modal-content">
         <div class="modal-header">
             <h2 class="modal-title">Import Leads from Excel</h2>
-            <button class="modal-close" onclick="closeImportModal()">
+            <button type="button" class="modal-close" aria-label="Close import dialog">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -330,19 +330,27 @@ const addLeadModal = document.getElementById('addLeadModal');
 const addLeadForm = document.getElementById('addLeadForm');
 
 // Open add lead modal
-if (addLeadBtn) {
-    addLeadBtn.addEventListener('click', function() {
-        console.log('Add lead button clicked');
-        addLeadModal.style.display = 'flex';
-        document.body.style.overflow = 'hidden';
-        resetAddLeadForm();
-    });
-}
+// Use event delegation so the Add Lead button continues to work after partial DOM reloads
+// This avoids lost event listeners when the tab content is replaced dynamically.
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('#addLeadBtn');
+    if (!btn) return;
+    const modal = document.getElementById('addLeadModal');
+    if (!modal) return;
+    console.log('Add lead button clicked (delegated)');
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+    resetAddLeadForm();
+    // Ensure close handlers are attached after modal opens
+    bindModalCloseHandlers();
+});
 
 // Close add lead modal
 function closeAddLeadModal() {
     console.log('Closing add lead modal');
-    addLeadModal.style.display = 'none';
+    const modal = document.getElementById('addLeadModal');
+    if (!modal) return;
+    modal.style.display = 'none';
     document.body.style.overflow = 'auto';
     resetAddLeadForm();
 }
@@ -356,6 +364,28 @@ function resetAddLeadForm() {
         document.getElementById('leadPriority').value = 'MEDIUM';
     }
 }
+
+// Bind persistent handlers to modal-close buttons. Runs whenever modals are opened or when DOM changes.
+function bindModalCloseHandlers() {
+    const buttons = document.querySelectorAll('.modal-close');
+    if (!buttons || buttons.length === 0) {
+        console.log('[bind] no .modal-close found');
+        return;
+    }
+    buttons.forEach(btn => {
+        if (btn.dataset.bound === 'true') return; // already bound
+        btn.dataset.bound = 'true';
+        // Direct click listener (capture) to ensure we get it even if other handlers stop propagation
+        btn.addEventListener('click', function(ev) {
+            console.log('[bind] modal-close direct click', {btn: btn, target: ev.target});
+            const modal = btn.closest('.modal');
+            if (modal && modal.id === 'addLeadModal') return closeAddLeadModal();
+            if (modal && modal.id === 'importExcelModal') return closeImportModal();
+            if (modal) { modal.style.display = 'none'; document.body.style.overflow = 'auto'; }
+        }, true);
+    });
+}
+
 
 function filterLeads() {
     const sourceFilter = document.getElementById('sourceFilter').value;
@@ -774,16 +804,18 @@ function openImportModal() {
         document.body.style.overflow = 'hidden';
         resetImportForm();
         initializeImportTabs();
+        // Ensure close handlers are attached for import modal too
+        bindModalCloseHandlers();
     }
 }
 
 function closeImportModal() {
+    console.log('Closing import modal');
     const importExcelModal = document.getElementById('importExcelModal');
-    if (importExcelModal) {
-        importExcelModal.style.display = 'none';
-        document.body.style.overflow = 'auto';
-        resetImportForm();
-    }
+    if (!importExcelModal) return;
+    importExcelModal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+    resetImportForm();
 }
 
 function resetImportForm() {
@@ -1039,24 +1071,55 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('statusFilter').addEventListener('input', debouncedFilter);
     document.getElementById('nameSearch').addEventListener('input', debouncedFilter);
     
-    // Close modal when clicking outside
-    if (addLeadModal) {
-        addLeadModal.addEventListener('click', function(e) {
-            if (e.target === addLeadModal) {
-                closeAddLeadModal();
-            }
-        });
-    }
-
-    // Close modal with escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && addLeadModal.style.display === 'flex') {
+    // Close add lead modal when clicking outside (dynamic check) - using capture phase and diagnostics
+    document.addEventListener('click', function(e) {
+        const modal = document.getElementById('addLeadModal');
+        if (modal && e.target === modal) {
+            console.log('[modal] overlay clicked', { target: e.target, modalId: modal.id });
             closeAddLeadModal();
         }
-        if (e.key === 'Escape' && document.getElementById('importExcelModal').style.display === 'flex') {
+    }, true);
+
+    // Handle modal close buttons via delegation (works after DOM replacements) - capture phase to beat other handlers
+    document.addEventListener('click', function(e) {
+        const closeBtn = e.target.closest('.modal-close');
+        if (!closeBtn) return;
+        const modal = closeBtn.closest('.modal');
+        console.log('[modal] close button clicked', { target: e.target, closeBtn: closeBtn, modalId: modal ? modal.id : null });
+        if (!modal) {
+            // fallback: hide any known modals
+            const fallback = document.getElementById('addLeadModal') || document.getElementById('importExcelModal');
+            if (fallback) {
+                fallback.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            }
+            return;
+        }
+        if (modal.id === 'addLeadModal') {
+            closeAddLeadModal();
+        } else if (modal.id === 'importExcelModal') {
+            closeImportModal();
+        } else {
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+    }, true);
+
+    // Close modal with escape key (dynamic checks) and diagnostics
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+        console.log('[modal] Escape pressed');
+        const modal = document.getElementById('addLeadModal');
+        if (modal && modal.style.display === 'flex') {
+            console.log('[modal] closing addLeadModal via Escape');
+            closeAddLeadModal();
+        }
+        const importModal = document.getElementById('importExcelModal');
+        if (importModal && importModal.style.display === 'flex') {
+            console.log('[modal] closing importExcelModal via Escape');
             closeImportModal();
         }
-    });
+    }, true);
 
     // Import Excel modal click outside to close
     const importExcelModal = document.getElementById('importExcelModal');
@@ -1070,6 +1133,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize import tabs
     initializeImportTabs();
+
+    // Ensure modal close buttons are bound on initial load
+    bindModalCloseHandlers();
+
+    // --- ONE-TIME DEBUG: capture modal-close clicks to diagnose why the X button doesn't trigger handlers ---
+    // This will run only until the first close-click is observed, then it removes itself.
+    document.addEventListener('click', function oneTimeModalCloseCapture(e) {
+        const btn = e.target.closest('.modal-close');
+        if (!btn) return;
+        console.log('[one-time-debug] capture close button clicked', {target: e.target, btn: btn});
+        try {
+            const rect = btn.getBoundingClientRect();
+            const midX = rect.left + rect.width/2;
+            const midY = rect.top + rect.height/2;
+            const topEl = document.elementFromPoint(midX, midY);
+            console.log('[one-time-debug] button rect and top element at center', {rect: rect, elementAtCenter: topEl});
+        } catch (err) {
+            console.log('[one-time-debug] elementFromPoint error', err);
+        }
+        // Attach a direct click listener to the button so future clicks also log
+        btn.addEventListener('click', function directBtnListener(ev) {
+            console.log('[one-time-debug] direct btn listener fired', {btn: btn, evTarget: ev.target});
+            const rect2 = btn.getBoundingClientRect();
+            const topEl2 = document.elementFromPoint(rect2.left + rect2.width/2, rect2.top + rect2.height/2);
+            console.log('[one-time-debug] element at center after click', topEl2);
+        }, {once: true});
+        document.removeEventListener('click', oneTimeModalCloseCapture, true);
+    }, true);
+
+    // Add direct listeners to all modal-close buttons to ensure clicks are detected even if delegation fails
+    document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', function(ev) {
+            console.log('[debug] modal-close direct click', {btn: btn, target: ev.target});
+        }, true);
+    });
 });
 </script>
 
@@ -1263,7 +1361,16 @@ document.addEventListener('DOMContentLoaded', function() {
     align-items: center;
     justify-content: center;
     backdrop-filter: blur(10px);
+    /* Ensure overlay receives pointer events */
+    pointer-events: auto;
 }
+
+/* Make the close button clearly clickable and on top */
+.modal .modal-close {
+    cursor: pointer;
+    z-index: 10010;
+    position: relative;
+} 
 
 .modal.show {
     display: flex;
