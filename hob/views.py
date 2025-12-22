@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 def is_business_head(user):
     """Check if user is business head or higher"""
-    return user.role in ['BUSINESS_HEAD', 'ADMIN', 'OPS']
+    return user.role in ['BUSINESS_DEVELOPMENT_MANAGER', 'ADMIN', 'OPS']
+
 
 @login_required
 @user_passes_test(is_business_head)
