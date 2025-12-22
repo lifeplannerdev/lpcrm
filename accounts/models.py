@@ -19,7 +19,7 @@ class User(AbstractUser):
         ('CM','Center Manager'),
         ('HR','Human Resources')
     ]
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=30, choices=ROLE_CHOICES)
     team = models.CharField(max_length=50, blank=True)
 
     # Add these lines to resolve clashes
