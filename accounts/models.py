@@ -17,7 +17,8 @@ class User(AbstractUser):
         ('BUSINESS_HEAD', 'Business Head'),
         ('BUSINESS DEVELOPMENT MANAGER', 'Business development manager'),
         ('CM','Center Manager'),
-        ('HR','Human Resources')
+        ('HR','Human Resources'),
+        ('FOE','FOE Cum TC')
     ]
     role = models.CharField(max_length=30, choices=ROLE_CHOICES)
     team = models.CharField(max_length=50, blank=True)
