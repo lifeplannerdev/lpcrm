@@ -15,6 +15,7 @@ class User(AbstractUser):
         ('MEDIA', 'Media Team'),
         ('TRAINER', 'Trainer'),  
         ('BUSINESS_HEAD', 'Business Head'),
+        ('BUSINESS DEVELOPMENT MANAGER', 'Business development manager'),
         ('CM','Center Manager'),
         ('HR','Human Resources')
     ]
