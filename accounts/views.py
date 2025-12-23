@@ -88,7 +88,9 @@ def quick_login(request):
         elif role == 'HR':
             return redirect('hr:dashboard')    
         elif role == 'ADMIN':
-            return redirect('gm:dashboard')      
+            return redirect('gm:dashboard')  
+        elif role == 'FOE':
+            return redirect('accounts:admission_executive_dashboard')
 
         # Fallback
         return redirect('accounts:landing')
