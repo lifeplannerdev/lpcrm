@@ -91,7 +91,6 @@ def quick_login(request):
             return redirect('gm:dashboard')  
         elif role == 'FOE':
             return redirect('accounts:admission_executive_dashboard')
-
         # Fallback
         return redirect('accounts:landing')
 
@@ -148,16 +147,16 @@ def admission_dashboard(request):
     }
     return render(request, 'accounts/admissionmanager.html', context)
 
-
-def is_admission_executive(user):
-    """Check if user has admission executive role"""
-    return user.role == 'ADM_EXEC'
+def is_admission_executive_or_foe(user):
+    """Check if user has admission executive or FOE role"""
+    return user.role in ['ADM_EXEC', 'FOE']
+ 
 
 @login_required
-@user_passes_test(is_admission_executive)
+@user_passes_test(is_admission_executive_or_foe)
 def admission_executive_dashboard(request):
     """Admission executive dashboard view"""
-    # Get leads assigned to this executive
+    # Get leads assigned to this user (executive or FOE)
     leads = Lead.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
     
     # Split by priority
@@ -171,7 +170,6 @@ def admission_executive_dashboard(request):
         'low_priority_leads': low_priority_leads,
     }
     return render(request, 'accounts/admissionexecutive.html', context) 
-
 
 @login_required
 @require_POST
@@ -189,7 +187,7 @@ def assign_lead_to_executive(request):
         user = request.user
         
         # Verify permissions
-        if not (user.role in ['ADM_MANAGER', 'OPS', 'ADMIN','BUSINESS_HEAD'] or 
+        if not (user.role in ['ADM_MANAGER', 'OPS', 'ADMIN','BUSINESS_HEAD','BUSINESS_DEVELOPMENT_MANAGER'] or
                 lead.assigned_to == user):
             return JsonResponse(
                 {'status': 'error', 'message': 'Permission denied'}, 
