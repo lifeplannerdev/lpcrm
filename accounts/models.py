@@ -14,7 +14,7 @@ class User(AbstractUser):
         ('PROCESSING', 'Processing Executive'),
         ('MEDIA', 'Media Team'),
         ('TRAINER', 'Trainer'),  
-        # ('BUSINESS_HEAD', 'Business Head'),
+        ('BUSINESS_HEAD', 'Business Head'),
         ('BUSINESS_DEVELOPMENT_MANAGER', 'BDM'),
         ('CM','Center Manager'),
         ('HR','Human Resources'),
@@ -22,6 +22,10 @@ class User(AbstractUser):
     ]
     role = models.CharField(max_length=30, choices=ROLE_CHOICES)
     team = models.CharField(max_length=50, blank=True)
+    is_active = models.BooleanField(default=True)
+    phone = models.CharField(max_length=15, blank=True,null=True)
+    location = models.CharField(max_length=100, blank=True,null=True)
+    
 
     # Add these lines to resolve clashes
     groups = models.ManyToManyField(
