@@ -1,17 +1,22 @@
 from django.urls import path
-from . import views
-
-app_name = 'tasks'
+from .views import (
+    TaskStatsAPIView,
+    EmployeeListAPIView,
+    TaskListCreateAPIView,
+    TaskDetailAPIView,
+    TaskUpdateListCreateAPIView,
+    TasksAssignedByMeAPIView,
+    TaskStatusUpdateAPIView,
+    UpcomingTasksAPIView
+)
 
 urlpatterns = [
-    
-    path('my-tasks/', views.my_tasks, name='my_tasks'),
-    path('my-tasks-ajax/', views.my_tasks_ajax, name='my_tasks_ajax'),
-    path('all-assigned-tasks/', views.all_assigned_tasks_ajax, name='all_assigned_tasks_ajax'),
-    path('create/', views.create_task_ajax, name='create_task_ajax'),
-    path('<int:task_id>/update/', views.update_task_ajax, name='update_task_ajax'),
-    path('<int:task_id>/delete/', views.delete_task_ajax, name='delete_task_ajax'),
-    path('<int:task_id>/update-status/', views.update_task_status, name='update_task_status'),
-    path('<int:task_id>/', views.task_detail, name='task_detail'),
-    
+    path('tasks/stats/', TaskStatsAPIView.as_view(), name='task-stats'),
+    path('employees/', EmployeeListAPIView.as_view(), name='employee-list'),
+    path('tasks/', TaskListCreateAPIView.as_view(), name='task-list-create'),
+    path('tasks/<int:pk>/', TaskDetailAPIView.as_view(), name='task-detail'),
+    path('tasks/<int:task_id>/updates/', TaskUpdateListCreateAPIView.as_view(), name='task-updates'),
+    path('tasks/assigned-by-me/', TasksAssignedByMeAPIView.as_view(), name='tasks-assigned-by-me'),
+    path('tasks/<int:pk>/status/', TaskStatusUpdateAPIView.as_view(), name='task-status-update'),
+    path('upcoming/', UpcomingTasksAPIView.as_view(), name='upcoming-tasks'),
 ]

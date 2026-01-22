@@ -47,11 +47,10 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'trainers',
     'tasks',
-    'hob',
-    'gm',
     'hr',
     'django_crontab',
     'cloudinary',
+    'reports',
 ]
 
 
@@ -134,12 +133,6 @@ DATABASES = {
         'OPTIONS': {'sslmode': 'require'},
     }
 }
-
-
-
-
-
-
 
 
 

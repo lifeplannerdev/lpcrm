@@ -1,41 +1,32 @@
 from django.urls import path
-from . import views
+from .views import (
+    RecentActivitiesAPIView,
+    StaffByTeamView,
+    StaffListView,
+    StaffDetailView,
+    StaffCreateView,
+    StaffUpdateView,
+    StaffDeleteView,
+    LoginAPIView, 
+    RegisterAPIView,
+    RefreshTokenAPIView,
+    LogoutAPIView,
+    DashboardStatsAPIView,
+    )
 
-app_name = 'accounts'
 
 urlpatterns = [
-    path('', views.landing_page, name='landing'),  # Handles GET requests
-    path('quick-login/', views.quick_login, name='quick_login'),  # Handles POST
-    path('dashboard/', views.admission_dashboard, name='admission_dashboard'),
-    path('executive-dashboard/', views.admission_executive_dashboard, name='admission_executive_dashboard'),
-    path('media/', views.media_dashboard, name='media_dashboard'),
-    path('operations/', views.operations_dashboard, name='operations_dashboard'),
-    path('cm-dashboard/', views.cm_dashboard, name='cm_dashboard'),
-    path('assign-lead/', views.assign_lead, name='assign_lead'),
-    path('forward-to-processing/', views.forward_to_processing, name='forward_to_processing'),
-    path('update-lead-field/', views.update_lead_field, name='update_lead_field'),
-    path('processing/', views.ProcessingDashboard.as_view(), name='processing_dashboard'),
-    path('accept-lead/', views.accept_lead, name='accept_lead'),
-    path('complete-processing/', views.complete_processing, name='complete_processing'),
-    path('hold-processing/', views.hold_processing, name='hold_processing'),
-    path('reject-lead/', views.reject_lead, name='reject_lead'),
-    path('update-document-status/', views.update_document_status, name='update_document_status'),
-    path('update-processing-notes/', views.update_processing_notes, name='update_processing_notes'),
-    path('reopen-lead/', views.reopen_lead, name='reopen_lead'),
-    path('all-leads/', views.all_leads, name='all_leads'),
-    path('import_leads_excel/', views.import_leads_excel, name='import_leads_excel'),
-    path('download_excel_template/', views.download_excel_template, name='download_excel_template'),
-    path('delete-lead/<int:lead_id>/', views.delete_lead, name='delete_lead'),
-    path('leads/assign-to-executive/', views.assign_lead_to_executive, name='assign_to_executive'),
-    path('add-lead/', views.add_lead, name='add_lead'),
-    path('lead-details/<int:lead_id>/', views.lead_details, name='lead_details'),
-    path('staff-reports/', views.staff_reports_page, name='staff_reports'),
-    path('reports/<int:report_id>/', views.get_report_details, name='get_report_details'),
-    path('reports/<int:report_id>/update/', views.update_report, name='update_report'),
-    path('reports/<int:report_id>/delete/', views.delete_report, name='delete_report'),
-    path('micro-works/create/', views.create_micro_work, name='create_micro_work'),
-    path('micro-works/<int:work_id>/complete/', views.mark_micro_work_completed, name='mark_micro_work_completed'),
-    path('micro-works/<int:work_id>/delete/', views.delete_micro_work, name='delete_micro_work'),
-    path('micro-works/', views.get_micro_works, name='get_micro_works'),
-
+    path('login/', LoginAPIView.as_view(), name='login'),
+    path('register/', RegisterAPIView.as_view(), name='register'),
+    path('token/refresh/', RefreshTokenAPIView.as_view(), name='token-refresh'),
+    path('logout/', LogoutAPIView.as_view(), name='logout'),
+    
+    path('staffs/', StaffListView.as_view(), name='staff-list'),
+    path('staffs/<int:pk>/', StaffDetailView.as_view(), name='staff-detail'),
+    path('staffs/create/', StaffCreateView.as_view(), name='staff-create'),
+    path('staffs/<int:pk>/update/', StaffUpdateView.as_view(), name='staff-update'),
+    path('staffs/<int:pk>/delete/', StaffDeleteView.as_view(), name='staff-delete'),
+    path('staff/team/', StaffByTeamView.as_view(), name='staff-by-team'),
+    path("stats/", DashboardStatsAPIView.as_view(), name="dashboard-stats"),
+    path("activities/", RecentActivitiesAPIView.as_view(), name="dashboard-activities"),
 ]

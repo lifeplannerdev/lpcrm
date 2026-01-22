@@ -1,6 +1,7 @@
-import re
 from django.db import models
 from cloudinary.models import CloudinaryField
+from django.conf import settings
+
 
 class AttendanceDocument(models.Model):
     name = models.CharField(max_length=255, verbose_name="Document Name")
@@ -24,30 +25,22 @@ class AttendanceDocument(models.Model):
     def __str__(self):
         return f"{self.name} - {self.date}"
 
-class Employee(models.Model):
-    name = models.CharField(max_length=100)
-    email = models.EmailField()
-    phone = models.CharField(max_length=15)
-    address = models.TextField(blank=True, null=True)
-    join_date = models.CharField(max_length=100, blank=True, null=True)
-    position = models.CharField(max_length=100)
-    salary = models.CharField(max_length=100)
-    penalty = models.CharField(max_length=100, blank=True, null=True)
-    attendance = models.TextField(max_length=100, blank=True, null=True)
-
-    def __str__(self):
-        return str(self.name)
-    class Meta:
-        verbose_name = 'Employee'
-        verbose_name_plural = 'Employees'
 
 class Penalty(models.Model):
-    employee=models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='penalties', verbose_name='Employee')
-    act=models.CharField(max_length=1000)
-    amount=models.IntegerField(default=0, null=True, blank=True, verbose_name='Amount')
-    month=models.CharField(max_length=100)
-    date=models.DateField()
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="penalties",
+    )
+    act = models.CharField(max_length=1000)
+    amount = models.IntegerField(default=0, blank=True, verbose_name='Amount')
+    month = models.CharField(max_length=100, verbose_name="Month")
+    date = models.DateField()
 
     class Meta:
-        verbose_name = 'Penalty'
-        verbose_name_plural = 'Penalties'
+        verbose_name = "Penalty"
+        verbose_name_plural = "Penalties"
+        ordering = ['-date']
+
+    def __str__(self):
+        return f"{self.user.username if self.user else 'No User'} - {self.month} - ₹{self.amount}"

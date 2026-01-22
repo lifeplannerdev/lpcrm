@@ -1,21 +1,33 @@
 from django.urls import path
-from .views import trainer_dashboard, StudentListView, update_student_notes, add_student, edit_student, delete_student, delete_student2, student_details, attendance_view, get_attendance_detail, quick_mark_attendance, attendance_records,export_student_attendance
+from .views import (
+    StudentStatsAPIView,
+    TrainerListCreateAPIView,
+    TrainerDetailAPIView,
+    StudentListCreateAPIView,
+    StudentDetailAPIView,
+    AttendanceListCreateAPIView,
+    AttendanceDetailAPIView,          
+    QuickMarkAttendanceAPIView,        
+    AttendanceRecordsAPIView,          
+    ExportStudentAttendanceAPIView,    
+)
 
-
-app_name = 'trainers'
+app_name = 'academy'
 
 urlpatterns = [
-    path('dashboard/', trainer_dashboard, name='dashboard'),
-    path('students/', StudentListView.as_view(), name='student_list'),
-    path('student/<int:student_id>/', student_details, name='student_details'),
-    path('update-notes/', update_student_notes, name='update_notes'),
-    path('add-student/', add_student, name='add_student'),
-    path('edit-student/<int:student_id>/', edit_student, name='edit_student'),
-    path('delete-student/', delete_student, name='delete_student'),
-    path('delete-student2/<int:student_id>/', delete_student2, name='delete_student2'),
-    path('attendance/', attendance_view, name='attendance'),
-    path('attendance/detail/', get_attendance_detail, name='attendance_detail'),
-    path('attendance/quick-mark/', quick_mark_attendance, name='quick_mark_attendance'),
-    path('student/<int:student_id>/attendance-records/',attendance_records, name='attendance_records'),
-    path('student/<int:student_id>/export-attendance/',export_student_attendance, name='export_student_attendance'),
+    # Trainers
+    path('trainers/', TrainerListCreateAPIView.as_view(), name='trainer-list-create'),
+    path('trainers/<int:pk>/', TrainerDetailAPIView.as_view(), name='trainer-detail'),
+
+    # Students
+    path('students/stats/', StudentStatsAPIView.as_view(), name='student-stats'),
+    path('students/', StudentListCreateAPIView.as_view(), name='student-list-create'),
+    path('students/<int:pk>/', StudentDetailAPIView.as_view(), name='student-detail'),
+
+    # Attendance
+    path('attendance/', AttendanceListCreateAPIView.as_view(), name='attendance-list-create'),
+    path('attendance/detail/', AttendanceDetailAPIView.as_view(), name='attendance-detail'),  # fixed
+    path('attendance/quick-mark/', QuickMarkAttendanceAPIView.as_view(), name='quick-mark-attendance'),
+    path('students/<int:student_id>/attendance-records/', AttendanceRecordsAPIView.as_view(), name='attendance-records'),
+    path('students/<int:student_id>/export-attendance/', ExportStudentAttendanceAPIView.as_view(), name='export-student-attendance'),
 ]

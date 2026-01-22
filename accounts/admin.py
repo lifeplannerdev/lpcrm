@@ -5,7 +5,6 @@ from django.contrib.auth.models import Group
 from django.contrib.admin import AdminSite
 from django.contrib.auth import BACKEND_SESSION_KEY
 from django.conf import settings
-from .models import DailyReport
 from .models import MicroWork
 
 class CustomUserAdmin(UserAdmin):
@@ -19,7 +18,6 @@ class CustomUserAdmin(UserAdmin):
     )
 
 admin.site.register(User, CustomUserAdmin)
-admin.site.register(DailyReport)
 admin.site.register(MicroWork)
 
 # Unregister the Group model so it does not appear in admin

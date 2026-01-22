@@ -1,11 +1,18 @@
 from django.urls import path
-from . import views
+from .views import (
+    LeadListView,
+    LeadCreateView,
+    LeadDetailView,
+    LeadProcessingTimelineView,
+)
 
 app_name = 'leads'
 
 urlpatterns = [
-    path('<int:lead_id>/update_priority/', views.update_priority, name='update_priority'),
-    path('<int:lead_id>/update_status/', views.update_status, name='update_status'),
-    path('<int:lead_id>/update_program/', views.update_program, name='update_program'),
-    path('<int:lead_id>/update/', views.update_lead, name='update_lead'),
+    # List all leads (with filtering, search, pagination)
+    path('leads/', LeadListView.as_view(), name='lead-list'),
+    path('leads/create/', LeadCreateView.as_view(), name='lead-create'),
+    # Retrieve, update, or delete a specific lead
+    path('leads/<int:pk>/', LeadDetailView.as_view(), name='lead-detail'),
+    path('leads/<int:lead_id>/timeline/', LeadProcessingTimelineView.as_view(), name='lead-timeline'),
 ]

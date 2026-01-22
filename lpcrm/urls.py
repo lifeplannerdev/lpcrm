@@ -24,14 +24,12 @@ from django.conf import settings
 urlpatterns = [
     
     path('admin/', admin.site.urls),
-    path('',include('accounts.urls',namespace='accounts')),
-    path('leads/', include('leads.urls',namespace="leads")),
-    path('trainers/', include('trainers.urls', namespace='trainers')),
-    path('tasks/', include('tasks.urls', namespace='tasks')),
-    path('hr/', include('hr.urls', namespace='hr')),
-    path('hob/', include('hob.urls', namespace='hob')),
-    path('gm/', include('gm.urls', namespace='gm')),
-
+    path('api/',include('accounts.urls')),
+    path('api/', include('leads.urls')),
+    path('api/', include('trainers.urls')),
+    path('api/', include('tasks.urls')),
+    path('api/', include('hr.urls')),
+    path('api/', include('reports.urls')),
 
 ]
 

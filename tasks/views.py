@@ -1,109 +1,186 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib import messages
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
+from rest_framework import status, generics
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
 from django.utils import timezone
-import json
+from rest_framework.exceptions import PermissionDenied
+
 from .models import Task, TaskUpdate
-from .forms import TaskForm, TaskUpdateForm
-from accounts.models import User
+from .serializers import TaskSerializer, TaskUpdateSerializer, EmployeeSerializer, UpcomingTaskSerializer
+from django.contrib.auth import get_user_model
+from .permissions import IsTaskAssigner, TASK_ASSIGNERS, TASK_ASSIGNEES
+from django.utils.timezone import now
+
+User = get_user_model()
 
 
-def is_business_head(user):
-    """Check if user is business head or higher"""
-    return user.role in ['BUSINESS_HEAD', 'ADMIN', 'OPS']
+#  Pagination 
+class TaskPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 50
 
 
+#  Task Stats 
+class TaskStatsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request):
+        user = request.user
 
+        if user.role == "ADMIN":
+            qs = Task.objects.all()
+        elif user.role in TASK_ASSIGNEES:
+            qs = Task.objects.filter(assigned_to=user)
+        elif user.role in TASK_ASSIGNERS:
+            qs = Task.objects.filter(assigned_by=user)
+        else:
+            qs = Task.objects.none()
 
-@login_required
-def my_tasks(request):
-    """View for users to see their assigned tasks"""
-    tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
-    
-    # Statistics for the user
-    my_total_tasks = tasks.count()
-    my_pending_tasks = tasks.filter(status='PENDING').count()
-    my_in_progress_tasks = tasks.filter(status='IN_PROGRESS').count()
-    my_completed_tasks = tasks.filter(status='COMPLETED').count()
-    my_overdue_tasks = tasks.filter(status='OVERDUE').count()
-    
-    context = {
-        'tasks': tasks,
-        'my_total_tasks': my_total_tasks,
-        'my_pending_tasks': my_pending_tasks,
-        'my_in_progress_tasks': my_in_progress_tasks,
-        'my_completed_tasks': my_completed_tasks,
-        'my_overdue_tasks': my_overdue_tasks,
-    }
-    return render(request, 'tasks/my_tasks.html', context)
+        stats = qs.aggregate(
+            total=Count('id'),
+            pending=Count('id', filter=Q(status='PENDING')),
+            in_progress=Count('id', filter=Q(status='IN_PROGRESS')),
+            completed=Count('id', filter=Q(status='COMPLETED')),
+            overdue=Count('id', filter=Q(status='OVERDUE')),
+        )
 
-from django.utils import timezone
-import pytz
-
-@login_required
-def my_tasks_ajax(request):
-    """AJAX endpoint for task sidebar to get user's tasks"""
-    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
-        return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
-    
-    try:
-        tasks = Task.objects.filter(assigned_to=request.user).order_by('-priority', '-created_at')
-        
-        # Convert to IST timezone
-        ist = pytz.timezone('Asia/Kolkata')
-        
-        # Convert tasks to JSON-serializable format
-        tasks_data = []
-        for task in tasks:
-            # Convert deadline to IST
-            deadline_ist = task.deadline.astimezone(ist)
-            
-            tasks_data.append({
-                'id': task.id,
-                'title': task.title,
-                'description': task.description,
-                'status': task.status,
-                'priority': task.priority,
-                'deadline': deadline_ist.strftime('%b %d, %Y %I:%M %p'),
-                'deadline_iso': deadline_ist.isoformat(),  # Add ISO format for JS parsing
-                'overdue_days': task.overdue_days if task.status == 'OVERDUE' else 0,
-                'assigned_by': task.assigned_by.get_full_name() or task.assigned_by.username,
-                'created_at': task.created_at.strftime('%b %d, %Y'),
-            })
-        
-        return JsonResponse({
-            'status': 'success',
-            'tasks': tasks_data,
-            'total_tasks': len(tasks_data)
+        return Response({
+            "total": stats["total"],
+            "pending": stats["pending"],
+            "in_progress": stats["in_progress"],
+            "completed": stats["completed"],
+            "overdue": stats["overdue"],
         })
-        
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-        
-@login_required
-@require_POST
-def update_task_status(request, task_id):
-    """Update task status with notes"""
-    try:
-        # Allow both assigned_to user and assigned_by user to update task status
-        task = get_object_or_404(Task, id=task_id)
-        
-        # Check if user has permission to update this task
-        # Either the user is assigned to the task or they assigned the task
-        if not (request.user == task.assigned_to or request.user == task.assigned_by):
-            return JsonResponse({'status': 'error', 'message': 'You do not have permission to update this task'}, status=403)
-        
-        data = json.loads(request.body)
-        new_status = data.get('status')
-        notes = data.get('notes', '')
-        
-        if new_status not in dict(Task.STATUS_CHOICES).keys():
-            return JsonResponse({'status': 'error', 'message': 'Invalid status'}, status=400)
-        
-        # Create task update record
+
+
+#  Employee List 
+class EmployeeListAPIView(generics.ListAPIView):
+    permission_classes = [IsTaskAssigner]
+    queryset = User.objects.filter(is_active=True)
+    serializer_class = EmployeeSerializer
+
+
+#  Task List / Create 
+class TaskListCreateAPIView(generics.ListCreateAPIView):
+    serializer_class = TaskSerializer
+    pagination_class = TaskPagination
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsTaskAssigner()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Task.objects.select_related("assigned_to", "assigned_by")
+
+        if user.role == "ADMIN":
+            return qs.order_by("-created_at")
+        if user.role in TASK_ASSIGNEES:
+            return qs.filter(assigned_to=user).order_by("-created_at")
+        if user.role in TASK_ASSIGNERS:
+            return qs.filter(assigned_by=user).order_by("-created_at")
+        return Task.objects.none()
+
+    def perform_create(self, serializer):
+        serializer.save(assigned_by=self.request.user)
+
+
+#  Task Detail / Update / Delete 
+class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = TaskSerializer
+
+    def get_permissions(self):
+        if self.request.method in ["PUT", "PATCH", "DELETE"]:
+            return [IsTaskAssigner()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Task.objects.select_related("assigned_to", "assigned_by")
+
+        if user.role == "ADMIN":
+            return qs
+        if user.role in TASK_ASSIGNEES:
+            return qs.filter(assigned_to=user)
+        if user.role in TASK_ASSIGNERS:
+            return qs.filter(assigned_by=user)
+        return Task.objects.none()
+
+
+#  Task Updates 
+class TaskUpdateListCreateAPIView(generics.ListCreateAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TaskUpdateSerializer
+
+    def get_queryset(self):
+        task = get_object_or_404(Task, pk=self.kwargs["task_id"])
+
+        # Only assigned_to, assigned_by, or admin can view updates
+        if task.assigned_to != self.request.user and task.assigned_by != self.request.user and self.request.user.role != "ADMIN":
+            raise PermissionDenied("You do not have access to this task.")
+
+        return TaskUpdate.objects.filter(task=task).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        task = get_object_or_404(Task, pk=self.kwargs["task_id"])
+
+        # Only assigned_to can update the task
+        if task.assigned_to != self.request.user:
+            raise PermissionDenied("Only the assigned employee can update this task.")
+
+        new_status = serializer.validated_data.get("new_status", task.status)
+
+        # Validate new status
+        valid_statuses = [choice[0] for choice in Task.STATUS_CHOICES]
+        if new_status not in valid_statuses:
+            raise PermissionDenied(f"Invalid status. Must be one of {valid_statuses}")
+
+        serializer.save(
+            task=task,
+            updated_by=self.request.user,
+            previous_status=task.status
+        )
+
+        # Update main task status
+        if new_status != task.status:
+            task.status = new_status
+            task.save(update_fields=["status", "updated_at"])
+
+
+#  Tasks Assigned By Me 
+class TasksAssignedByMeAPIView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TaskSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role not in ['ADMIN', 'BUSINESS_HEAD', 'OPS', 'GENERAL_MANAGER']:
+            return Task.objects.none()
+        return Task.objects.filter(assigned_by=user).select_related('assigned_to', 'assigned_by').order_by('-created_at')
+
+
+#  Task Status Update 
+class TaskStatusUpdateAPIView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = TaskUpdateSerializer
+
+    def post(self, request, pk):
+        task = get_object_or_404(Task, pk=pk)
+
+        if request.user != task.assigned_to:
+            return Response({"detail": "Only assigned user can change status."}, status=status.HTTP_403_FORBIDDEN)
+
+        new_status = request.data.get("status")
+        notes = request.data.get("notes", "")
+
+        if new_status not in [choice[0] for choice in Task.STATUS_CHOICES]:
+            return Response({"detail": "Invalid status."}, status=status.HTTP_400_BAD_REQUEST)
+
         TaskUpdate.objects.create(
             task=task,
             updated_by=request.user,
@@ -111,222 +188,58 @@ def update_task_status(request, task_id):
             new_status=new_status,
             notes=notes
         )
-        
-        # Update task status
+
         task.status = new_status
-        if new_status == 'COMPLETED':
-            task.completed_at = timezone.now()
-        task.save()
-        
-        return JsonResponse({
-            'status': 'success',
-            'task_status': task.get_status_display(),
-            'completed_at': task.completed_at.strftime('%b %d, %Y %I:%M %p') if task.completed_at else None
-        })
-        
-    except Task.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Task not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        task.save(update_fields=['status', 'updated_at'])
 
-@login_required
-def task_detail(request, task_id):
-    """View task details and updates"""
-    task = get_object_or_404(Task, id=task_id)
-    
-    # Check if user has permission to view this task
-    # Allow assigned_to user, assigned_by user, or business heads to view
-    if not (request.user == task.assigned_to or request.user == task.assigned_by or is_business_head(request.user)):
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'status': 'error',
-                'message': 'You do not have permission to view this task.'
-            }, status=403)
-        else:
-            messages.error(request, 'You do not have permission to view this task.')
-            return redirect('tasks:my_tasks')
-    
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        # Return JSON data for AJAX requests
-        return JsonResponse({
-            'status': 'success',
-            'task': {
-                'id': task.id,
-                'title': task.title,
-                'description': task.description,
-                'status': task.status,
-                'status_display': task.get_status_display(),
-                'priority': task.priority,
-                'priority_display': task.get_priority_display(),
-                'deadline': task.deadline.strftime('%b %d, %Y %I:%M %p'),
-                'created_at': task.created_at.strftime('%b %d, %Y'),
-                'completed_at': task.completed_at.strftime('%b %d, %Y %I:%M %p') if task.completed_at else None,
-                'assigned_by': task.assigned_by.get_full_name() or task.assigned_by.username,
-                'assigned_to': task.assigned_to.get_full_name() or task.assigned_to.username,
+        return Response({"detail": "Status updated successfully"})
+
+
+# #  Upcoming Tasks 
+# class UpcomingTasksAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def get(self, request):
+#         qs = Task.objects.filter(
+#             deadline__gte=now()
+#         ).order_by("deadline")
+
+#         # Role-based filtering
+#         if request.user.role != "ADMIN":
+#             qs = qs.filter(assigned_to=request.user)
+
+#         tasks = qs[:10]
+
+#         data = [
+#             {
+#                 "id": task.id,
+#                 "title": task.title,
+#                 "priority": task.priority,
+#                 "status": task.status,
+#                 "completed": task.status == "COMPLETED",
+#                 "deadline": task.deadline,
+#             }
+#             for task in tasks
+#         ]
+
+#         return Response(data)
+
+class UpcomingTasksAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        qs = Task.objects.filter(deadline__gte=now())
+
+        if request.user.role not in ["ADMIN", "BUSINESS_HEAD", "OPS"]:
+            qs = qs.filter(assigned_to=request.user)
+
+        qs = qs.order_by("deadline")[:5]
+
+        return Response([
+            {
+                "title": t.title,
+                "status": t.status,
+                "deadline": t.deadline.strftime("%d %b %Y"),
             }
-        })
-    else:
-        # Return HTML page for regular requests
-        updates = task.updates.all().order_by('-created_at')
-        
-        context = {
-            'task': task,
-            'updates': updates,
-        }
-        return render(request, 'tasks/task_detail.html', context)
-
-@login_required
-def all_assigned_tasks_ajax(request):
-    """AJAX endpoint to get all tasks assigned by the current user (for Operations/Business Head)"""
-    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
-        return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
-    
-    try:
-        # Get tasks assigned by the current user (for managers/ops to see tasks they created)
-        tasks = Task.objects.filter(assigned_by=request.user).order_by('-priority', '-created_at')
-        
-        # Convert tasks to JSON-serializable format
-        tasks_data = []
-        for task in tasks:
-            tasks_data.append({
-                'id': task.id,
-                'title': task.title,
-                'description': task.description,
-                'status': task.status,
-                'priority': task.priority,
-                'deadline': task.deadline.strftime('%b %d, %Y %I:%M %p'),
-                'deadline_raw': task.deadline.strftime('%Y-%m-%dT%H:%M'),  # For datetime-local input
-                'overdue_days': task.overdue_days if task.status == 'OVERDUE' else 0,
-                'is_overdue': task.status == 'OVERDUE',
-                'assigned_to_id': task.assigned_to.id,
-                'assigned_to_name': task.assigned_to.get_full_name() or task.assigned_to.username,
-                'assigned_by': task.assigned_by.get_full_name() or task.assigned_by.username,
-                'created_at': task.created_at.strftime('%b %d, %Y'),
-            })
-        
-        return JsonResponse({
-            'status': 'success',
-            'tasks': tasks_data,
-            'total_tasks': len(tasks_data)
-        })
-        
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-@login_required
-@require_POST
-def create_task_ajax(request):
-    """Create a new task via AJAX"""
-    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
-        return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
-    
-    try:
-        data = json.loads(request.body)
-        
-        # Get the assigned user
-        assigned_to_user = User.objects.get(id=data.get('assigned_to'))
-        
-        # Create the task
-        task = Task.objects.create(
-            title=data.get('title'),
-            description=data.get('description', ''),
-            assigned_by=request.user,
-            assigned_to=assigned_to_user,
-            priority=data.get('priority', 'MEDIUM'),
-            deadline=data.get('deadline')
-        )
-        
-        # Create initial task update
-        TaskUpdate.objects.create(
-            task=task,
-            updated_by=request.user,
-            previous_status='PENDING',
-            new_status='PENDING',
-            notes=f'Task created by {request.user.get_full_name()}'
-        )
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Task created successfully!',
-            'task_id': task.id
-        })
-        
-    except User.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Assigned user not found'}, status=404)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-@login_required
-@require_POST
-def update_task_ajax(request, task_id):
-    """Update an existing task via AJAX"""
-    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
-        return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
-    
-    try:
-        data = json.loads(request.body)
-        
-        # Get the task and verify user has permission to update it
-        task = get_object_or_404(Task, id=task_id, assigned_by=request.user)
-        
-        # Get the assigned user if changed
-        if 'assigned_to' in data and data['assigned_to']:
-            assigned_to_user = User.objects.get(id=data.get('assigned_to'))
-            task.assigned_to = assigned_to_user
-        
-        # Update task fields
-        if 'title' in data:
-            task.title = data['title']
-        if 'description' in data:
-            task.description = data['description']
-        if 'priority' in data:
-            task.priority = data['priority']
-        if 'deadline' in data:
-            task.deadline = data['deadline']
-        
-        task.save()
-        
-        # Create task update record
-        TaskUpdate.objects.create(
-            task=task,
-            updated_by=request.user,
-            previous_status=task.status,
-            new_status=task.status,
-            notes=f'Task updated by {request.user.get_full_name()}'
-        )
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Task updated successfully!',
-            'task_id': task.id
-        })
-        
-    except User.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Assigned user not found'}, status=404)
-    except Task.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Task not found or you do not have permission to edit it'}, status=404)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
-@login_required
-@require_POST
-def delete_task_ajax(request, task_id):
-    """Delete a task via AJAX"""
-    if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
-        return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
-    
-    try:
-        # Get the task and verify user has permission to delete it
-        task = get_object_or_404(Task, id=task_id, assigned_by=request.user)
-        task.delete()
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Task deleted successfully!'
-        })
-        
-    except Task.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Task not found or you do not have permission to delete it'}, status=404)
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
+            for t in qs
+        ])
