@@ -44,6 +44,10 @@ INSTALLED_APPS = [
     'django_crontab',
     'cloudinary',
     'reports',
+    'rest_framework',
+    'django_filters',
+    'corsheaders',
+    'rest_framework_simplejwt'
 ]
 
 
