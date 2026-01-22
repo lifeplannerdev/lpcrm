@@ -1,3 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+
+# Virtual env
+env/
+venv/
+.venv/
+
+# Environment variables
 .env
-credentials/
-*.json
+
+# Django
+/staticfiles/
+/media/
+/assets/
+
+# OS
+.DS_Store
+Thumbs.db

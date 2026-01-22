@@ -11,29 +11,22 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
-from dotenv import load_dotenv
 import dj_database_url
-from decouple import config
+from decouple import config, Csv
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
-load_dotenv()
 
+# SECURITY
+SECRET_KEY = config('SECRET_KEY')
+DEBUG = config('DEBUG', default=False, cast=bool)
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-$pb1a&_gjg$k2e02i4awf#=(f_8rhtjky3*(k9jt-c)0uzw7@&'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = ["*"]
-
-AUTH_USER_MODEL = 'accounts.User' 
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -77,21 +70,7 @@ MIDDLEWARE = [
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
-AUTH_USER_MODEL = 'accounts.User'
-ROOT_URLCONF = 'lpcrm.urls'
-ADMIN_LOGIN_URL = '/admin-login/'
-SESSION_COOKIE_AGE = 86400 
-SESSION_SAVE_EVERY_REQUEST = True 
 
-
-# Session settings
-SESSION_COOKIE_NAME = 'frontend_sessionid'
-SESSION_COOKIE_PATH = '/'
-SESSION_COOKIE_HTTPONLY = True
-
-# Admin session settings
-ADMIN_SESSION_COOKIE_NAME = 'admin_sessionid'
-ADMIN_SESSION_COOKIE_PATH = '/admin'
 
 TEMPLATES = [
     {
@@ -125,11 +104,11 @@ WSGI_APPLICATION = 'lpcrm.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'neondb',
-        'USER': 'neondb_owner',
-        'PASSWORD': 'npg_iP5dyZgpaL2R',
-        'HOST': 'ep-floral-haze-adtwv5ke-pooler.c-2.us-east-1.aws.neon.tech',
-        'PORT': '5432',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST'),
+        'PORT': config('DB_PORT'),
         'OPTIONS': {'sslmode': 'require'},
     }
 }
@@ -159,11 +138,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
-TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 TIME_ZONE = 'Asia/Kolkata'
 
@@ -179,21 +154,34 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 
 
+AUTH_USER_MODEL = 'accounts.User'
+ROOT_URLCONF = 'lpcrm.urls'
+ADMIN_LOGIN_URL = '/admin-login/'
+SESSION_COOKIE_AGE = 86400 
+SESSION_SAVE_EVERY_REQUEST = True 
 
-# Import and configure Cloudinary
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
+
+# Session settings
+SESSION_COOKIE_NAME = 'frontend_sessionid'
+SESSION_COOKIE_PATH = '/'
+SESSION_COOKIE_HTTPONLY = True
+
+# Admin session settings
+ADMIN_SESSION_COOKIE_NAME = 'admin_sessionid'
+ADMIN_SESSION_COOKIE_PATH = '/admin'
+
 
 # Configure with your credentials from the Cloudinary Dashboard
-cloudinary.config( 
-    cloud_name = "dzmvrjvfs",
-    api_key = "529255454263344", 
-    api_secret = "TwM8oZiBNiLwdYwDjnPekSvSEXU",  # Keep this secret!
-    secure = True
+cloudinary.config(
+    cloud_name=config('CLOUD_NAME'),
+    api_key=config('CLOUD_KEY'),
+    api_secret=config('CLOUD_SECRET'),
+    secure=True
 )
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+
+CORS_ALLOWED_ORIGINS = [config('FRONTEND_URL')]
+
 
 
 # Default primary key field type
