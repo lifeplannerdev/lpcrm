@@ -1,14 +1,14 @@
-# Create your views here.
+# accounts/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny,IsAdminUser, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import generics, filters, status
 from rest_framework.pagination import PageNumberPagination
 from .permissions import IsManagement, IsSuperAdmin
 from leads.models import Lead
 from trainers.models import Student
-from .models import User,ActivityLog
+from .models import User, ActivityLog
 from rest_framework.exceptions import PermissionDenied
 from .serializers import (
     StaffListSerializer,
@@ -20,14 +20,14 @@ from .serializers import (
 )
 
 
-#  Pagination 
+# Pagination 
 class StaffPagination(PageNumberPagination):
     page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 100
 
 
-#  Dashboard Stats View
+# Dashboard Stats View
 class DashboardStatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -65,10 +65,26 @@ class RecentActivitiesAPIView(APIView):
             }
             for activity in activities
         ]
-        print(data)
         return Response(data)
-    
-    
+
+
+class CurrentUserAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "role": user.role,
+            "phone": user.phone if hasattr(user, 'phone') else None,
+            "location": user.location if hasattr(user, 'location') else None,
+        })
+
+
 # Registration View
 class RegisterAPIView(APIView):
     permission_classes = [AllowAny]
@@ -89,7 +105,7 @@ class RegisterAPIView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
-# Login View
+#Login View 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
 
@@ -105,6 +121,9 @@ class LoginAPIView(APIView):
             "user": {
                 "id": user.id,
                 "username": user.username,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
                 "role": user.role
             }
         }, status=status.HTTP_200_OK)
@@ -112,9 +131,11 @@ class LoginAPIView(APIView):
         response.set_cookie(
             key="refresh_token",
             value=str(refresh),
-            httponly=True,
-            secure=False,         
-            samesite="Lax",
+            httponly=True,           
+            secure=True,            
+            samesite="None",         
+            max_age=7*24*60*60,      
+            path="/",               
         )
         
         return response
@@ -139,21 +160,30 @@ class RefreshTokenAPIView(APIView):
 
             return Response({"access": access_token}, status=status.HTTP_200_OK)
 
-        except Exception:
+        except Exception as e:
             return Response(
-                {"detail": "Invalid refresh token"},
+                {"detail": "Invalid or expired refresh token"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
 
-# Logout View
+#Logout View
 class LogoutAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
         response = Response(
             {"message": "Logged out successfully"},
             status=status.HTTP_200_OK
         )
-        response.delete_cookie("refresh_token", path="/api/token/refresh/")
+        
+        response.delete_cookie(
+            key="refresh_token",
+            path="/",
+            samesite="None",
+            secure=True
+        )
+        
         return response
 
 
@@ -169,16 +199,14 @@ class StaffListView(generics.ListAPIView):
     ordering = ['-date_joined']
 
 
-
-#  Staff Detail View 
+# Staff Detail View 
 class StaffDetailView(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = StaffDetailSerializer
     permission_classes = [IsManagement]
 
 
-
-#  Staff Create View 
+# Staff Create View 
 class StaffCreateView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = StaffCreateSerializer
@@ -190,7 +218,7 @@ class StaffCreateView(generics.CreateAPIView):
         return response
 
 
-#  Staff Update View
+# Staff Update View
 class StaffUpdateView(generics.UpdateAPIView):
     queryset = User.objects.all()
     serializer_class = StaffUpdateSerializer
@@ -210,8 +238,7 @@ class StaffUpdateView(generics.UpdateAPIView):
         )
 
 
-
-#  Staff Delete View 
+# Staff Delete View 
 class StaffDeleteView(generics.DestroyAPIView):
     queryset = User.objects.all()
     serializer_class = StaffDetailSerializer
@@ -250,8 +277,3 @@ class StaffByTeamView(generics.ListAPIView):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-
-
-
-

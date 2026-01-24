@@ -8,6 +8,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from pathlib import Path
+from datetime import timedelta
 import dj_database_url
 from decouple import config, Csv
 import cloudinary
@@ -33,6 +34,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',  
     'django_filters',
     'widget_tweaks',
     'django_crontab',
@@ -135,28 +137,73 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+    'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),      
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),       
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+    
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+    
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+    
+    'JTI_CLAIM': 'jti',
+    
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
+
 # Admin settings
 ADMIN_LOGIN_URL = '/admin-login/'
 
-# Session settings
-SESSION_COOKIE_AGE = 86400 
+#  Session settings
+SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_NAME = 'frontend_sessionid'
 SESSION_COOKIE_PATH = '/'
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
-
-# Admin session settings
+SESSION_COOKIE_SAMESITE = 'None'  
+SESSION_COOKIE_SECURE = True     
+# Admin session 
 ADMIN_SESSION_COOKIE_NAME = 'admin_sessionid'
 ADMIN_SESSION_COOKIE_PATH = '/admin'
 
-# CSRF settings
+#  CSRF settings
 CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True        
+CSRF_COOKIE_HTTPONLY = False      
 CSRF_TRUSTED_ORIGINS = [config('FRONTEND_URL')]
 
-# CORS settings
+#  CORS settings
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [config('FRONTEND_URL')]
 
@@ -181,6 +228,19 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
+#  Security Settings (Production)
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+
+#  HTTPS Settings (Only for production with HTTPS)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+
 # Cloudinary configuration
 cloudinary.config(
     cloud_name=config('CLOUD_NAME'),
@@ -198,3 +258,25 @@ CRONJOBS = [
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+#  Logging Configuration (Optional but recommended)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
