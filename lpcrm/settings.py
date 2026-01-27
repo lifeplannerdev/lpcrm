@@ -186,27 +186,34 @@ SIMPLE_JWT = {
 # Admin settings
 ADMIN_LOGIN_URL = '/admin-login/'
 
-#  Session settings
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_COOKIE_NAME = 'frontend_sessionid'
 SESSION_COOKIE_PATH = '/'
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'None'  
-SESSION_COOKIE_SECURE = True     
+SESSION_COOKIE_SAMESITE = 'Lax'  # ✅ CHANGED: From 'None' to 'Lax'
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_DOMAIN = 'lpcrm.vercel.app'  # ✅ ADDED: Explicit domain
+
 # Admin session 
 ADMIN_SESSION_COOKIE_NAME = 'admin_sessionid'
 ADMIN_SESSION_COOKIE_PATH = '/admin'
 
-#  CSRF settings
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True        
-CSRF_COOKIE_HTTPONLY = False      
-CSRF_TRUSTED_ORIGINS = [config('FRONTEND_URL')]
+CSRF_COOKIE_SAMESITE = 'Lax' 
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_DOMAIN = 'lpcrm.vercel.app'  
+CSRF_TRUSTED_ORIGINS = [
+    'https://lpcrm.vercel.app', 
+]
 
-#  CORS settings
+
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [config('FRONTEND_URL')]
+CORS_ALLOWED_ORIGINS = [
+    'https://lpcrm.vercel.app', 
+]
+
+CORS_ALLOWED_ORIGINS += ['https://lpcrmbackend.vercel.app']
 
 CORS_ALLOW_METHODS = [
     'DELETE',
