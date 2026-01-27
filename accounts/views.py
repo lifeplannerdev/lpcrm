@@ -115,9 +115,11 @@ class LoginAPIView(APIView):
         user = serializer.validated_data["user"]
         refresh = RefreshToken.for_user(user)
         
-        response = Response({
+        # ✅ Return refresh token in response body instead of cookie
+        return Response({
             "message": "Login successful",
             "access": str(refresh.access_token),
+            "refresh": str(refresh),  # ✅ Add this
             "user": {
                 "id": user.id,
                 "username": user.username,
@@ -127,26 +129,14 @@ class LoginAPIView(APIView):
                 "role": user.role
             }
         }, status=status.HTTP_200_OK)
-        
-        response.set_cookie(
-            key="refresh_token",
-            value=str(refresh),
-            httponly=True,           
-            secure=True,            
-            samesite="None",         
-            max_age=7*24*60*60,      
-            path="/",               
-        )
-        
-        return response
 
 
-# Token Refresh View
+# Token Refresh View - Updated
 class RefreshTokenAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        refresh_token = request.COOKIES.get("refresh_token")
+        refresh_token = request.data.get("refresh_token")
 
         if not refresh_token:
             return Response(
@@ -158,7 +148,10 @@ class RefreshTokenAPIView(APIView):
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
 
-            return Response({"access": access_token}, status=status.HTTP_200_OK)
+            return Response({
+                "access": access_token,
+                "refresh": str(refresh) 
+            }, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response(

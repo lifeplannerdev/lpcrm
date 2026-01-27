@@ -38,19 +38,15 @@ class LoginSerializer(serializers.Serializer):
         username = data.get("username")
         password = data.get("password")
 
-        # 1️⃣ Check if user exists first
         try:
             user = User.objects.get(username=username)
         except User.DoesNotExist:
             raise serializers.ValidationError("Invalid username or password")
-
-        # 2️⃣ Check admin approval
         if not user.is_active:
             raise serializers.ValidationError(
                 "Your account is pending admin approval"
             )
 
-        # 3️⃣ Authenticate password
         user = authenticate(username=username, password=password)
         if not user:
             raise serializers.ValidationError("Invalid username or password")
