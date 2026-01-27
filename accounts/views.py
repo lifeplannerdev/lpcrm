@@ -108,7 +108,7 @@ class RegisterAPIView(APIView):
 #Login View 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
-
+    
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -132,10 +132,11 @@ class LoginAPIView(APIView):
             key="refresh_token",
             value=str(refresh),
             httponly=True,           
-            secure=True,            
-            samesite="None",         
+            secure=True,             
+            samesite="Lax",          
             max_age=7*24*60*60,      
-            path="/",               
+            path="/",                
+            domain="lpcrm.vercel.app"
         )
         
         return response
