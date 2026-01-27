@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404
 
 # Custom Pagination for Daily Reports
 class DailyReportPagination(PageNumberPagination):
-    page_size = 10              
+    page_size = 50              
     page_size_query_param = "page_size"
     max_page_size = 50
 
