@@ -120,8 +120,7 @@ class StaffCreateSerializer(serializers.ModelSerializer):
             'is_active',
             'password',
             'phone',              
-            'location', 
-            'team'
+            'location',
             'salary',
             'join_date'
         ]
