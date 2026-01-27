@@ -108,7 +108,7 @@ class RegisterAPIView(APIView):
 #Login View 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
-    
+
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -132,11 +132,10 @@ class LoginAPIView(APIView):
             key="refresh_token",
             value=str(refresh),
             httponly=True,           
-            secure=True,             
-            samesite="Lax",          
+            secure=True,            
+            samesite="None",         
             max_age=7*24*60*60,      
-            path="/",                
-            domain="lpcrm.vercel.app"
+            path="/",               
         )
         
         return response
@@ -147,44 +146,23 @@ class RefreshTokenAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        # Log what cookies we're receiving
-        print("All cookies:", request.COOKIES)
-        
         refresh_token = request.COOKIES.get("refresh_token")
-        
-        # Also try to get it from the request body as fallback
-        if not refresh_token:
-            refresh_token = request.data.get("refresh_token")
 
         if not refresh_token:
             return Response(
-                {"detail": "Refresh token not found in cookies or body"},
+                {"detail": "Refresh token not found"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
         try:
             refresh = RefreshToken(refresh_token)
-            
-            # Check if token is blacklisted
-            if hasattr(refresh, 'check_blacklist'):
-                refresh.check_blacklist()
-            
             access_token = str(refresh.access_token)
 
-            return Response({
-                "access": access_token
-            }, status=status.HTTP_200_OK)
+            return Response({"access": access_token}, status=status.HTTP_200_OK)
 
-        except TokenError as e:
-            print(f"Token error: {str(e)}")
-            return Response(
-                {"detail": f"Invalid or expired refresh token: {str(e)}"},
-                status=status.HTTP_401_UNAUTHORIZED
-            )
         except Exception as e:
-            print(f"Unexpected error: {str(e)}")
             return Response(
-                {"detail": "Token refresh failed"},
+                {"detail": "Invalid or expired refresh token"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
