@@ -146,23 +146,44 @@ class RefreshTokenAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        # Log what cookies we're receiving
+        print("All cookies:", request.COOKIES)
+        
         refresh_token = request.COOKIES.get("refresh_token")
+        
+        # Also try to get it from the request body as fallback
+        if not refresh_token:
+            refresh_token = request.data.get("refresh_token")
 
         if not refresh_token:
             return Response(
-                {"detail": "Refresh token not found"},
+                {"detail": "Refresh token not found in cookies or body"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
         try:
             refresh = RefreshToken(refresh_token)
+            
+            # Check if token is blacklisted
+            if hasattr(refresh, 'check_blacklist'):
+                refresh.check_blacklist()
+            
             access_token = str(refresh.access_token)
 
-            return Response({"access": access_token}, status=status.HTTP_200_OK)
+            return Response({
+                "access": access_token
+            }, status=status.HTTP_200_OK)
 
-        except Exception as e:
+        except TokenError as e:
+            print(f"Token error: {str(e)}")
             return Response(
-                {"detail": "Invalid or expired refresh token"},
+                {"detail": f"Invalid or expired refresh token: {str(e)}"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception as e:
+            print(f"Unexpected error: {str(e)}")
+            return Response(
+                {"detail": "Token refresh failed"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
