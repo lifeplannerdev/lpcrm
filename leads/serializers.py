@@ -17,27 +17,9 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             'location',
             'remarks',
             'status',
+            'assigned_to', 
         ]
 
-    def validate_name(self, value):
-        value = value.strip()
-        if not value:
-            raise serializers.ValidationError("Name is required.")
-        if len(value) < 3:
-            raise serializers.ValidationError("Name must be at least 3 characters long.")
-        return value
-
-    def validate_phone(self, value):
-        value = value.strip()
-        if not value:
-            raise serializers.ValidationError("Phone number is required.")
-        if not value.isdigit():
-            raise serializers.ValidationError("Phone number must contain only digits.")
-        if len(value) < 10:
-            raise serializers.ValidationError("Phone number must be at least 10 digits.")
-        if Lead.objects.filter(phone=value).exists():
-            raise serializers.ValidationError("A lead with this phone number already exists.")
-        return value
 
     def validate(self, attrs):
         # Normalize fields to uppercase
@@ -55,16 +37,28 @@ class LeadCreateSerializer(serializers.ModelSerializer):
                 "status": "Cannot create a lead directly with this status."
             })
 
-        return attrs
+        # ADD VALIDATION FOR assigned_to
+        assigned_to = attrs.get('assigned_to')
+        if assigned_to and assigned_to.role not in ['ADM_MANAGER', 'ADM_EXEC']:
+            raise serializers.ValidationError({
+                "assigned_to": "User must have ADM_MANAGER or ADM_EXEC role."
+            })
 
+        return attrs
+    
+    def create(self, validated_data):
+        # Set assigned_date if assigned_to is provided
+        if validated_data.get('assigned_to'):
+            validated_data['assigned_date'] = timezone.now()
+        return super().create(validated_data)
 
 
 
 
 #  Lead List Serializer 
-
 class LeadListSerializer(serializers.ModelSerializer):
     assigned_to_name = serializers.CharField(source='assigned_to.username', read_only=True)
+    assigned_to_id = serializers.IntegerField(source='assigned_to.id', read_only=True, allow_null=True)
 
     class Meta:
         model = Lead
@@ -77,17 +71,21 @@ class LeadListSerializer(serializers.ModelSerializer):
             'program',
             'source',
             'processing_status',
-            'assigned_to_name',
+            'assigned_to',           
+            'assigned_to_name',       
+            'assigned_to_id',         
+            'assigned_date',          
             'created_at',
             'email',
             'location',
-            
         ]
 
 
 #  Lead Detail Serializer 
 
 class LeadDetailSerializer(serializers.ModelSerializer):
+    assigned_to_name = serializers.CharField(source='assigned_to.username', read_only=True)
+    
     class Meta:
         model = Lead
         fields = '__all__'
@@ -96,31 +94,31 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             'updated_at',
             'processing_status_date',
             'registration_date',
+            'assigned_date', 
         )
 
-    def to_internal_value(self, data):
-        """
-        Normalize priority, status, and source to uppercase before validation
-        """
-        # Create a mutable copy of the data
-        data = data.copy() if hasattr(data, 'copy') else dict(data)
-        
-        # Normalize fields to uppercase
-        if 'priority' in data and data['priority']:
-            data['priority'] = data['priority'].upper()
-        
-        if 'status' in data and data['status']:
-            data['status'] = data['status'].upper()
-        
-        if 'source' in data and data['source']:
-            data['source'] = data['source'].upper()
-        
-        return super().to_internal_value(data)
+    def validate_assigned_to(self, value):
+        """Validate that assigned user has correct role"""
+        if value and value.role not in ['ADM_MANAGER', 'ADM_EXEC']:
+            raise serializers.ValidationError(
+                "User must have ADM_MANAGER or ADM_EXEC role."
+            )
+        return value
+
 
     def update(self, instance, validated_data):
         request = self.context.get('request')
 
-        # Track remarks changes
+        # Track assignment changes
+        if 'assigned_to' in validated_data:
+            old_assigned = instance.assigned_to
+            new_assigned = validated_data.get('assigned_to')
+            
+            if old_assigned != new_assigned:
+                # Update assigned_date when assignment changes
+                validated_data['assigned_date'] = timezone.now()
+
+        # Track remarks changes (existing code)
         if 'remarks' in validated_data and instance.remarks != validated_data.get('remarks'):
             RemarkHistory.objects.create(
                 lead=instance,
@@ -135,38 +133,6 @@ class LeadDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"status": "Status cannot be empty."})
 
         return super().update(instance, validated_data)
-
-
-#  Processing Update Serializer 
-class ProcessingUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ProcessingUpdate
-        fields = [
-            'id',
-            'lead',
-            'status',
-            'changed_by',
-            'notes',
-            'timestamp',
-        ]
-        read_only_fields = ('timestamp',)
-
-    def validate_status(self, value):
-        if value not in dict(Lead.PROCESSING_STATUS_CHOICES).keys():
-            raise serializers.ValidationError("Invalid processing status.")
-        return value
-
-    def validate(self, attrs):
-        lead = attrs.get('lead')
-        changed_by = attrs.get('changed_by')
-
-        if not Lead.objects.filter(id=lead.id).exists():
-            raise serializers.ValidationError({"lead": "Lead does not exist."})
-
-        if changed_by and changed_by.role != 'PROCESSING':
-            raise serializers.ValidationError({"changed_by": "User must have PROCESSING role to update status."})
-
-        return attrs
 
 
 #  Remark History Serializer 
