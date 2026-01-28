@@ -23,6 +23,7 @@ LEAD_VIEW_ALL_ROLES = [
     "OPS",
     "HR",
     'MEDIA',
+    "CM",
 ]
 
 class CanAccessLeads(BasePermission):
