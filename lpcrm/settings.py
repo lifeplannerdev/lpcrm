@@ -197,15 +197,25 @@ SESSION_COOKIE_SECURE = True
 ADMIN_SESSION_COOKIE_NAME = 'admin_sessionid'
 ADMIN_SESSION_COOKIE_PATH = '/admin'
 
-#  CSRF settings
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True        
-CSRF_COOKIE_HTTPONLY = False      
-CSRF_TRUSTED_ORIGINS = [config('FRONTEND_URL')]
+# ============================================
+# CORS & CSRF SETTINGS (FIXED)
+# ============================================
 
-#  CORS settings
+# Get frontend URL from environment variable with fallback
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+
+# CORS settings
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [config('FRONTEND_URL')]
+
+# Allow multiple origins (production + development)
+CORS_ALLOWED_ORIGINS = [
+    FRONTEND_URL,
+    'https://lpcrm.vercel.app',      # Production frontend
+    'http://localhost:5173',          # Local development (Vite)
+    'http://localhost:3000',          # Local development (alternative)
+    'http://127.0.0.1:5173',         # Alternative localhost
+    'http://127.0.0.1:3000',         # Alternative localhost
+]
 
 CORS_ALLOW_METHODS = [
     'DELETE',
@@ -227,6 +237,25 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+# CSRF settings
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True        
+CSRF_COOKIE_HTTPONLY = False
+
+# CSRF Trusted Origins (must match CORS origins)
+CSRF_TRUSTED_ORIGINS = [
+    FRONTEND_URL,
+    'https://lpcrm.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:3000',
+]
+
+# ============================================
+# END CORS & CSRF SETTINGS
+# ============================================
 
 #  Security Settings (Production)
 SECURE_BROWSER_XSS_FILTER = True
@@ -276,6 +305,11 @@ LOGGING = {
         'django': {
             'handlers': ['console'],
             'level': 'INFO',
+            'propagate': False,
+        },
+        'corsheaders': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
             'propagate': False,
         },
     },
