@@ -106,59 +106,45 @@ class RegisterAPIView(APIView):
 
 
 #Login View 
-import logging
-
-logger = logging.getLogger(__name__)
-
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        try:
-            logger.info(f"Login attempt from: {request.data.get('username', 'unknown')}")
-            
-            serializer = LoginSerializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            user = serializer.validated_data["user"]
-            
-            refresh = RefreshToken.for_user(user)
-            
-            logger.info(f"Login successful for user: {user.username}")
-            
-            return Response({
-                "message": "Login successful",
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-                "user": {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "role": user.role
-                }
-            }, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            logger.error(f"Login error: {str(e)}", exc_info=True)
-            return Response({
-                "detail": f"Login failed: {str(e)}"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+        refresh = RefreshToken.for_user(user)
+        
+        # ✅ Return refresh token in response body instead of cookie
+        return Response({
+            "message": "Login successful",
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),  # ✅ Add this
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "role": user.role
+            }
+        }, status=status.HTTP_200_OK)
 
 
+# Token Refresh View - Updated
 class RefreshTokenAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        refresh_token = request.data.get("refresh_token")
+
+        if not refresh_token:
+            return Response(
+                {"detail": "Refresh token not found"},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
         try:
-            refresh_token = request.data.get("refresh_token")
-
-            if not refresh_token:
-                return Response(
-                    {"detail": "Refresh token not found"},
-                    status=status.HTTP_401_UNAUTHORIZED
-                )
-
             refresh = RefreshToken(refresh_token)
             access_token = str(refresh.access_token)
 
@@ -168,11 +154,11 @@ class RefreshTokenAPIView(APIView):
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
-            logger.error(f"Token refresh error: {str(e)}", exc_info=True)
             return Response(
                 {"detail": "Invalid or expired refresh token"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
+
 
 #Logout View
 class LogoutAPIView(APIView):
