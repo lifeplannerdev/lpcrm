@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 from datetime import timedelta
-import dj_database_url
 from decouple import config, Csv
 import cloudinary
 import cloudinary.uploader
@@ -34,7 +33,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'corsheaders',
+    'corsheaders',  
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',  
@@ -51,7 +50,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -82,7 +81,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'lpcrm.wsgi.application'
 
-# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -94,7 +92,6 @@ DATABASES = {
         'OPTIONS': {'sslmode': 'require'},
     }
 }
-
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -120,7 +117,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Changed from 'assets'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -194,15 +191,14 @@ SESSION_COOKIE_SECURE = True
 ADMIN_SESSION_COOKIE_NAME = 'admin_sessionid'
 ADMIN_SESSION_COOKIE_PATH = '/admin'
 
-
-
 # Get frontend URL from environment variable with fallback
 FRONTEND_URL = config('FRONTEND_URL', default='https://lpcrm.vercel.app')
 
-# CORS settings
+
 CORS_ALLOW_CREDENTIALS = True
 
-# Allow multiple origins (production + development)
+# CRITICAL: Allow all origins for Vercel deployments
+# This is because Vercel creates unique URLs for each deployment
 CORS_ALLOWED_ORIGINS = [
     'https://lpcrm.vercel.app',      
     'http://localhost:5173',          
@@ -211,9 +207,14 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:3000',         
 ]
 
-# Add the configured frontend URL if different
-if FRONTEND_URL not in CORS_ALLOWED_ORIGINS:
-    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+# Alternative: Use CORS_ALLOWED_ORIGIN_REGEXES for Vercel preview deployments
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://lpcrm.*\.vercel\.app$",  # Matches all Vercel preview URLs
+    r"^https://lpcrmbackend.*\.vercel\.app$",
+]
+
+# If you want to be more permissive (NOT RECOMMENDED for production)
+# CORS_ALLOW_ALL_ORIGINS = True  # Uncomment only for testing
 
 CORS_ALLOW_METHODS = [
     'DELETE',
@@ -241,19 +242,17 @@ CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True        
 CSRF_COOKIE_HTTPONLY = False
 
-# CSRF Trusted Origins (must match CORS origins)
 CSRF_TRUSTED_ORIGINS = [
     'https://lpcrm.vercel.app',
     'https://lpcrmbackend.vercel.app',
+    'https://*.vercel.app', 
     'http://localhost:5173',
     'http://localhost:3000',
     'http://127.0.0.1:5173',
     'http://127.0.0.1:3000',
 ]
 
-# ============================================
-# Security Settings
-# ============================================
+
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
@@ -285,13 +284,17 @@ CRONJOBS = [
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Logging Configuration
+# Logging Configuration - ENHANCED for debugging
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
         'verbose': {
-            'format': '{levelname} {asctime} {module} {message}',
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
             'style': '{',
         },
     },
@@ -313,7 +316,12 @@ LOGGING = {
         },
         'django.request': {
             'handlers': ['console'],
-            'level': 'ERROR',  # Only log errors in production
+            'level': 'DEBUG' if DEBUG else 'ERROR',
+            'propagate': False,
+        },
+        'accounts': {  # Your app logging
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
             'propagate': False,
         },
     },
