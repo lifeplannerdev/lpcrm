@@ -39,8 +39,8 @@ class Lead(models.Model):
 
     # Basic lead info
     name = models.CharField(max_length=100, validators=[MinLengthValidator(3)])
-    phone = models.CharField(max_length=20,validators=[MinLengthValidator(10)], help_text="Contact phone number")
-    email = models.EmailField(unique=True,null=True,blank=True)
+    phone = models.CharField(max_length=20, validators=[MinLengthValidator(10)], help_text="Contact phone number")
+    email = models.EmailField(unique=True, null=True, blank=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='MEDIUM')
     status = models.TextField(default='ENQUIRY', help_text="Current status of the lead")
     program = models.TextField(blank=True, null=True, help_text="Enter the program name")
@@ -62,12 +62,31 @@ class Lead(models.Model):
     document_status = models.CharField(max_length=20, choices=DOCUMENT_STATUS_CHOICES, default='PENDING')
     documents_received = models.TextField(blank=True, null=True)
 
-    # Assignment tracking
+    # NEW: Two-level assignment tracking
     assigned_to = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
-        limit_choices_to={'role__in': ['ADM_MANAGER', 'ADM_EXEC']}, related_name='assigned_leads'
+        related_name='assigned_leads',
+        help_text="Primary assignee (Manager/Department Head)"
+    )
+    assigned_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='leads_assigned_by_me',
+        help_text="Who assigned this lead"
     )
     assigned_date = models.DateTimeField(null=True, blank=True)
+    
+    # NEW: Secondary assignment for junior staff
+    sub_assigned_to = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='sub_assigned_leads',
+        help_text="Junior employee handling the lead"
+    )
+    sub_assigned_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='leads_sub_assigned_by_me',
+        help_text="Manager who sub-assigned to junior"
+    )
+    sub_assigned_date = models.DateTimeField(null=True, blank=True)
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
@@ -79,14 +98,15 @@ class Lead(models.Model):
         verbose_name = 'Lead'
         verbose_name_plural = 'Leads'
         indexes = [
-            models.Index(fields=['status']),  # This will still work with TextField
+            models.Index(fields=['status']),
             models.Index(fields=['priority']),
             models.Index(fields=['processing_status']),
             models.Index(fields=['assigned_to']),
+            models.Index(fields=['sub_assigned_to']),
         ]
 
     def __str__(self):
-        return f"{self.name} ({self.phone}) - {self.status}"  # Removed get_status_display()
+        return f"{self.name} ({self.phone}) - {self.status}"
 
     def save(self, *args, **kwargs):
         # Update registration date when status changes to REGISTERED
@@ -117,6 +137,12 @@ class Lead(models.Model):
     def get_processing_timeline(self):
         """Returns a queryset of processing status changes"""
         return self.processing_updates.all().order_by('-timestamp')
+    
+    # NEW: Get current handler of the lead
+    @property
+    def current_handler(self):
+        """Returns the current person handling this lead (sub_assigned_to if exists, else assigned_to)"""
+        return self.sub_assigned_to if self.sub_assigned_to else self.assigned_to
 
     @property
     def is_forwardable(self):
@@ -134,6 +160,28 @@ class Lead(models.Model):
         """Check if processing can be marked as complete"""
         return (self.processing_status == 'PROCESSING' and 
                 self.processing_executive is not None)
+
+
+class LeadAssignment(models.Model):
+    """Track all lead assignments and reassignments"""
+    ASSIGNMENT_TYPE_CHOICES = [
+        ('PRIMARY', 'Primary Assignment'),
+        ('SUB', 'Sub Assignment'),
+        ('REASSIGNMENT', 'Reassignment'),
+    ]
+    
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name='assignment_history')
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='received_assignments')
+    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='made_assignments')
+    assignment_type = models.CharField(max_length=20, choices=ASSIGNMENT_TYPE_CHOICES)
+    notes = models.TextField(blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.lead} assigned to {self.assigned_to} by {self.assigned_by}"
 
 
 class ProcessingUpdate(models.Model):
