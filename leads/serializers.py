@@ -10,8 +10,10 @@ class UserSimpleSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'role', 'first_name', 'last_name']
 
 
-# Lead Create Serializer - THIS WAS MISSING!
+# Lead Create Serializer - UPDATED TO HANDLE assigned_to
 class LeadCreateSerializer(serializers.ModelSerializer):
+    assigned_to = serializers.IntegerField(required=False, allow_null=True, write_only=True)
+    
     class Meta:
         model = Lead
         fields = [
@@ -25,6 +27,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             'location',
             'remarks',
             'status',
+            'assigned_to',
         ]
 
     def validate_name(self, value):
@@ -46,6 +49,30 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         if Lead.objects.filter(phone=value).exists():
             raise serializers.ValidationError("A lead with this phone number already exists.")
         return value
+    
+    def validate_assigned_to(self, value):
+        """Validate that assigned_to user exists and has appropriate role"""
+        if value is None:
+            return None
+        
+        try:
+            user = User.objects.get(id=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User not found.")
+        
+        # Check if user has appropriate role for assignment
+        from .permissions import MANAGER_ROLES, EXECUTIVE_ROLES
+        ALLOWED_ASSIGNMENT_ROLES = MANAGER_ROLES + EXECUTIVE_ROLES
+        
+        if user.role not in ALLOWED_ASSIGNMENT_ROLES:
+            raise serializers.ValidationError(
+                "Can only assign to managers or executives."
+            )
+        
+        if not user.is_active:
+            raise serializers.ValidationError("Cannot assign to inactive user.")
+        
+        return value
 
     def validate(self, attrs):
         # Normalize fields to uppercase
@@ -64,6 +91,41 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             })
 
         return attrs
+    
+    def create(self, validated_data):
+        """Override create to handle assigned_to properly"""
+        assigned_to_id = validated_data.pop('assigned_to', None)
+        
+        # Create the lead
+        lead = Lead.objects.create(**validated_data)
+        
+        # Handle assignment if provided
+        if assigned_to_id:
+            try:
+                assigned_user = User.objects.get(id=assigned_to_id)
+                lead.assigned_to = assigned_user
+                
+                # Set assignment metadata
+                request = self.context.get('request')
+                if request and request.user:
+                    lead.assigned_by = request.user
+                lead.assigned_date = timezone.now()
+                
+                lead.save()
+                
+                # Create assignment history record
+                LeadAssignment.objects.create(
+                    lead=lead,
+                    assigned_to=assigned_user,
+                    assigned_by=request.user if request else None,
+                    assignment_type='PRIMARY',
+                    notes='Initial assignment during lead creation'
+                )
+            except User.DoesNotExist:
+                # If user not found, just create lead without assignment
+                pass
+        
+        return lead
 
 
 class LeadAssignmentSerializer(serializers.ModelSerializer):
