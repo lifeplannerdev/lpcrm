@@ -15,20 +15,39 @@ class EmployeeSerializer(serializers.ModelSerializer):
 #  Task Serializer 
 class TaskSerializer(serializers.ModelSerializer):
     assigned_by = serializers.PrimaryKeyRelatedField(read_only=True)
-
+    assigned_by_name = serializers.CharField(source='assigned_by.username', read_only=True)
+    assigned_to_name = serializers.CharField(source='assigned_to.username', read_only=True)
+    
+    # Add these computed fields that your frontend expects
+    is_overdue = serializers.BooleanField(read_only=True)
+    overdue_days = serializers.SerializerMethodField()
+    days_until_deadline = serializers.SerializerMethodField()
+    
     class Meta:
         model = Task
         fields = "__all__"
-
+    
+    def get_overdue_days(self, obj):
+        if obj.status in ['COMPLETED', 'CANCELLED']:
+            return 0
+        if obj.is_overdue:
+            delta = timezone.now().date() - obj.deadline
+            return delta.days
+        return 0
+    
+    def get_days_until_deadline(self, obj):
+        if obj.status in ['COMPLETED', 'CANCELLED']:
+            return 0
+        delta = obj.deadline - timezone.now().date()
+        return delta.days if delta.days > 0 else 0
+    
     def validate(self, attrs):
         request = self.context.get("request")
         assigned_to = attrs.get("assigned_to")
-
         if request and assigned_to and request.user == assigned_to:
             raise serializers.ValidationError(
                 "You cannot assign a task to yourself."
             )
-
         return attrs
 
 

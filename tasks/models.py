@@ -70,20 +70,38 @@ class Task(models.Model):
             self.completed_at = None
         super().save(*args, **kwargs)
 
+    # ---------- Computed Properties ----------
+
     @property
     def is_overdue(self):
         if self.status in ['COMPLETED', 'CANCELLED']:
             return False
-        return timezone.now() > self.deadline
+        return timezone.now().date() > self.deadline
+
+    @property
+    def overdue_days(self):
+        if self.status in ['COMPLETED', 'CANCELLED']:
+            return 0
+        if self.is_overdue:
+            delta = timezone.now().date() - self.deadline
+            return delta.days
+        return 0
+
+    @property
+    def days_until_deadline(self):
+        if self.status in ['COMPLETED', 'CANCELLED']:
+            return 0
+        delta = self.deadline - timezone.now().date()
+        return max(delta.days, 0)
+
+    # ---------- Class Method ----------
 
     @classmethod
     def update_overdue_tasks(cls):
         overdue_tasks = cls.objects.filter(
-            deadline__lt=timezone.now(),
+            deadline__lt=timezone.now().date(),
             status__in=['PENDING', 'IN_PROGRESS']
         )
-
-        from .models import TaskUpdate
 
         for task in overdue_tasks:
             TaskUpdate.objects.create(
@@ -96,18 +114,30 @@ class Task(models.Model):
             task.status = 'OVERDUE'
             task.save(update_fields=['status', 'updated_at'])
 
+    def __str__(self):
+        return f"{self.title} ({self.status})"
+
 
 class TaskUpdate(models.Model):
-    """Model to track task status updates and notes"""
-    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='updates')
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name='updates'
+    )
     updated_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    previous_status = models.CharField(max_length=20, choices=Task.STATUS_CHOICES)
-    new_status = models.CharField(max_length=20, choices=Task.STATUS_CHOICES)
+    previous_status = models.CharField(
+        max_length=20,
+        choices=Task.STATUS_CHOICES
+    )
+    new_status = models.CharField(
+        max_length=20,
+        choices=Task.STATUS_CHOICES
+    )
     notes = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         ordering = ['-created_at']
-    
+
     def __str__(self):
-        return f"{self.task.title} - {self.previous_status} → {self.new_status}"
+        return f"{self.task.title}: {self.previous_status} → {self.new_status}"
