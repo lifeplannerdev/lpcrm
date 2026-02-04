@@ -46,7 +46,7 @@ class Task(models.Model):
         default='MEDIUM'
     )
 
-    deadline = models.DateTimeField()
+    deadline = models.DateField()
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
