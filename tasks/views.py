@@ -87,6 +87,7 @@ class TaskListCreateAPIView(generics.ListCreateAPIView):
 
 
 # Task Detail / Update / Delete
+# In views.py - Update TaskDetailAPIView
 class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TaskSerializer
 
@@ -106,7 +107,25 @@ class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             return qs.filter(assigned_to=user)
 
         return Task.objects.none()
-
+    
+    def perform_update(self, serializer):
+        """Create TaskUpdate record when status changes"""
+        task = self.get_object()
+        old_status = task.status
+        new_status = serializer.validated_data.get('status', old_status)
+        
+        # Save the task
+        instance = serializer.save()
+        
+        # If status changed, create a TaskUpdate record
+        if old_status != new_status:
+            TaskUpdate.objects.create(
+                task=instance,
+                updated_by=self.request.user,
+                previous_status=old_status,
+                new_status=new_status,
+                notes=f"Status changed by {self.request.user.username}"
+            )
 
 # Task Updates
 class TaskUpdateListCreateAPIView(generics.ListCreateAPIView):
