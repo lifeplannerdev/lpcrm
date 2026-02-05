@@ -18,6 +18,6 @@ urlpatterns = [
     path("attendance/<int:pk>/", AttendanceDocumentDeleteAPI.as_view(), name="attendance-detail"),
     
     # Employee/Staff endpoints
-    path("employees/", StaffListAPI.as_view(), name="staff-list"),
-    path("employees/<int:pk>/", StaffDetailAPI.as_view(), name="staff-detail"),
+    path("staffs/", StaffListAPI.as_view(), name="staff-list"),
+    path("staffs/<int:pk>/", StaffDetailAPI.as_view(), name="staff-detail"),
 ]
