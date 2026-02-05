@@ -35,6 +35,7 @@ class Student(models.Model):
         ('A2 ONLINE', 'A2 (Online)'),
         ('B1 ONLINE', 'B1 (Online)'),
         ('B2 ONLINE', 'B2 (Online)'),
+        ('ONLINE','Online'),
         ('A1 EXAM PREPERATION','A1 (Exam Preparation)'),
         ('A2 EXAM PREPERATION','A2 (Exam Preparation)'),
         ('B1 EXAM PREPERATION','B1 (Exam Preparation)'),
