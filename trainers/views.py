@@ -5,12 +5,20 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
-from django.db.models import Count
+from django.db.models import Count, Q
+from django.contrib.auth import get_user_model
 import csv
 
 from .models import Trainer, Student, Attendance
-from .serializers import TrainerSerializer, StudentSerializer, AttendanceSerializer
+from .serializers import (
+    TrainerSerializer, 
+    StudentSerializer, 
+    AttendanceSerializer,
+    TrainerUserSerializer
+)
 from .permissions import IsTrainerOwnStudent
+
+User = get_user_model()
 
 
 # ---------------- PAGINATION ----------------
@@ -62,6 +70,35 @@ class TrainerDetailAPIView(APIView):
         return Response(status=204)
 
 
+# NEW: List all users with TRAINER role
+class TrainerUserListAPIView(APIView):
+    """
+    GET /api/trainer-users/
+    List all users with TRAINER role
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Get all users with TRAINER role
+        trainers = User.objects.filter(role='TRAINER', is_active=True)
+        
+        # Optional search
+        search = request.GET.get('search')
+        if search:
+            trainers = trainers.filter(
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(username__icontains=search) |
+                Q(email__icontains=search)
+            )
+        
+        serializer = TrainerUserSerializer(trainers.order_by('first_name'), many=True)
+        return Response({
+            'count': trainers.count(),
+            'results': serializer.data
+        })
+
+
 # ---------------- STUDENT APIs ----------------
 
 class StudentListCreateAPIView(APIView):
@@ -70,8 +107,28 @@ class StudentListCreateAPIView(APIView):
     def get(self, request):
         qs = Student.objects.select_related('trainer', 'trainer__user')
 
+        # If user is a trainer, show only their students
         if hasattr(request.user, 'trainer_profile'):
             qs = qs.filter(trainer=request.user.trainer_profile)
+
+        # Filter options
+        status_filter = request.GET.get('status')
+        batch_filter = request.GET.get('batch')
+        trainer_filter = request.GET.get('trainer')
+        search = request.GET.get('search')
+
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        if batch_filter:
+            qs = qs.filter(batch=batch_filter)
+        if trainer_filter:
+            qs = qs.filter(trainer_id=trainer_filter)
+        if search:
+            qs = qs.filter(
+                Q(name__icontains=search) |
+                Q(email__icontains=search) |
+                Q(phone_number__icontains=search)
+            )
 
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(qs, request)
@@ -110,7 +167,10 @@ class StudentDetailAPIView(APIView):
     def delete(self, request, pk):
         student = self.get_object(request, pk)
         student.delete()
-        return Response(status=204)
+        return Response(
+            {"message": "Student deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT
+        )
 
 
 # ---------------- ATTENDANCE APIs ----------------
@@ -123,6 +183,7 @@ class AttendanceListCreateAPIView(APIView):
             'student', 'trainer', 'trainer__user'
         )
 
+        # If user is a trainer, show only their attendance records
         if hasattr(request.user, 'trainer_profile'):
             qs = qs.filter(trainer=request.user.trainer_profile)
 
@@ -164,6 +225,7 @@ class AttendanceDetailAPIView(APIView):
             'student', 'trainer', 'trainer__user'
         )
 
+        # If user is a trainer, show only their records
         if hasattr(request.user, 'trainer_profile'):
             records = records.filter(trainer=request.user.trainer_profile)
 
@@ -185,6 +247,11 @@ class AttendanceDetailAPIView(APIView):
 
 
 class QuickMarkAttendanceAPIView(APIView):
+    """
+    POST /api/attendance/quick-mark/
+    Bulk mark attendance for multiple students
+    Excludes COMPLETED students automatically
+    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -201,10 +268,11 @@ class QuickMarkAttendanceAPIView(APIView):
         saved = []
 
         for r in records:
+            # Check if student belongs to trainer and is not COMPLETED
             if not Student.objects.filter(
                 id=r.get('student'),
                 trainer=trainer
-            ).exists():
+            ).exclude(status='COMPLETED').exists():
                 continue
 
             obj, _ = Attendance.objects.update_or_create(
@@ -263,21 +331,69 @@ class ExportStudentAttendanceAPIView(APIView):
         return response
 
 
+# NEW: Get students for attendance marking (excludes COMPLETED students)
+class AttendanceStudentsAPIView(APIView):
+    """
+    GET /api/attendance/students/
+    Get active students for attendance marking (excludes COMPLETED students)
+    Only shows trainer's own students
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not hasattr(request.user, 'trainer_profile'):
+            return Response(
+                {"error": "Only trainers can access this endpoint"},
+                status=403
+            )
+
+        trainer = request.user.trainer_profile
+        
+        # Get only active students (exclude COMPLETED)
+        students = Student.objects.filter(
+            trainer=trainer
+        ).exclude(
+            status='COMPLETED'
+        ).select_related('trainer', 'trainer__user')
+
+        # Optional filters
+        batch = request.GET.get('batch')
+        student_class = request.GET.get('student_class')
+        
+        if batch:
+            students = students.filter(batch=batch)
+        if student_class:
+            students = students.filter(student_class=student_class)
+
+        serializer = StudentSerializer(students, many=True)
+        return Response({
+            'count': students.count(),
+            'results': serializer.data
+        })
+
+
 # ---------------- STATS ----------------
 
 class StudentStatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        # Base queryset
+        qs = Student.objects.all()
+        
+        # If trainer, show only their stats
+        if hasattr(request.user, 'trainer_profile'):
+            qs = qs.filter(trainer=request.user.trainer_profile)
+        
         stats = {
-            "total": Student.objects.count(),
+            "total": qs.count(),
             "ACTIVE": 0,
             "COMPLETED": 0,
             "PAUSED": 0,
             "DROPPED": 0,
         }
 
-        for item in Student.objects.values('status').annotate(c=Count('id')):
+        for item in qs.values('status').annotate(c=Count('id')):
             stats[item['status']] = item['c']
 
         stats["PAUSED_DROPPED"] = stats["PAUSED"] + stats["DROPPED"]
