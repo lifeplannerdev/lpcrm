@@ -1,9 +1,23 @@
 from django.urls import path
-from .views import PenaltyListCreateAPI, PenaltyDetailAPI, AttendanceDocumentAPI, AttendanceDocumentDeleteAPI
+from .views import (
+    PenaltyListCreateAPI, 
+    PenaltyDetailAPI, 
+    AttendanceDocumentAPI, 
+    AttendanceDocumentDeleteAPI,
+    StaffListAPI,
+    StaffDetailAPI
+)
 
 urlpatterns = [
-    path("penalties/", PenaltyListCreateAPI.as_view()),
-    path("penalties/<int:pk>/", PenaltyDetailAPI.as_view()),
-    path("attendance/", AttendanceDocumentAPI.as_view()),
-    path("attendance/<int:pk>/", AttendanceDocumentDeleteAPI.as_view()),
+    # Penalty endpoints
+    path("penalties/", PenaltyListCreateAPI.as_view(), name="penalty-list-create"),
+    path("penalties/<int:pk>/", PenaltyDetailAPI.as_view(), name="penalty-detail"),
+    
+    # Attendance endpoints
+    path("attendance/", AttendanceDocumentAPI.as_view(), name="attendance-list-create"),
+    path("attendance/<int:pk>/", AttendanceDocumentDeleteAPI.as_view(), name="attendance-detail"),
+    
+    # Employee/Staff endpoints
+    path("employees/", StaffListAPI.as_view(), name="staff-list"),
+    path("employees/<int:pk>/", StaffDetailAPI.as_view(), name="staff-detail"),
 ]
