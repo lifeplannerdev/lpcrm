@@ -2,29 +2,36 @@ from django.urls import path
 from .views import (
     TrainerListCreateAPIView,
     TrainerDetailAPIView,
+    TrainerUserListAPIView,  # NEW
     StudentListCreateAPIView,
     StudentDetailAPIView,
     AttendanceListCreateAPIView,
     AttendanceDetailAPIView,
     QuickMarkAttendanceAPIView,
     AttendanceRecordsAPIView,
+    AttendanceStudentsAPIView,  # NEW
     ExportStudentAttendanceAPIView,
     StudentStatsAPIView,
 )
 
-app_name = 'academy'
-
 urlpatterns = [
-    path('trainers/', TrainerListCreateAPIView.as_view()),
-    path('trainers/<int:pk>/', TrainerDetailAPIView.as_view()),
-
-    path('students/stats/', StudentStatsAPIView.as_view()),
-    path('students/', StudentListCreateAPIView.as_view()),
-    path('students/<int:pk>/', StudentDetailAPIView.as_view()),
-
-    path('attendance/', AttendanceListCreateAPIView.as_view()),
-    path('attendance/detail/', AttendanceDetailAPIView.as_view()),
-    path('attendance/quick-mark/', QuickMarkAttendanceAPIView.as_view()),
-    path('students/<int:student_id>/attendance-records/', AttendanceRecordsAPIView.as_view()),
-    path('students/<int:student_id>/export-attendance/', ExportStudentAttendanceAPIView.as_view()),
+    # Trainer endpoints
+    path('trainers/', TrainerListCreateAPIView.as_view(), name='trainer-list-create'),
+    path('trainers/<int:pk>/', TrainerDetailAPIView.as_view(), name='trainer-detail'),
+    path('trainer-users/', TrainerUserListAPIView.as_view(), name='trainer-user-list'),  # NEW
+    
+    # Student endpoints
+    path('students/', StudentListCreateAPIView.as_view(), name='student-list-create'),
+    path('students/<int:pk>/', StudentDetailAPIView.as_view(), name='student-detail'),
+    
+    # Attendance endpoints
+    path('attendance/', AttendanceListCreateAPIView.as_view(), name='attendance-list-create'),
+    path('attendance/detail/', AttendanceDetailAPIView.as_view(), name='attendance-detail'),
+    path('attendance/quick-mark/', QuickMarkAttendanceAPIView.as_view(), name='attendance-quick-mark'),
+    path('attendance/students/', AttendanceStudentsAPIView.as_view(), name='attendance-students'),  # NEW
+    path('attendance/student/<int:student_id>/', AttendanceRecordsAPIView.as_view(), name='attendance-student-records'),
+    path('attendance/export/<int:student_id>/', ExportStudentAttendanceAPIView.as_view(), name='export-student-attendance'),
+    
+    # Stats
+    path('stats/students/', StudentStatsAPIView.as_view(), name='student-stats'),
 ]
