@@ -4,13 +4,11 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-
 class UserSerializer(serializers.ModelSerializer):
     """Basic user serializer"""
     class Meta:
         model = User
-        fields = ["id", "username", "email", "role", "salary", "join_date", "position"]
-
+        fields = ["id", "username", "email", "role", "salary", "join_date", "phone", "location"]
 
 class UserMinimalSerializer(serializers.ModelSerializer):
     """Minimal user info for dropdowns and references"""
@@ -22,12 +20,11 @@ class UserMinimalSerializer(serializers.ModelSerializer):
     
     def get_name(self, obj):
         """Return display name"""
-        if hasattr(obj, 'name') and obj.name:
-            return obj.name
         if obj.first_name and obj.last_name:
             return f"{obj.first_name} {obj.last_name}"
+        elif obj.first_name:
+            return obj.first_name
         return obj.username
-
 
 class PenaltySerializer(serializers.ModelSerializer):
     """
@@ -56,16 +53,15 @@ class PenaltySerializer(serializers.ModelSerializer):
         """Get user's display name"""
         if not obj.user:
             return "Unknown"
-        if hasattr(obj.user, 'name') and obj.user.name:
-            return obj.user.name
         if obj.user.first_name and obj.user.last_name:
             return f"{obj.user.first_name} {obj.user.last_name}"
+        elif obj.user.first_name:
+            return obj.user.first_name
         return obj.user.username
     
     def get_user_email(self, obj):
         """Get user's email"""
         return obj.user.email if obj.user else ""
-
 
 class AttendanceDocumentSerializer(serializers.ModelSerializer):
     """Serializer for attendance documents"""
@@ -89,7 +85,6 @@ class AttendanceDocumentSerializer(serializers.ModelSerializer):
             return obj.document.url
         return None
 
-
 class StaffSerializer(serializers.ModelSerializer):
     """Serializer for staff/employee listing"""
     role_display = serializers.CharField(source="get_role_display", read_only=True)
@@ -103,7 +98,6 @@ class StaffSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "full_name",
-            "name",  # If you have a custom name field
             "email",
             "phone",
             "role",
@@ -117,8 +111,8 @@ class StaffSerializer(serializers.ModelSerializer):
     
     def get_full_name(self, obj):
         """Return full name"""
-        if hasattr(obj, 'name') and obj.name:
-            return obj.name
         if obj.first_name and obj.last_name:
             return f"{obj.first_name} {obj.last_name}"
+        elif obj.first_name:
+            return obj.first_name
         return obj.username
