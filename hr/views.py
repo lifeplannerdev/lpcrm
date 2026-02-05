@@ -2,8 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from .models import Penalty, AttendanceDocument
-from .serializers import PenaltySerializer, AttendanceDocumentSerializer
+from .serializers import PenaltySerializer, AttendanceDocumentSerializer, StaffSerializer
 from .permissions import IsHR
+from .permissions import IsHR
+
 
 User = get_user_model()
 
@@ -90,3 +92,22 @@ class AttendanceDocumentDeleteAPI(APIView):
 
         doc.delete()
         return Response({"message": "Document deleted"})
+
+
+class StaffListAPI(APIView):
+    permission_classes = [IsHR]
+
+    def get(self, request):
+        users = User.objects.all()
+
+        role = request.GET.get("role")
+        is_active = request.GET.get("is_active")
+
+        if role:
+            users = users.filter(role=role)
+
+        if is_active is not None:
+            users = users.filter(is_active=is_active.lower() == "true")
+
+        serializer = StaffSerializer(users.order_by("first_name"), many=True)
+        return Response(serializer.data)
