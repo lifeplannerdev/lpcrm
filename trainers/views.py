@@ -354,7 +354,7 @@ class AttendanceStudentsAPIView(APIView):
             trainer=trainer
         ).exclude(
             status='COMPLETED'
-        ).select_related('trainer', 'trainer__user')
+        ).select_related('trainer', 'trainer__user').order_by('name')
 
         # Optional filters
         batch = request.GET.get('batch')
