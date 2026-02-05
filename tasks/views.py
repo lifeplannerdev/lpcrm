@@ -94,8 +94,8 @@ class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TaskSerializer
 
     def get_permissions(self):
-        if self.request.method in ["PUT", "PATCH", "DELETE"]:
-            return [IsTaskAssigner()]
+        # Anyone authenticated can view (subject to queryset filtering)
+        # Update/Delete require custom permission check
         return [IsAuthenticated()]
 
     def get_queryset(self):
@@ -108,6 +108,36 @@ class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
         # All other roles can only access tasks assigned to them
         return qs.filter(assigned_to=user)
+    
+    def check_edit_permission(self, task):
+        """
+        Check if user can edit/delete the task.
+        Only the user who created the task (assigned_by) can edit/delete it.
+        """
+        user = self.request.user
+        
+        if task.assigned_by != user:
+            raise PermissionDenied(
+                "Only the user who created this task can edit or delete it."
+            )
+    
+    def update(self, request, *args, **kwargs):
+        """Override update to check edit permission"""
+        task = self.get_object()
+        self.check_edit_permission(task)
+        return super().update(request, *args, **kwargs)
+    
+    def partial_update(self, request, *args, **kwargs):
+        """Override partial_update to check edit permission"""
+        task = self.get_object()
+        self.check_edit_permission(task)
+        return super().partial_update(request, *args, **kwargs)
+    
+    def destroy(self, request, *args, **kwargs):
+        """Override destroy to check edit permission"""
+        task = self.get_object()
+        self.check_edit_permission(task)
+        return super().destroy(request, *args, **kwargs)
     
     def perform_update(self, serializer):
         """Create TaskUpdate record when status changes"""
