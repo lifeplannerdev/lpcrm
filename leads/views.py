@@ -32,7 +32,7 @@ class LeadPagination(PageNumberPagination):
     max_page_size = 100
 
 
-# Lead List View 
+# Lead List View - UPDATED: Only ADMIN sees all leads
 class LeadListView(generics.ListAPIView):
     serializer_class = LeadListSerializer
     permission_classes = [CanAccessLeads]  
@@ -51,19 +51,11 @@ class LeadListView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         
-        # Admins and HR can see all leads
-        if user.role in LEAD_VIEW_ALL_ROLES:
+        # ONLY ADMIN can see all leads
+        if user.role in ADMIN_ROLES:
             return Lead.objects.all().distinct()
         
-        # Managers see leads assigned to them or their team
-        if user.role in MANAGER_ROLES:
-            return Lead.objects.filter(
-                models.Q(assigned_to=user) | 
-                models.Q(sub_assigned_to=user) |
-                models.Q(sub_assigned_by=user)
-            ).distinct()
-        
-        # Executives see only leads assigned to them
+        # All other roles (Managers, Executives, HR, etc.) see only their assigned leads
         return Lead.objects.filter(
             models.Q(assigned_to=user) | 
             models.Q(sub_assigned_to=user)
@@ -120,7 +112,7 @@ class LeadCreateView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
-# Lead Detail View 
+# Lead Detail View - UPDATED: Only ADMIN sees all leads
 class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = LeadDetailSerializer
     permission_classes = [CanAccessLeads]
@@ -128,16 +120,11 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_queryset(self):
         user = self.request.user
         
-        if user.role in LEAD_VIEW_ALL_ROLES:
+        # ONLY ADMIN can access all leads
+        if user.role in ADMIN_ROLES:
             return Lead.objects.all()
         
-        if user.role in MANAGER_ROLES:
-            return Lead.objects.filter(
-                models.Q(assigned_to=user) | 
-                models.Q(sub_assigned_to=user) |
-                models.Q(sub_assigned_by=user)
-            )
-        
+        # All other roles can only access their assigned leads
         return Lead.objects.filter(
             models.Q(assigned_to=user) | 
             models.Q(sub_assigned_to=user)
@@ -182,7 +169,7 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
 
 
-# Lead Processing Timeline View 
+# Lead Processing Timeline View - UPDATED
 class LeadProcessingTimelineView(generics.ListAPIView):
     serializer_class = ProcessingUpdateSerializer
     permission_classes = [CanAccessLeads]
@@ -192,16 +179,18 @@ class LeadProcessingTimelineView(generics.ListAPIView):
         lead = get_object_or_404(Lead, id=lead_id)
         user = self.request.user
         
-        # Check permissions
-        if (lead.assigned_to != user and 
-            lead.sub_assigned_to != user and 
-            user.role not in LEAD_VIEW_ALL_ROLES):
+        # ONLY ADMIN or assigned users can view timeline
+        if user.role in ADMIN_ROLES:
+            return ProcessingUpdate.objects.filter(lead=lead).order_by('-timestamp')
+        
+        # Check if user is assigned to this lead
+        if lead.assigned_to != user and lead.sub_assigned_to != user:
             return ProcessingUpdate.objects.none()
         
         return ProcessingUpdate.objects.filter(lead=lead).order_by('-timestamp')
 
 
-# NEW: Lead Assignment View
+# Lead Assignment View
 class LeadAssignView(APIView):
     """
     Assign or sub-assign a lead
@@ -251,7 +240,7 @@ class LeadAssignView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-# NEW: Bulk Lead Assignment View
+# Bulk Lead Assignment View
 class BulkLeadAssignView(APIView):
     """
     Assign multiple leads at once
@@ -333,7 +322,7 @@ class BulkLeadAssignView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-# NEW: Lead Assignment History View
+# Lead Assignment History View - UPDATED
 class LeadAssignmentHistoryView(generics.ListAPIView):
     """
     Get assignment history for a specific lead
@@ -347,20 +336,25 @@ class LeadAssignmentHistoryView(generics.ListAPIView):
         lead = get_object_or_404(Lead, id=lead_id)
         user = self.request.user
         
-        # Check permissions
-        if (lead.assigned_to != user and 
-            lead.sub_assigned_to != user and 
-            user.role not in LEAD_VIEW_ALL_ROLES):
+        # ONLY ADMIN or assigned users can view history
+        if user.role in ADMIN_ROLES:
+            return LeadAssignment.objects.filter(lead=lead).order_by('-timestamp')
+        
+        # Check if user is assigned to this lead
+        if lead.assigned_to != user and lead.sub_assigned_to != user:
             return LeadAssignment.objects.none()
         
         return LeadAssignment.objects.filter(lead=lead).order_by('-timestamp')
 
 
-# NEW: My Team Leads View
+# My Team Leads View - UPDATED
 class MyTeamLeadsView(generics.ListAPIView):
     """
     Get all leads for manager's team
     GET /api/leads/my-team/
+    
+    NOTE: This endpoint is now only useful for ADMIN roles.
+    Managers will only see their directly assigned leads in the main list.
     """
     serializer_class = LeadListSerializer
     permission_classes = [CanAccessLeads]
@@ -369,17 +363,19 @@ class MyTeamLeadsView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         
-        if user.role not in MANAGER_ROLES:
-            return Lead.objects.none()
+        # Only ADMIN can see team leads
+        if user.role in ADMIN_ROLES:
+            # Return all leads (same as main list for admin)
+            return Lead.objects.all().distinct()
         
-        # Get leads assigned to this manager and sub-assigned to their team
+        # For managers and others, return only their assigned leads
         return Lead.objects.filter(
             models.Q(assigned_to=user) |
-            models.Q(sub_assigned_by=user)
+            models.Q(sub_assigned_to=user)
         ).distinct()
 
 
-# NEW: Available Users for Assignment
+# Available Users for Assignment
 class AvailableUsersForAssignmentView(APIView):
     """
     Get list of users that can be assigned leads
@@ -413,7 +409,7 @@ class AvailableUsersForAssignmentView(APIView):
         return Response(list(users), status=status.HTTP_200_OK)
 
 
-# NEW: Unassign Lead
+# Unassign Lead
 class UnassignLeadView(APIView):
     """
     Remove assignment from a lead
