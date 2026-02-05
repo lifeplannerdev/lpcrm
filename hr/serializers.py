@@ -18,3 +18,25 @@ class AttendanceDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = AttendanceDocument
         fields = "__all__"
+
+
+class StaffSerializer(serializers.ModelSerializer):
+    role_display = serializers.CharField(source="get_role_display", read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "phone",
+            "role",
+            "role_display",
+            "team",
+            "location",
+            "salary",
+            "join_date",
+            "is_active",
+        ]
