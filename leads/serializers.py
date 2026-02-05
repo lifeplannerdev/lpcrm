@@ -138,6 +138,8 @@ class LeadAssignmentSerializer(serializers.ModelSerializer):
         read_only_fields = ['timestamp']
 
 
+# UPDATE THIS SECTION IN YOUR serializers.py
+
 class LeadAssignSerializer(serializers.Serializer):
     """Serializer for assigning leads (both primary and sub-assignment)"""
     lead_id = serializers.IntegerField()
@@ -162,13 +164,13 @@ class LeadAssignSerializer(serializers.Serializer):
             raise serializers.ValidationError({"assigned_to_id": "User not found."})
         
         # Validation based on user role
-        from .permissions import ADMIN_ROLES, MANAGER_ROLES, EXECUTIVE_ROLES
+        from .permissions import ADMIN_ROLES, OPERATIONS_ROLES, MANAGER_ROLES, EXECUTIVE_ROLES
         
-        if user.role in ADMIN_ROLES:
-            # Admin can assign to managers or executives
+        # ADMIN and OPS can assign to managers or executives
+        if user.role in ADMIN_ROLES or user.role in OPERATIONS_ROLES:
             if assignee.role not in MANAGER_ROLES + EXECUTIVE_ROLES:
                 raise serializers.ValidationError({
-                    "assigned_to_id": "Admin can only assign to managers or executives."
+                    "assigned_to_id": "Can only assign to managers or executives."
                 })
             attrs['assignment_type'] = 'PRIMARY'
             
