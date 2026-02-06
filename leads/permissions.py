@@ -31,21 +31,23 @@ class CanAccessLeads(BasePermission):
 
 class CanAssignLeads(BasePermission):
     """
-    Admin can assign to managers
-    Managers can sub-assign to their juniors
-    OPS can also assign like admin
+    Admin & OPS: assign to anyone
+    Admission Manager: assign to self + Admission Executives
+    Admission Executive: assign to self only
     """
     def has_permission(self, request, view):
         user = request.user
+
         if not user.is_authenticated:
             return False
-        
-        # Admins and OPS can assign
+
         if user.role in ADMIN_ROLES or user.role in OPERATIONS_ROLES:
             return True
-        
-        # Managers can sub-assign
-        if user.role in MANAGER_ROLES:
+
+        if user.role == 'ADM_MANAGER':
             return True
-        
+
+        if user.role == 'ADM_EXEC':
+            return True
+
         return False

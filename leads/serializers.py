@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Lead, ProcessingUpdate, RemarkHistory, LeadAssignment
 from accounts.models import User
 from django.utils import timezone
+from .permissions import ADMIN_ROLES, OPERATIONS_ROLES, MANAGER_ROLES, EXECUTIVE_ROLES
 
 
 class UserSimpleSerializer(serializers.ModelSerializer):
@@ -10,10 +11,9 @@ class UserSimpleSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'role', 'first_name', 'last_name']
 
 
-# Lead Create Serializer - UPDATED TO HANDLE assigned_to
 class LeadCreateSerializer(serializers.ModelSerializer):
     assigned_to = serializers.IntegerField(required=False, allow_null=True, write_only=True)
-    
+
     class Meta:
         model = Lead
         fields = [
@@ -32,16 +32,12 @@ class LeadCreateSerializer(serializers.ModelSerializer):
 
     def validate_name(self, value):
         value = value.strip()
-        if not value:
-            raise serializers.ValidationError("Name is required.")
         if len(value) < 3:
             raise serializers.ValidationError("Name must be at least 3 characters long.")
         return value
 
     def validate_phone(self, value):
         value = value.strip()
-        if not value:
-            raise serializers.ValidationError("Phone number is required.")
         if not value.isdigit():
             raise serializers.ValidationError("Phone number must contain only digits.")
         if len(value) < 10:
@@ -49,33 +45,48 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         if Lead.objects.filter(phone=value).exists():
             raise serializers.ValidationError("A lead with this phone number already exists.")
         return value
-    
+
     def validate_assigned_to(self, value):
-        """Validate that assigned_to user exists and has appropriate role"""
         if value is None:
             return None
-        
+
+        request = self.context.get('request')
+        creator = getattr(request, 'user', None)
+
         try:
-            user = User.objects.get(id=value)
+            assignee = User.objects.get(id=value)
         except User.DoesNotExist:
-            raise serializers.ValidationError("User not found.")
-        
-        # Check if user has appropriate role for assignment
-        from .permissions import MANAGER_ROLES, EXECUTIVE_ROLES
-        ALLOWED_ASSIGNMENT_ROLES = MANAGER_ROLES + EXECUTIVE_ROLES
-        
-        if user.role not in ALLOWED_ASSIGNMENT_ROLES:
-            raise serializers.ValidationError(
-                "Can only assign to managers or executives."
-            )
-        
-        if not user.is_active:
+            raise serializers.ValidationError("Assigned user not found.")
+
+        if not assignee.is_active:
             raise serializers.ValidationError("Cannot assign to inactive user.")
-        
+
+        # ADM_EXEC → self only
+        if creator and creator.role == 'ADM_EXEC':
+            if assignee != creator:
+                raise serializers.ValidationError(
+                    "Admission Executives can assign leads only to themselves."
+                )
+
+        # ADM_MANAGER → self or ADM_EXEC
+        elif creator and creator.role == 'ADM_MANAGER':
+            if assignee != creator and assignee.role != 'ADM_EXEC':
+                raise serializers.ValidationError(
+                    "Admission Managers can assign leads only to themselves or Admission Executives."
+                )
+
+        # ADMIN / OPS → managers or executives
+        elif creator and (creator.role in ADMIN_ROLES or creator.role in OPERATIONS_ROLES):
+            if assignee.role not in MANAGER_ROLES + EXECUTIVE_ROLES:
+                raise serializers.ValidationError(
+                    "Admins can assign leads only to managers or executives."
+                )
+        else:
+            raise serializers.ValidationError("You do not have permission to assign leads.")
+
         return value
 
     def validate(self, attrs):
-        # Normalize fields to uppercase
         for field in ['source', 'status', 'priority']:
             if attrs.get(field):
                 attrs[field] = attrs[field].upper()
@@ -91,106 +102,91 @@ class LeadCreateSerializer(serializers.ModelSerializer):
             })
 
         return attrs
-    
+
     def create(self, validated_data):
-        """Override create to handle assigned_to properly"""
         assigned_to_id = validated_data.pop('assigned_to', None)
-        
-        # Create the lead
+        request = self.context.get('request')
+        creator = getattr(request, 'user', None)
+
         lead = Lead.objects.create(**validated_data)
-        
-        # Handle assignment if provided
+
         if assigned_to_id:
-            try:
-                assigned_user = User.objects.get(id=assigned_to_id)
-                lead.assigned_to = assigned_user
-                
-                # Set assignment metadata
-                request = self.context.get('request')
-                if request and request.user:
-                    lead.assigned_by = request.user
-                lead.assigned_date = timezone.now()
-                
-                lead.save()
-                
-                # Create assignment history record
-                LeadAssignment.objects.create(
-                    lead=lead,
-                    assigned_to=assigned_user,
-                    assigned_by=request.user if request else None,
-                    assignment_type='PRIMARY',
-                    notes='Initial assignment during lead creation'
-                )
-            except User.DoesNotExist:
-                # If user not found, just create lead without assignment
-                pass
-        
+            assignee = User.objects.get(id=assigned_to_id)
+            lead.assigned_to = assignee
+            lead.assigned_by = creator
+            lead.assigned_date = timezone.now()
+            lead.save()
+
+            LeadAssignment.objects.create(
+                lead=lead,
+                assigned_to=assignee,
+                assigned_by=creator,
+                assignment_type='PRIMARY',
+                notes='Initial assignment during lead creation'
+            )
+
         return lead
 
 
 class LeadAssignmentSerializer(serializers.ModelSerializer):
     assigned_to = UserSimpleSerializer(read_only=True)
     assigned_by = UserSimpleSerializer(read_only=True)
-    
+
     class Meta:
         model = LeadAssignment
         fields = ['id', 'lead', 'assigned_to', 'assigned_by', 'assignment_type', 'notes', 'timestamp']
         read_only_fields = ['timestamp']
 
 
-# UPDATE THIS SECTION IN YOUR serializers.py
-
 class LeadAssignSerializer(serializers.Serializer):
-    """Serializer for assigning leads (both primary and sub-assignment)"""
     lead_id = serializers.IntegerField()
     assigned_to_id = serializers.IntegerField()
     notes = serializers.CharField(required=False, allow_blank=True)
-    
+
     def validate(self, attrs):
         user = self.context['request'].user
-        lead_id = attrs.get('lead_id')
-        assigned_to_id = attrs.get('assigned_to_id')
-        
-        # Check if lead exists
+
         try:
-            lead = Lead.objects.get(id=lead_id)
+            lead = Lead.objects.get(id=attrs['lead_id'])
         except Lead.DoesNotExist:
             raise serializers.ValidationError({"lead_id": "Lead not found."})
-        
-        # Check if assignee exists
+
         try:
-            assignee = User.objects.get(id=assigned_to_id)
+            assignee = User.objects.get(id=attrs['assigned_to_id'])
         except User.DoesNotExist:
             raise serializers.ValidationError({"assigned_to_id": "User not found."})
-        
-        # Validation based on user role
-        from .permissions import ADMIN_ROLES, OPERATIONS_ROLES, MANAGER_ROLES, EXECUTIVE_ROLES
-        
-        # ADMIN and OPS can assign to managers or executives
+
+        # ADMIN / OPS
         if user.role in ADMIN_ROLES or user.role in OPERATIONS_ROLES:
             if assignee.role not in MANAGER_ROLES + EXECUTIVE_ROLES:
                 raise serializers.ValidationError({
                     "assigned_to_id": "Can only assign to managers or executives."
                 })
             attrs['assignment_type'] = 'PRIMARY'
-            
+
+        # ADM_MANAGER
         elif user.role in MANAGER_ROLES:
-            # Manager can only sub-assign to executives
             if assignee.role not in EXECUTIVE_ROLES:
                 raise serializers.ValidationError({
                     "assigned_to_id": "Managers can only assign to executives."
                 })
-            
-            # Manager can only sub-assign leads assigned to them
             if lead.assigned_to != user:
                 raise serializers.ValidationError({
-                    "lead_id": "You can only sub-assign leads that are assigned to you."
+                    "lead_id": "You can only sub-assign leads assigned to you."
                 })
-            
             attrs['assignment_type'] = 'SUB'
+
+        # ADM_EXEC → self only
+        elif user.role == 'ADM_EXEC':
+            if assignee != user:
+                raise serializers.ValidationError({
+                    "assigned_to_id": "Admission Executives can assign leads only to themselves."
+                })
+            attrs['assignment_type'] = 'PRIMARY'
+
         else:
             raise serializers.ValidationError("You don't have permission to assign leads.")
-        
+
         attrs['lead'] = lead
         attrs['assignee'] = assignee
         return attrs
