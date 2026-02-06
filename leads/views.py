@@ -386,30 +386,43 @@ class AvailableUsersForAssignmentView(APIView):
     def get(self, request):
         from accounts.models import User
         user = request.user
-        
+
         if user.role in ADMIN_ROLES:
             # Admin can assign to managers and executives
             users = User.objects.filter(
                 role__in=MANAGER_ROLES + EXECUTIVE_ROLES,
                 is_active=True
-            ).values('id', 'username', 'email', 'role', 'first_name', 'last_name')
-            
-        elif user.role in MANAGER_ROLES:
-            # Manager can sub-assign to executives only
+            ).values(
+                'id', 'username', 'email', 'role', 'first_name', 'last_name'
+            )
+
+        elif user.role == 'ADM_MANAGER':
+            # Admission Manager → only Admission Executives
             users = User.objects.filter(
-                role__in=EXECUTIVE_ROLES,
+                role='ADM_EXEC',
                 is_active=True
-            ).values('id', 'username', 'email', 'role', 'first_name', 'last_name')
+            ).values(
+                'id', 'username', 'email', 'role', 'first_name', 'last_name'
+            )
+
+        elif user.role == 'ADM_EXEC':
+            # Admission Executive → self only
+            users = User.objects.filter(
+                id=user.id,
+                is_active=True
+            ).values(
+                'id', 'username', 'email', 'role', 'first_name', 'last_name'
+            )
+
         else:
             return Response(
                 {'error': 'You do not have permission to assign leads'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         return Response(list(users), status=status.HTTP_200_OK)
 
 
-# Unassign Lead
 class UnassignLeadView(APIView):
     """
     Remove assignment from a lead
@@ -423,14 +436,14 @@ class UnassignLeadView(APIView):
 
     def post(self, request):
         lead_id = request.data.get('lead_id')
-        unassign_type = request.data.get('unassign_type', 'SUB')  # Default to SUB
-        
+        unassign_type = request.data.get('unassign_type', 'SUB')
+
         if not lead_id:
             return Response(
                 {'error': 'lead_id is required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         try:
             lead = Lead.objects.get(id=lead_id)
         except Lead.DoesNotExist:
@@ -438,10 +451,16 @@ class UnassignLeadView(APIView):
                 {'error': 'Lead not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        
+
         user = request.user
-        
-        # Check permissions
+
+        # 🚫 Admission Executives can never unassign
+        if user.role == 'ADM_EXEC':
+            return Response(
+                {'error': 'Admission Executives cannot unassign leads'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         if user.role in ADMIN_ROLES:
             # Admin can unassign both primary and sub
             if unassign_type == 'PRIMARY':
@@ -451,30 +470,36 @@ class UnassignLeadView(APIView):
                 lead.sub_assigned_to = None
                 lead.sub_assigned_by = None
                 lead.sub_assigned_date = None
+
             elif unassign_type == 'SUB':
                 lead.sub_assigned_to = None
                 lead.sub_assigned_by = None
                 lead.sub_assigned_date = None
-                
-        elif user.role in MANAGER_ROLES:
-            # Manager can only unassign sub-assignments for their leads
+
+        elif user.role == 'ADM_MANAGER':
+            # Manager can only unassign sub-assignments of their own leads
             if lead.assigned_to != user:
                 return Response(
                     {'error': 'You can only unassign leads assigned to you'},
                     status=status.HTTP_403_FORBIDDEN
                 )
+
             lead.sub_assigned_to = None
             lead.sub_assigned_by = None
             lead.sub_assigned_date = None
+
         else:
             return Response(
                 {'error': 'You do not have permission to unassign leads'},
                 status=status.HTTP_403_FORBIDDEN
             )
-        
+
         lead.save()
-        
-        return Response({
-            'message': 'Lead unassigned successfully',
-            'lead': LeadDetailSerializer(lead).data
-        }, status=status.HTTP_200_OK)
+
+        return Response(
+            {
+                'message': 'Lead unassigned successfully',
+                'lead': LeadDetailSerializer(lead).data
+            },
+            status=status.HTTP_200_OK
+        )
