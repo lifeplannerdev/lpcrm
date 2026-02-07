@@ -454,7 +454,6 @@ class UnassignLeadView(APIView):
 
         user = request.user
 
-        # 🚫 Admission Executives can never unassign
         if user.role == 'ADM_EXEC':
             return Response(
                 {'error': 'Admission Executives cannot unassign leads'},
