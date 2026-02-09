@@ -42,6 +42,9 @@ class CanAccessLeads(BasePermission):
 
 class CanAssignLeads(BasePermission):
     """
+    Permission for lead assignment - more permissive than you might think.
+    Anyone who can create leads can also see the available users list.
+    
     Admin & OPS: assign to managers and executives
     Admission Manager: assign to FOE and Admission Executives
     FOE: assign to self only
@@ -52,16 +55,6 @@ class CanAssignLeads(BasePermission):
         if not user.is_authenticated:
             return False
         
-        # Admin and OPS can assign
-        if user.role in ADMIN_ROLES or user.role in OPERATIONS_ROLES:
-            return True
-        
-        # Managers can sub-assign to executives
-        if user.role in MANAGER_ROLES:
-            return True
-        
-        # Executives (including FOE) can assign to themselves
-        if user.role in EXECUTIVE_ROLES:
-            return True
-        
-        return False
+        # All roles that can access leads can also view available users
+        # The actual assignment restrictions are handled in the serializer
+        return user.role in LEAD_ACCESS_ROLES
