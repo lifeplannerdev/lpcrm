@@ -375,65 +375,44 @@ class MyTeamLeadsView(generics.ListAPIView):
         ).distinct()
 
 
-# Available Users for Assignment
+# Available Users for Assignment - UPDATED: No role-based restrictions
 class AvailableUsersForAssignmentView(APIView):
     """
     Get list of users that can be assigned leads
     GET /api/leads/available-users/
     
-    This endpoint is accessible to anyone who can create leads.
-    The returned list is filtered based on the user's role.
+    Returns all active users with lead-handling roles:
+    - OPS (Operations Manager)
+    - ADM_MANAGER (Admission Manager)
+    - ADM_EXEC (Admission Executive)
+    - CM (Center Manager)
+    - BDM (Business Development Manager)
+    - FOE (FOE Cum TC)
+    
+    No role-based filtering - ADMIN and all staff can see the full list.
     """
-    permission_classes = [CanAccessLeads]  # Changed from CanAssignLeads
+    permission_classes = [CanAccessLeads]
 
     def get(self, request):
         from accounts.models import User
-        from .permissions import ADMIN_ROLES, MANAGER_ROLES, EXECUTIVE_ROLES
         
-        user = request.user
-
-        # ADMIN / OPS can assign to managers and executives
-        if user.role in ADMIN_ROLES or user.role in ['OPS']:
-            users = User.objects.filter(
-                role__in=MANAGER_ROLES + EXECUTIVE_ROLES,
-                is_active=True
-            ).values(
-                'id', 'username', 'email', 'role', 'first_name', 'last_name'
-            )
-
-        # ADM_MANAGER can assign to FOE and ADM_EXEC
-        elif user.role == 'ADM_MANAGER':
-            users = User.objects.filter(
-                role__in=['ADM_EXEC', 'FOE'],
-                is_active=True
-            ).values(
-                'id', 'username', 'email', 'role', 'first_name', 'last_name'
-            )
-
-        # Other managers (CM, BDM) can assign to executives
-        elif user.role in MANAGER_ROLES and user.role != 'ADM_MANAGER':
-            users = User.objects.filter(
-                role__in=EXECUTIVE_ROLES,
-                is_active=True
-            ).values(
-                'id', 'username', 'email', 'role', 'first_name', 'last_name'
-            )
-
-        # FOE and ADM_EXEC can assign to themselves only
-        elif user.role in EXECUTIVE_ROLES:
-            users = User.objects.filter(
-                id=user.id,
-                is_active=True
-            ).values(
-                'id', 'username', 'email', 'role', 'first_name', 'last_name'
-            )
-
-        else:
-            # For any other role that has lead access but we haven't explicitly handled
-            return Response(
-                {'error': f'Your role ({user.role}) cannot assign leads'},
-                status=status.HTTP_403_FORBIDDEN
-            )
+        # Define roles that can be assigned leads
+        ASSIGNABLE_ROLES = [
+            'OPS',
+            'ADM_MANAGER',
+            'ADM_EXEC',
+            'CM',
+            'BDM',
+            'FOE'
+        ]
+        
+        # Return all active users with assignable roles
+        users = User.objects.filter(
+            role__in=ASSIGNABLE_ROLES,
+            is_active=True
+        ).values(
+            'id', 'username', 'email', 'role', 'first_name', 'last_name'
+        ).order_by('role', 'first_name', 'last_name')
 
         return Response(list(users), status=status.HTTP_200_OK)
 
