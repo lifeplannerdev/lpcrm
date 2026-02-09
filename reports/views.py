@@ -9,6 +9,8 @@ from .permissions import REPORT_REVIEWERS, IsReportReviewer,IsReportOwner
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+import cloudinary.utils
 
 
 # Custom Pagination for Daily Reports
@@ -156,3 +158,55 @@ class DailyReportDetailView(APIView):
         )
         return Response(serializer.data)
 
+
+# ========== NEW VIEW FOR INLINE FILE VIEWING ==========
+class ViewReportFileView(APIView):
+    """
+    API endpoint to get a Cloudinary URL for inline viewing
+    Returns a URL with fl_attachment flag set to false
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        report = get_object_or_404(DailyReport, pk=pk)
+
+        # Check permissions
+        if (
+            report.user != request.user and
+            request.user.role not in REPORT_REVIEWERS
+        ):
+            return Response(
+                {"error": "Permission denied"},
+                status=403
+            )
+
+        # Check if file exists
+        if not report.attached_file:
+            return Response(
+                {"error": "No file attached to this report"},
+                status=404
+            )
+
+        # Get the Cloudinary public_id
+        public_id = report.attached_file.public_id
+        
+        # Generate URL for inline viewing (not as attachment)
+        # Cloudinary URLs default to inline, but we can be explicit
+        view_url = cloudinary.utils.cloudinary_url(
+            public_id,
+            resource_type='auto',
+            secure=True,
+            flags='attachment:false'  # This ensures inline viewing
+        )[0]
+
+        # Alternative: You can also use the direct URL from the field
+        # and ensure it's HTTPS
+        # view_url = report.attached_file.url
+        # if view_url.startswith('http://'):
+        #     view_url = view_url.replace('http://', 'https://')
+
+        return JsonResponse({
+            "view_url": view_url,
+            "file_name": report.get_file_name(),
+            "report_name": report.name
+        })
