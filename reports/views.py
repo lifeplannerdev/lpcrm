@@ -163,7 +163,7 @@ class DailyReportDetailView(APIView):
 class ViewReportFileView(APIView):
     """
     API endpoint to get a Cloudinary URL for inline viewing
-    Returns a URL with fl_attachment flag set to false
+    Returns the direct Cloudinary URL which supports inline viewing by default
     """
     permission_classes = [IsAuthenticated]
 
@@ -187,23 +187,13 @@ class ViewReportFileView(APIView):
                 status=404
             )
 
-        # Get the Cloudinary public_id
-        public_id = report.attached_file.public_id
+        # Get the direct Cloudinary URL
+        # Cloudinary URLs support inline viewing by default
+        view_url = report.attached_file.url
         
-        # Generate URL for inline viewing (not as attachment)
-        # Cloudinary URLs default to inline, but we can be explicit
-        view_url = cloudinary.utils.cloudinary_url(
-            public_id,
-            resource_type='auto',
-            secure=True,
-            flags='attachment:false'  # This ensures inline viewing
-        )[0]
-
-        # Alternative: You can also use the direct URL from the field
-        # and ensure it's HTTPS
-        # view_url = report.attached_file.url
-        # if view_url.startswith('http://'):
-        #     view_url = view_url.replace('http://', 'https://')
+        # Ensure HTTPS
+        if view_url.startswith('http://'):
+            view_url = view_url.replace('http://', 'https://')
 
         return JsonResponse({
             "view_url": view_url,
