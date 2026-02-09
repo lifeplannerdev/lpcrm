@@ -8,6 +8,8 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied
 import logging
+from django.db.models import Count, Q
+
 
 from .models import Task, TaskUpdate
 from .serializers import (
@@ -38,21 +40,28 @@ class TaskStatsAPIView(APIView):
 
     def get(self, request):
         user = request.user
-
-        # ONLY ADMIN can see all tasks stats
         if user.role == "ADMIN":
             qs = Task.objects.all()
         else:
-            # All other roles see only tasks assigned to them
             qs = Task.objects.filter(assigned_to=user)
+
+        now = timezone.now()
+        
+        overdue_count = qs.filter(
+            Q(deadline__lt=now) & 
+            ~Q(status='COMPLETED') &
+            ~Q(status='CANCELLED')
+        ).count()
 
         stats = qs.aggregate(
             total=Count('id'),
             pending=Count('id', filter=Q(status='PENDING')),
             in_progress=Count('id', filter=Q(status='IN_PROGRESS')),
             completed=Count('id', filter=Q(status='COMPLETED')),
-            overdue=Count('id', filter=Q(status='OVERDUE')),
         )
+        
+        # Add the dynamically calculated overdue count
+        stats['overdue'] = overdue_count
 
         return Response(stats)
 
