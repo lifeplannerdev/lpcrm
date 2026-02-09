@@ -279,30 +279,6 @@ class TaskStatusUpdateAPIView(generics.GenericAPIView):
         return Response({"detail": "Status updated successfully", "update_id": update.id})
 
 
-# Pending Tasks 
-class PendingTasksAPIView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user = request.user
-        
-        qs = Task.objects.filter(
-            status__in=['PENDING', 'IN_PROGRESS']
-        ).select_related('assigned_to', 'assigned_by')
-
-        # ONLY ADMIN can see all pending tasks
-        if user.role != "ADMIN":
-            qs = qs.filter(assigned_to=user)
-
-        # Order by priority and deadline
-        qs = qs.order_by('-priority', 'deadline')
-
-        # Serialize the data
-        serializer = TaskSerializer(qs, many=True)
-        
-        return Response(serializer.data)
-
-
 # Upcoming Tasks
 class UpcomingTasksAPIView(APIView):
     permission_classes = [IsAuthenticated]
