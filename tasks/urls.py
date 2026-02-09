@@ -20,5 +20,4 @@ urlpatterns = [
     path('tasks/assigned-by-me/', TasksAssignedByMeAPIView.as_view(), name='tasks-assigned-by-me'),
     path('tasks/<int:pk>/status/', TaskStatusUpdateAPIView.as_view(), name='task-status-update'),
     path('upcoming/', UpcomingTasksAPIView.as_view(), name='upcoming-tasks'),
-    path('tasks/pending/', PendingTasksAPIView.as_view(), name='pending-tasks'),
 ]
