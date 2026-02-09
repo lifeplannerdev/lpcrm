@@ -2,7 +2,7 @@ from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Case, When, IntegerField
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from django.utils import timezone
@@ -80,10 +80,25 @@ class TaskListCreateAPIView(generics.ListCreateAPIView):
 
         # ONLY ADMIN can see all tasks
         if user.role == "ADMIN":
-            return qs.order_by("-created_at")
-
-        # All other roles (including TASK_ASSIGNERS) see only tasks assigned to them
-        return qs.filter(assigned_to=user).order_by("-created_at")
+            base_qs = qs
+        else:
+            # All other roles (including TASK_ASSIGNERS) see only tasks assigned to them
+            base_qs = qs.filter(assigned_to=user)
+        
+        # Custom ordering: Pending/In Progress/Overdue tasks first, then Completed tasks by date
+        # Priority order: 1=OVERDUE, 2=PENDING, 3=IN_PROGRESS, 4=COMPLETED
+        ordered_qs = base_qs.annotate(
+            status_priority=Case(
+                When(status='OVERDUE', then=1),
+                When(status='PENDING', then=2),
+                When(status='IN_PROGRESS', then=3),
+                When(status='COMPLETED', then=4),
+                default=5,
+                output_field=IntegerField(),
+            )
+        ).order_by('status_priority', '-created_at')
+        
+        return ordered_qs
 
     def perform_create(self, serializer):
         serializer.save(assigned_by=self.request.user)
@@ -218,11 +233,21 @@ class TasksAssignedByMeAPIView(generics.ListAPIView):
         if user.role not in TASK_ASSIGNERS and user.role != "ADMIN":
             return Task.objects.none()
 
+        # Apply the same custom ordering here as well
         return Task.objects.filter(
             assigned_by=user
         ).select_related(
             'assigned_to', 'assigned_by'
-        ).order_by('-created_at')
+        ).annotate(
+            status_priority=Case(
+                When(status='OVERDUE', then=1),
+                When(status='PENDING', then=2),
+                When(status='IN_PROGRESS', then=3),
+                When(status='COMPLETED', then=4),
+                default=5,
+                output_field=IntegerField(),
+            )
+        ).order_by('status_priority', '-created_at')
 
 
 # Task Status Update (Assignee only)
@@ -280,7 +305,6 @@ class TaskStatusUpdateAPIView(generics.GenericAPIView):
 
 
 # Pending Tasks (NEW)
-
 class PendingTasksAPIView(APIView):
     permission_classes = [IsAuthenticated]
     
@@ -292,9 +316,21 @@ class PendingTasksAPIView(APIView):
 
         if user.role != "ADMIN":
             qs = qs.filter(assigned_to=user)
-        qs = qs.order_by('-priority', 'deadline')
+        
+        # Order by priority (HIGH first) and then by deadline (earliest first)
+        qs = qs.annotate(
+            priority_order=Case(
+                When(priority='HIGH', then=1),
+                When(priority='MEDIUM', then=2),
+                When(priority='LOW', then=3),
+                default=4,
+                output_field=IntegerField(),
+            )
+        ).order_by('priority_order', 'deadline')
+        
         serializer = TaskSerializer(qs, many=True)
         return Response(serializer.data)
+
 
 # Upcoming Tasks
 class UpcomingTasksAPIView(APIView):
