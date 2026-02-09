@@ -385,10 +385,12 @@ class AvailableUsersForAssignmentView(APIView):
 
     def get(self, request):
         from accounts.models import User
+        from .permissions import ADMIN_ROLES, MANAGER_ROLES, EXECUTIVE_ROLES
+        
         user = request.user
 
-        if user.role in ADMIN_ROLES:
-            # Admin can assign to managers and executives
+        if user.role in ADMIN_ROLES or user.role in ['OPS']:
+            # Admin/OPS can assign to managers and executives (including FOE)
             users = User.objects.filter(
                 role__in=MANAGER_ROLES + EXECUTIVE_ROLES,
                 is_active=True
@@ -397,16 +399,16 @@ class AvailableUsersForAssignmentView(APIView):
             )
 
         elif user.role == 'ADM_MANAGER':
-            # Admission Manager → only Admission Executives
+            # Admission Manager can assign to FOE and ADM_EXEC
             users = User.objects.filter(
-                role='ADM_EXEC',
+                role__in=['ADM_EXEC', 'FOE'],
                 is_active=True
             ).values(
                 'id', 'username', 'email', 'role', 'first_name', 'last_name'
             )
 
-        elif user.role == 'ADM_EXEC':
-            # Admission Executive → self only
+        elif user.role in ['ADM_EXEC', 'FOE']:
+            # ADM_EXEC and FOE can assign to self only
             users = User.objects.filter(
                 id=user.id,
                 is_active=True
