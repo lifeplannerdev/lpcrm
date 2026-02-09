@@ -169,3 +169,4 @@ class MicroWork(models.Model):
         if self.completed_at:
             return self.completed_at.strftime('%I:%M %p')
         return None
+

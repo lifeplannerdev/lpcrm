@@ -231,7 +231,7 @@ CORS_ALLOW_HEADERS = [
 #  Security Settings (Production)
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 #  HTTPS Settings (Only for production with HTTPS)
 if not DEBUG:
