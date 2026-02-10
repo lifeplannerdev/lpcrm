@@ -11,8 +11,8 @@ class CustomUserAdmin(UserAdmin):
     # Makes password field more prominent
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email','location','phone ',)}),
-        ('Role info', {'fields': ('role', 'team','salary')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email')}),
+        ('Role info', {'fields': ('role', 'team')}),
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
