@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'tasks',
     'hr',
     'reports',
+    'telephony',
 ]
 
 MIDDLEWARE = [
@@ -280,3 +281,5 @@ LOGGING = {
         },
     },
 }
+
+VOXBAY_WEBHOOK_SECRET = ""  # Fill after Voxbay provides it
