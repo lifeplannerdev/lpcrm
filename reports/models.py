@@ -81,20 +81,7 @@ class DailyReportAttachment(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def get_download_url(self):
-        """
-        Returns a Cloudinary URL that forces the browser to download the file
-        with the original filename.
-
-        ✅ FIX 2: Cloudinary ignores fl_attachment as a query-string parameter.
-        It must be inserted as a *transformation segment* inside the URL path,
-        between the version/upload part and the public_id part.
-
-        Correct format:
-          https://res.cloudinary.com/<cloud>/raw/upload/fl_attachment:<name>/<version>/<public_id>
-
-        We achieve this by replacing the first occurrence of "/upload/" with
-        "/upload/fl_attachment:<encoded_name>/" in the raw Cloudinary URL.
-        """
+        
         if not self.attached_file:
             return None
 
@@ -104,12 +91,13 @@ class DailyReportAttachment(models.Model):
 
         filename = self.original_filename or "download"
 
-        # Cloudinary requires colons and slashes to be percent-encoded in the
-        # fl_attachment value; use urllib.parse.quote with safe='' to be safe.
-        encoded_name = urllib.parse.quote(filename, safe='')
+        safe_filename = filename.replace(' ', '_')
 
-        # Insert the transformation right after "/upload/"
-        # e.g. ".../upload/v123/public_id" → ".../upload/fl_attachment:my_file.pdf/v123/public_id"
+        encoded_name = urllib.parse.quote(
+            safe_filename,
+            safe='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._-'
+        )
+
         if '/upload/' in url:
             url = url.replace('/upload/', f'/upload/fl_attachment:{encoded_name}/', 1)
 
