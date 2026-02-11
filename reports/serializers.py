@@ -3,7 +3,7 @@ from .models import DailyReport, DailyReportAttachment
 
 
 class DailyReportAttachmentSerializer(serializers.ModelSerializer):
-    view_url = serializers.SerializerMethodField()   # renamed from file_url
+    view_url = serializers.SerializerMethodField()
     download_url = serializers.SerializerMethodField()
 
     class Meta:
@@ -11,7 +11,7 @@ class DailyReportAttachmentSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "attached_file",
-            "view_url",          # was file_url — frontend expects view_url
+            "view_url",
             "download_url",
             "original_filename",
             "uploaded_at",
@@ -43,7 +43,7 @@ class DailyReportSerializer(serializers.ModelSerializer):
         model = DailyReport
         fields = [
             "id", "user", "user_name", "name", "heading", "report_text",
-            "file_url", "view_url",   # legacy shims
+            "file_url", "view_url",   # legacy shims kept for backwards compat
             "attachments",
             "report_date", "status", "review_comment",
             "reviewed_by", "reviewed_by_name",
@@ -67,17 +67,20 @@ class DailyReportSerializer(serializers.ModelSerializer):
 
     def _save_attachments(self, report, files):
         for file in files:
+            # ✅ FIX 1: Capture the original filename BEFORE handing the file
+            # object to Cloudinary. After CloudinaryField processes the upload,
+            # file.name becomes the Cloudinary public_id, not the original name.
+            original_name = file.name  # e.g. "my_report.pdf"
+
             DailyReportAttachment.objects.create(
                 report=report,
-                attached_file=file,
-                original_filename=file.name,  
+                attached_file=file,          # Cloudinary upload happens here
+                original_filename=original_name,  # saved before it's mutated
             )
 
     def create(self, validated_data):
-        # Pop files from the request — they aren't model fields
         request = self.context.get("request")
         files = request.FILES.getlist("attached_files") if request else []
-
         report = DailyReport.objects.create(**validated_data)
         self._save_attachments(report, files)
         return report
