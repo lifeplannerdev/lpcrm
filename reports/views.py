@@ -10,7 +10,6 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
-import cloudinary.utils
 from django.db.models import Case, When, Value, IntegerField
 
 
@@ -30,6 +29,12 @@ class DailyReportCreateView(generics.CreateAPIView):
             status="pending",
         )
 
+    # ✅ FIX: pass request in context so serializer.create() can read FILES
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
+
 
 class MyDailyReportsView(generics.ListAPIView):
     serializer_class = DailyReportSerializer
@@ -37,9 +42,11 @@ class MyDailyReportsView(generics.ListAPIView):
     pagination_class = DailyReportPagination
 
     def get_queryset(self):
-        return DailyReport.objects.filter(
-            user=self.request.user
-        ).prefetch_related("attachments").order_by("-report_date")
+        return (
+            DailyReport.objects.filter(user=self.request.user)
+            .prefetch_related("attachments")
+            .order_by("-report_date")
+        )
 
 
 class MyDailyReportUpdateView(generics.UpdateAPIView):
@@ -54,6 +61,12 @@ class MyDailyReportUpdateView(generics.UpdateAPIView):
                 "Approved or rejected reports cannot be edited."
             )
         serializer.save()
+
+    # ✅ FIX: pass request in context so serializer.update() can read FILES
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
 
 
 class AllDailyReportsView(generics.ListAPIView):
@@ -77,7 +90,6 @@ class AllDailyReportsView(generics.ListAPIView):
         if date:
             qs = qs.filter(report_date=date)
 
-        # Pending first
         qs = qs.annotate(
             status_order=Case(
                 When(status="pending", then=Value(0)),
@@ -164,7 +176,6 @@ class ViewReportFileView(APIView):
             DailyReport.objects.prefetch_related("attachments"), pk=pk
         )
 
-        # Permission check
         if (
             report.user != request.user
             and request.user.role not in REPORT_REVIEWERS
@@ -197,11 +208,8 @@ class ViewReportFileView(APIView):
 
         return JsonResponse(
             {
-                # Legacy single-file fields (first attachment) — kept for
-                # backwards compatibility with existing frontend consumers
                 "file_name": first["file_name"],
                 "view_url": first["view_url"],
-                # New multi-attachment field
                 "attachments": attachment_data,
                 "report_name": report.name,
             }
