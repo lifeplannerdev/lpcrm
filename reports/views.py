@@ -171,12 +171,7 @@ class DailyReportDetailView(APIView):
         return Response(serializer.data)
 
 
-# ========== NEW VIEW FOR INLINE FILE VIEWING ==========
 class ViewReportFileView(APIView):
-    """
-    API endpoint to get a Cloudinary URL for inline viewing
-    Returns the direct Cloudinary URL which supports inline viewing by default
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -192,23 +187,19 @@ class ViewReportFileView(APIView):
                 status=403
             )
 
-        # Check if file exists
         if not report.attached_file:
             return Response(
                 {"error": "No file attached to this report"},
                 status=404
             )
 
-        # Get the direct Cloudinary URL
-        # Cloudinary URLs support inline viewing by default
         view_url = report.attached_file.url
         
-        # Ensure HTTPS
         if view_url.startswith('http://'):
             view_url = view_url.replace('http://', 'https://')
 
         return JsonResponse({
             "view_url": view_url,
-            "file_name": report.get_file_name(),
+            "file_name": report.original_filename,
             "report_name": report.name
         })

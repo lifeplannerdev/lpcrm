@@ -1,20 +1,11 @@
-from django.contrib.auth.models import AbstractUser, Group, Permission
 from django.contrib.auth import get_user_model
-from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from cloudinary.models import CloudinaryField
 import os
+import urllib.parse
 
 User = get_user_model()
-
-
-def report_upload_path(instance, filename):
-    return os.path.join(
-        'daily_reports',
-        str(instance.user.id),
-        filename
-    )
 
 
 class DailyReport(models.Model):
@@ -36,11 +27,13 @@ class DailyReport(models.Model):
         verbose_name='Report Name',
         help_text='Give a title to your daily report'
     )
+
     heading = models.CharField(
         max_length=300,
         verbose_name='Report Heading',
         help_text='Brief summary of your daily report'
     )
+
     report_text = models.TextField(
         verbose_name='Daily Update',
         help_text='Share your daily progress and updates'
@@ -55,8 +48,15 @@ class DailyReport(models.Model):
         help_text='Upload any relevant file (optional)'
     )
 
+    original_filename = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
     report_date = models.DateField(
         default=timezone.now,
         db_index=True
@@ -76,6 +76,7 @@ class DailyReport(models.Model):
         on_delete=models.SET_NULL,
         related_name='reviewed_reports'
     )
+
     review_comment = models.TextField(blank=True)
 
     class Meta:
@@ -90,15 +91,21 @@ class DailyReport(models.Model):
     def is_today_report(self):
         return self.report_date == timezone.now().date()
 
-    def get_file_name(self):
-        if self.attached_file:
-            return os.path.basename(self.attached_file.public_id)
-        return None
+    def save(self, *args, **kwargs):
+        if self.attached_file and hasattr(self.attached_file, 'name'):
+            self.original_filename = os.path.basename(self.attached_file.name)
+        super().save(*args, **kwargs)
 
-    def get_secure_file_url(self):
-        if self.attached_file:
-            url = self.attached_file.url
-            if url.startswith('http://'):
-                url = url.replace('http://', 'https://')
-            return url
-        return None
+    def get_download_url(self):
+        if not self.attached_file:
+            return None
+
+        url = self.attached_file.url
+
+        # Ensure HTTPS
+        if url.startswith('http://'):
+            url = url.replace('http://', 'https://')
+
+        # Force correct filename on download
+        filename = urllib.parse.quote(self.original_filename or "download")
+        return f"{url}?fl_attachment={filename}"
