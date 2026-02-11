@@ -39,21 +39,6 @@ class DailyReport(models.Model):
         help_text='Share your daily progress and updates'
     )
 
-    attached_file = CloudinaryField(
-        resource_type='auto',
-        folder='daily_reports/attachments',
-        null=True,
-        blank=True,
-        verbose_name='Attached File',
-        help_text='Upload any relevant file (optional)'
-    )
-
-    original_filename = models.CharField(
-        max_length=255,
-        null=True,
-        blank=True
-    )
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -91,6 +76,30 @@ class DailyReport(models.Model):
     def is_today_report(self):
         return self.report_date == timezone.now().date()
 
+
+# ✅ NEW MODEL (Multiple Attachments Support)
+class DailyReportAttachment(models.Model):
+    report = models.ForeignKey(
+        DailyReport,
+        on_delete=models.CASCADE,
+        related_name='attachments'
+    )
+
+    attached_file = CloudinaryField(
+        resource_type='auto',
+        folder='daily_reports/attachments',
+        verbose_name='Attached File',
+        help_text='Upload any relevant file'
+    )
+
+    original_filename = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True
+    )
+
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
     def save(self, *args, **kwargs):
         if self.attached_file and hasattr(self.attached_file, 'name'):
             self.original_filename = os.path.basename(self.attached_file.name)
@@ -102,10 +111,11 @@ class DailyReport(models.Model):
 
         url = self.attached_file.url
 
-        # Ensure HTTPS
         if url.startswith('http://'):
             url = url.replace('http://', 'https://')
 
-        # Force correct filename on download
         filename = urllib.parse.quote(self.original_filename or "download")
         return f"{url}?fl_attachment={filename}"
+
+    def __str__(self):
+        return f"Attachment for {self.report.name}"
