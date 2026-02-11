@@ -1,13 +1,50 @@
 from rest_framework import serializers
-from .models import DailyReport
+from .models import DailyReport, DailyReportAttachment
 from django.urls import reverse
+
+
+class DailyReportAttachmentSerializer(serializers.ModelSerializer):
+    file_url = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DailyReportAttachment
+        fields = [
+            "id",
+            "attached_file",
+            "file_url",
+            "download_url",
+            "original_filename",
+            "uploaded_at",
+        ]
+        read_only_fields = ["uploaded_at"]
+
+    def get_file_url(self, obj):
+        """View inline (no forced download)"""
+        if obj.attached_file:
+            url = obj.attached_file.url
+            if url.startswith("http://"):
+                url = url.replace("http://", "https://")
+            return url
+        return None
+
+    def get_download_url(self, obj):
+        """Force download with original filename"""
+        return obj.get_download_url()
 
 
 class DailyReportSerializer(serializers.ModelSerializer):
     user_name = serializers.CharField(source="user.get_full_name", read_only=True)
+    reviewed_by_name = serializers.CharField(
+        source="reviewed_by.get_full_name", read_only=True
+    )
+    attachments = DailyReportAttachmentSerializer(many=True, read_only=True)
+
+    # ── Legacy single-file fields kept for backwards compatibility ──────────
+    # These always return None now (fields removed from DailyReport).
+    # Frontend consumers should migrate to `attachments` instead.
     file_url = serializers.SerializerMethodField()
     view_url = serializers.SerializerMethodField()
-    reviewed_by_name = serializers.CharField(source="reviewed_by.get_full_name", read_only=True)
 
     class Meta:
         model = DailyReport
@@ -18,9 +55,11 @@ class DailyReportSerializer(serializers.ModelSerializer):
             "name",
             "heading",
             "report_text",
-            "attached_file",
+            # legacy shims (kept so existing API consumers don't break)
             "file_url",
             "view_url",
+            # new multi-attachment field
+            "attachments",
             "report_date",
             "status",
             "review_comment",
@@ -38,16 +77,21 @@ class DailyReportSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    # Legacy shims — always None; kept so old clients don't crash
     def get_file_url(self, obj):
-        request = self.context.get("request")
-        download_url = obj.get_download_url()
-        if download_url and request:
-            return request.build_absolute_uri(download_url)
+        attachments = obj.attachments.all()
+        if attachments.exists():
+            first = attachments.first()
+            return first.get_download_url()
         return None
 
-    # View inline (no forced download)
     def get_view_url(self, obj):
-        request = self.context.get("request")
-        if obj.attached_file and request:
-            return request.build_absolute_uri(obj.attached_file.url)
+        attachments = obj.attachments.all()
+        if attachments.exists():
+            first = attachments.first()
+            if first.attached_file:
+                url = first.attached_file.url
+                if url.startswith("http://"):
+                    url = url.replace("http://", "https://")
+                return url
         return None
