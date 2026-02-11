@@ -11,6 +11,7 @@ from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 import cloudinary.utils
+from django.db.models import Case, When, Value, IntegerField
 
 
 # Custom Pagination for Daily Reports
@@ -80,7 +81,18 @@ class AllDailyReportsView(generics.ListAPIView):
         if date:
             qs = qs.filter(report_date=date)
 
-        return qs.order_by("-report_date")
+        # 🔹 Custom ordering: Pending first
+        qs = qs.annotate(
+            status_order=Case(
+                When(status='pending', then=Value(0)),
+                When(status='rejected', then=Value(1)),
+                When(status='approved', then=Value(2)),
+                default=Value(3),
+                output_field=IntegerField()
+            )
+        ).order_by('status_order', '-report_date', '-created_at')
+
+        return qs
 
 
 

@@ -31,3 +31,4 @@ admin.site.unregister(Group)
 admin.site.site_header = 'LP ADMINISTRATION'
 admin.site.site_title = 'LP Admin Portal'
 admin.site.index_title = 'Welcome to LP Administration'
+
