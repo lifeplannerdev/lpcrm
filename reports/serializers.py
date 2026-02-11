@@ -66,12 +66,11 @@ class DailyReportSerializer(serializers.ModelSerializer):
         return None
 
     def _save_attachments(self, report, files):
-        """Create DailyReportAttachment records for each uploaded file."""
         for file in files:
             DailyReportAttachment.objects.create(
                 report=report,
                 attached_file=file,
-                original_filename=file.name,   # capture BEFORE Cloudinary renames it
+                original_filename=file.name,  
             )
 
     def create(self, validated_data):

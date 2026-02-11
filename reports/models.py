@@ -90,14 +90,13 @@ class DailyReportAttachment(models.Model):
     original_filename = models.CharField(max_length=255, null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
-    # ← No custom save() needed anymore; original_filename is set by the serializer
-
     def get_download_url(self):
         if not self.attached_file:
             return None
         url = self.attached_file.url
         if url.startswith('http://'):
             url = url.replace('http://', 'https://')
+        import urllib.parse
         filename = urllib.parse.quote(self.original_filename or "download")
         return f"{url}?fl_attachment={filename}"
 
