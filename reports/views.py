@@ -9,8 +9,10 @@ from .permissions import REPORT_REVIEWERS, IsReportReviewer, IsReportOwner
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse, HttpResponse
 from django.db.models import Case, When, Value, IntegerField
+import urllib.parse
+import urllib.request
 
 
 class DailyReportPagination(PageNumberPagination):
@@ -29,7 +31,6 @@ class DailyReportCreateView(generics.CreateAPIView):
             status="pending",
         )
 
-    # ✅ FIX: pass request in context so serializer.create() can read FILES
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["request"] = self.request
@@ -62,7 +63,6 @@ class MyDailyReportUpdateView(generics.UpdateAPIView):
             )
         serializer.save()
 
-    # ✅ FIX: pass request in context so serializer.update() can read FILES
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["request"] = self.request
@@ -214,3 +214,88 @@ class ViewReportFileView(APIView):
                 "report_name": report.name,
             }
         )
+
+
+class DownloadAttachmentView(APIView):
+    """
+    GET /reports/attachments/<pk>/download/
+
+    Fetches the file from Cloudinary on the server side and streams it to
+    the browser with:
+        Content-Disposition: attachment; filename="original_name.pdf"
+
+    This is the ONLY reliable way to force a download with the correct
+    filename for cross-origin files (Cloudinary).  The browser's
+    <a download> attribute is silently ignored for cross-origin URLs.
+
+    Access: file owner  OR  any reviewer role.
+    No extra migration needed — no model changes.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        attachment = get_object_or_404(
+            DailyReportAttachment.objects.select_related("report__user"),
+            pk=pk,
+        )
+
+        # ── Permission check ──────────────────────────────────────────────
+        is_owner    = attachment.report.user == request.user
+        is_reviewer = request.user.role in REPORT_REVIEWERS
+        if not (is_owner or is_reviewer):
+            return Response({"error": "Permission denied"}, status=403)
+
+        if not attachment.attached_file:
+            return Response({"error": "No file found"}, status=404)
+
+        # ── Get plain Cloudinary URL (no transformations needed) ──────────
+        cloudinary_url = attachment.attached_file.url
+        if cloudinary_url.startswith("http://"):
+            cloudinary_url = cloudinary_url.replace("http://", "https://")
+
+        original_filename = attachment.original_filename or "download"
+
+        # ── Fetch from Cloudinary server-side ─────────────────────────────
+        # By doing the fetch here we completely sidestep CORS restrictions.
+        try:
+            req = urllib.request.Request(
+                cloudinary_url,
+                headers={"User-Agent": "Mozilla/5.0"},
+            )
+            remote = urllib.request.urlopen(req, timeout=30)
+            content_type = remote.headers.get(
+                "Content-Type", "application/octet-stream"
+            )
+        except Exception as exc:
+            return Response(
+                {"error": f"Could not fetch file: {exc}"}, status=502
+            )
+
+        # ── Build Content-Disposition with RFC 5987 encoded filename ──────
+        # ascii_name  → used as the plain fallback (spaces → underscores)
+        # encoded_name → percent-encoded UTF-8 for browsers that support it
+        ascii_name   = original_filename.replace(" ", "_").encode(
+            "ascii", errors="replace"
+        ).decode("ascii")
+        encoded_name = urllib.parse.quote(original_filename, safe="")
+
+        content_disposition = (
+            f"attachment; "
+            f'filename="{ascii_name}"; '
+            f"filename*=UTF-8''{encoded_name}"
+        )
+
+        # ── Stream the response ───────────────────────────────────────────
+        response = StreamingHttpResponse(
+            streaming_content=remote,
+            content_type=content_type,
+        )
+        response["Content-Disposition"] = content_disposition
+        response["Cache-Control"]        = "no-store"
+
+        # Forward Content-Length if Cloudinary provided it
+        content_length = remote.headers.get("Content-Length")
+        if content_length:
+            response["Content-Length"] = content_length
+
+        return response
