@@ -210,12 +210,14 @@ class AttendanceListCreateAPIView(APIView):
                 status=403
             )
 
-        serializer = AttendanceSerializer(data=request.data)
+        data = request.data.copy()
+        data['trainer'] = trainer.id
+        
+        serializer = AttendanceSerializer(data=data)
         if serializer.is_valid():
-            serializer.save(trainer=trainer)
+            serializer.save()  
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
-
 
 class AttendanceDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
