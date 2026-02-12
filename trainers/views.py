@@ -192,7 +192,7 @@ class AttendanceListCreateAPIView(APIView):
         serializer = AttendanceSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
-    def post(self, request):
+    def post(self, request):  # ← THIS METHOD NEEDS TO BE UPDATED
         if not hasattr(request.user, 'trainer_profile'):
             return Response(
                 {"detail": "Only trainers can mark attendance"},
@@ -202,22 +202,24 @@ class AttendanceListCreateAPIView(APIView):
         trainer = request.user.trainer_profile
         student_id = request.data.get('student')
 
-        if not Student.objects.filter(
+        # Verify student belongs to this trainer
+        student = Student.objects.filter(
             id=student_id, trainer=trainer
-        ).exists():
+        ).first()
+        
+        if not student:
             return Response(
                 {"detail": "You can mark attendance only for your students"},
                 status=403
             )
 
-        data = request.data.copy()
-        data['trainer'] = trainer.id
-        
-        serializer = AttendanceSerializer(data=data)
+        serializer = AttendanceSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()  
+            # Set the trainer when saving
+            serializer.save(trainer=trainer)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
+        
 
 class AttendanceDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
