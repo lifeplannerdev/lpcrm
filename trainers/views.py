@@ -260,11 +260,6 @@ class AttendanceDetailAPIView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
 class QuickMarkAttendanceAPIView(APIView):
-    """
-    POST /api/attendance/quick-mark/
-    Bulk mark attendance for multiple students
-    Excludes COMPLETED students automatically
-    """
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
@@ -279,22 +274,44 @@ class QuickMarkAttendanceAPIView(APIView):
             return Response({"error": "date and records required"}, status=400)
 
         saved = []
+        errors = []
 
         for r in records:
-            # Check if student belongs to trainer and is not COMPLETED
-            if not Student.objects.filter(
-                id=r.get('student'),
-                trainer=trainer
-            ).exclude(status='COMPLETED').exists():
+            try:
+                student_id = r.get('student')
+                
+                # Check if student belongs to trainer and is not COMPLETED
+                student = Student.objects.filter(
+                    id=student_id,
+                    trainer=trainer
+                ).exclude(status='COMPLETED').first()
+                
+                if not student:
+                    continue
+
+                obj, created = Attendance.objects.update_or_create(
+                    student=student, 
+                    date=date,
+                    defaults={
+                        'trainer': trainer,
+                        'status': r.get('status', 'PRESENT')
+                    }
+                )
+                saved.append(obj)
+                
+            except Exception as e:
+                errors.append({
+                    'student_id': r.get('student'),
+                    'error': str(e)
+                })
+                print(f"Error saving attendance for student {r.get('student')}: {str(e)}")
                 continue
 
-            obj, _ = Attendance.objects.update_or_create(
-                trainer=trainer,
-                student_id=r.get('student'),
-                date=date,
-                defaults={'status': r.get('status', 'PRESENT')}
-            )
-            saved.append(obj)
+        if not saved:
+            return Response({
+                'error': 'No attendance records were saved',
+                'details': errors
+            }, status=400)
 
         return Response(
             AttendanceSerializer(saved, many=True).data,
