@@ -37,7 +37,10 @@ class AttendanceSerializer(serializers.ModelSerializer):
             'student', 'student_name',
             'status', 'marked_at'
         ]
-        read_only_fields = ['trainer'] 
+        read_only_fields = ['trainer', 'marked_at']  
+        extra_kwargs = {
+            'trainer': {'required': False}  
+        }
 
 
 class TrainerUserSerializer(serializers.ModelSerializer):
