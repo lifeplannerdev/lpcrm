@@ -244,11 +244,20 @@ class AttendanceDetailAPIView(APIView):
         if date:
             records = records.filter(date=date)
 
+        # If date is provided, return all results without pagination
+        # This is needed for the attendance marking page
+        if date:
+            serializer = AttendanceSerializer(records, many=True)
+            return Response({
+                'count': records.count(),
+                'results': serializer.data
+            })
+        
+        # Otherwise, use pagination
         paginator = StandardResultsSetPagination()
         page = paginator.paginate_queryset(records, request)
         serializer = AttendanceSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
-
 
 class QuickMarkAttendanceAPIView(APIView):
     """
