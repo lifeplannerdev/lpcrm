@@ -37,8 +37,9 @@ class AttendanceSerializer(serializers.ModelSerializer):
             'student', 'student_name',
             'status', 'marked_at'
         ]
+        read_only_fields = ['trainer'] 
 
-# NEW: Trainer User Serializer (for listing all users with TRAINER role)
+
 class TrainerUserSerializer(serializers.ModelSerializer):
     """Serializer for listing users with TRAINER role"""
     full_name = serializers.SerializerMethodField()
