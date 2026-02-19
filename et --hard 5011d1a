@@ -1,0 +1,286 @@
+[33ma2450d2[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m  added  chat app
+[33ma95fa9f[m  added  chat app
+[33m5011d1a[m Update views.py
+[33mdf62528[m Update serializers.py
+[33mdee7024[m Update views.py
+[33m4ffa731[m Refactor post method in Attendance view
+[33m48c6aea[m Add TrainerUserSerializer for trainer role listing
+[33maa51a39[m Update views.py
+[33m9a17dc6[m Update urls.py
+[33m335e5ea[m Update views.py
+[33m62a6179[m Update models.py
+[33mcbc0f1d[m Update models.py
+[33m644c028[m Update serializers.py
+[33m6212b23[m updated reports page can attch multple files
+[33m3e1a7cf[m updated reports page can attch multple files
+[33m05285d2[m updated reports page can attch multple files
+[33mac0560a[m updated reports page can attch multple files
+[33m199e73d[m updated reports page can attch multple files
+[33m8fd30ff[m updated reports page can attch multple files
+[33m3ec3d0b[m added app for voxbay
+[33mb179583[m updated the reports attchments fileurl
+[33m5e19e5b[m updated the ordering of reports
+[33m3ab1a96[m updated the admin
+[33mea3881d[m updated the admin
+[33m2512175[m updated the admin
+[33m84481a6[m Update views.py
+[33mab59072[m Add view URL field and method to serializer
+[33md44f00f[m Add view-file path for admin report
+[33mb8b0ce2[m Update views.py
+[33md4510ed[m updated
+[33mcb27db9[m Update views.py
+[33mbca8e94[m Update views.py
+[33m2eae0e3[m Implement PendingTasksAPIView for task retrieval
+[33me7c3022[m Update urls.py
+[33mbfc02f2[m Remove pending tasks URL path
+[33m50a6771[m Update views.py
+[33m25b3259[m Clean up urls.py and add pending tasks endpoint
+[33m15c52f7[m Update views.py
+[33m2122768[m Update views.py
+[33m47cfcb1[m Update views.py
+[33m7a02948[m Update permissions.py
+[33m4c01185[m Update user role permissions for lead assignment
+[33m1a11d21[m Update serializers.py
+[33mec06725[m Update permissions.py
+[33m3b8e5b8[m updated leads serializer
+[33m98bdc39[m updated leads serializer
+[33mf9fd15e[m updated leads serializer
+[33m8067ab5[m updated models
+[33m72ec767[m Update views.py
+[33m2f35ec6[m updated  views
+[33m0836668[m Update urls.py
+[33mf280602[m Update views.py
+[33mf7b0967[m Update serializers.py
+[33m23d260c[m Update serializers.py
+[33mce94a93[m Update urls.py
+[33mcbbc009[m Add staff endpoints to URL configuration
+[33me0e3808[m Refactor HR API views for improved structure
+[33mda9c8a8[m Update serializers.py
+[33mdac92b8[m Update permissions.py
+[33m16120a0[m Add IsHRorAccounts permission class
+[33ma821c7e[m Implement StaffListAPI for user retrieval
+[33m8467b98[m Update serializers.py
+[33m91f2213[m Update lead assignment permissions to include operations
+[33m90a9479[m Update permissions.py
+[33mbf43a36[m Update views.py
+[33m8119f10[m Update views.py
+[33mb920d80[m Restrict task visibility based on user role
+[33m76e64a8[m Update views.py
+[33ma394d83[m Add new URL patterns for task statistics and updates
+[33m8f8f314[m updated the serializes of tasks
+[33mce2d99f[m updated the serializes of tasks
+[33m6b0c5eb[m updated the serializes of tasks
+[33mc5d9ea1[m updated the models
+[33m312eba9[m updated the permmissions
+[33m7790f73[m updated the permmissions
+[33maf3458b[m updated the permmissions
+[33m09b8b9c[m updated the permmissions
+[33m8e51b44[m updated the permmissions
+[33mc04f4b1[m updated the leads serializer
+[33m8066926[m updated the role
+[33m6527d7d[m updated the role
+[33mee472df[m updated the views in accounts
+[33m394844d[m updated the views in accounts
+[33m6a2ada9[m updated the views in accounts
+[33ma39c29e[m Fix DEBUG mode and CORS for production
+[33mcd64f25[m updated the views in accounts
+[33m0dfa31f[m updated the views in accounts
+[33m1d07032[m updated the views in accounts
+[33m26ef7b2[m updated the views in accounts
+[33m3515973[m updated the serializer
+[33mbc66191[m updated the settings
+[33m7945800[m updated the settings
+[33m382eecc[m updated the settings
+[33ma5946b7[m updated the settings
+[33mbea98b0[m updated the db credentials to env
+[33mba47913[m updated the pagination
+[33mef28fa3[m updated the db with token blacklistr
+[33mc91a4b0[m Merge remote changes with local requirements.txt update
+[33m2ffe26e[m Add django-cors-headers to requirements
+[33mf91f342[m updated
+[33mee9776b[m Add django-cors-headers to requirements
+[33m40a539e[m Merge remote changes with local requirements.txt update
+[33m5447889[m Add django-cors-headers to requirements
+[33m2bf345b[m Add django-cors-headers dependency
+[33m401f42b[m Add new dependencies to settings.py
+[33m26ed60f[m updated the settings
+[33mfa25702[m updated the settings
+[33me71c267[m moved the sensitive datas into .env
+[33m9337f37[m updated the requiremnts .txt
+[33mc6d6471[m updated the all views and urls
+[33mf142370[m updated accounts models
+[33m352b833[m updated accounts models
+[33m864b395[m updated foe views
+[33m4a820b3[m updated foe views
+[33ma8e5918[m updated hob views
+[33m482d635[m updated the view
+[33m70b8969[m model update
+[33m62e44e0[m Increase max_length of role field to 30 characters
+[33m0cf11f8[m Add 'Business Development Manager' role choice
+[33m10811e6[m fixed recurrent add lead issue @ hob/partials/leads.html
+[33m7f559d5[m fixed recurrent add lead issue @ hob/partials/leads.html
+[33mbcd5255[m fixed task fetch issue
+[33m859151e[m deleted docker config
+[33ma7c323f[m deleted docker config
+[33md89a018[m created docker new config
+[33m815d6a5[m created docker new config
+[33m416695b[m created docker new config
+[33mefe7976[m created docker new config
+[33m2cce626[m created docker new config
+[33mff615f4[m created docker new config
+[33mf186eb7[m created docker new config
+[33m4658d20[m created docker config
+[33m270056e[m revised hob profile
+[33m5019a18[m revised hob profile
+[33m20b1590[m revised hob profile
+[33mfbdefde[m added task section on trainer dashboard
+[33m6778527[m added task section on trainer dashboard
+[33m7595fbf[m added task section on trainer dashboard
+[33m78858dd[m added task section on trainer dashboard
+[33m84637de[m added task section on trainer dashboard
+[33m274e804[m added task section on trainer dashboard
+[33m2e755df[m added task section on trainer dashboard
+[33m5c36117[m added task section on trainer dashboard
+[33m2209caa[m added task section on trainer dashboard
+[33m298904d[m added task section on trainer dashboard
+[33m4215018[m added task section on trainer dashboard
+[33me0474a6[m added task section on trainer dashboard
+[33m80f134c[m added task section on trainer dashboard
+[33m2d3d4ae[m added task section on trainer dashboard
+[33maec3a50[m added task section on trainer dashboard
+[33mefa53ff[m added students detail dashboard
+[33m8094a3b[m added students detail dashboard
+[33m27f9def[m added students detail dashboard
+[33m8d8e2d1[m added trainer dashboard
+[33m3897237[m added trainer dashboard
+[33me32f236[m added trainer dashboard
+[33m8484d69[m added trainer dashboard
+[33m1aae27e[m added trainer dashboard
+[33m584da22[m added trainer dashboard
+[33me388aa4[m added trainer dashboard
+[33m99c74cf[m added trainer dashboard
+[33m40e0195[m added trainer dashboard
+[33m9893553[m added trainer dashboard
+[33m39edde4[m added trainer dashboard
+[33mce2290b[m added trainer dashboard
+[33m5081c2a[m functional documents tab
+[33m401da7a[m functional documents tab
+[33m46ed2d5[m functional documents tab
+[33m49190c1[m added user filter button to penalty list
+[33m2ae794c[m added user filter button to penalty list
+[33m65592d5[m added user filter button to penalty list
+[33m29fd5b4[m added hr employee features
+[33mdf4b8c5[m added hr employee features
+[33m89537c0[m added hr employee features
+[33m5b613f9[m added hr employee features
+[33m6b42574[m functional penalty tab
+[33m1210ba8[m functional penalty tab
+[33mdbb166a[m functional penalty tab
+[33mbf3ee0e[m functional penalty tab
+[33m8d7faea[m added hr employee features
+[33mb445248[m added hr employee features
+[33mdb19ab5[m added hr employee features
+[33mf996f0d[m added hr employee features
+[33m7886c1a[m added hr employee features
+[33mf48701e[m added hr employee features
+[33m0f0b0a9[m added hr employee features
+[33m4df769b[m added hr employee features
+[33m6ffa935[m added hr user
+[33m7b22658[m added hr user
+[33m43dfef5[m Merge branch 'main' of https://github.com/lifeplannerdev/lpcrm
+[33made8e36[m added hr user
+[33m1d82bbb[m added reports and tasks dynamics
+[33me42e5c9[m added delete and edit feature to employees
+[33m7b027bc[m added delete and edit feature to employees
+[33me2f505a[m added delete and edit feature to employees
+[33m55f204d[m added delete and edit feature to employees
+[33mdd9cf25[m added delete and edit feature to employees
+[33m6c5e4d3[m added delete and edit feature to employees
+[33m56513b9[m added delete and edit feature to employees
+[33m953db8b[m added delete and edit feature to employees
+[33m82c051e[m added gm dasboard overview
+[33mcc13f65[m added gm dasboard overview
+[33m1d50464[m added gm dasboard overview
+[33m4f3c02f[m added gm dasboard overview
+[33medb0b29[m added gm dasboard overview
+[33mcf4805f[m added gm dasboard overview
+[33m0e52309[m added reports and tasks dynamics
+[33m711a183[m fixxed task update button
+[33me5bc810[m fixxed task update button
+[33m80c1bb0[m fixxed task update button
+[33m9d21b95[m fixxed task update button
+[33m9064f46[m fixxed task update button
+[33mb912e00[m fixxed task update button
+[33mebf80e8[m fixxed task update button
+[33m9778d08[m fixxed task update button
+[33mc813bee[m added reports and tasks dynamics
+[33m3a0ff25[m added cmco dashboard
+[33mbf02ab1[m added cmco dashboard
+[33mee4ab96[m added cmco dashboard
+[33m5da0df9[m added cmco dashboard
+[33mdb3d61f[m added cmco dashboard
+[33m5d406c1[m added cmco dashboard
+[33m1ffee76[m added cmco dashboard
+[33mdcfaac3[m added cmco dashboard
+[33mb5c6e60[m added cmco dashboard
+[33mb017614[m added cmco dashboard
+[33m456688e[m added cmco dashboard
+[33mce1d552[m added cmco dashboard
+[33mfc0986f[m added cmco dashboard
+[33m987acad[m added cmco dashboard
+[33m1613417[m added cmco dashboard
+[33m5dc058c[m added cmco dashboard
+[33m859e99f[m added cmco dashboard
+[33mfeb207f[m added cmco dashboard
+[33m6fcf61f[m added cmco dashboard
+[33m3da70ae[m added cmco dashboard
+[33m20f498c[m added import excel for hob
+[33m1b8b5ff[m added import excel for hob
+[33m9ff9398[m added import excel for hob
+[33m500d407[m added import excel for hob
+[33m232154c[m added import excel for hob
+[33mb60218a[m added ist
+[33m1d17d58[m added microworks
+[33me975e46[m added cloudinary storage
+[33mac4f4c2[m added cloudinary storage
+[33mdac4e9b[m added cloudinary storage
+[33m9c5e52d[m added cloudinary storage
+[33mc54667b[m added cloudinary storage
+[33mef6455b[m added google storage
+[33mdde872d[m removed .env
+[33mc75e287[m removed .env
+[33m58fe0aa[m removed .env
+[33m727c01b[m removed .env
+[33m17934d0[m removed .env
+[33mb3059d2[m removed .env
+[33mb00f084[m removed .env
+[33mc22c1c8[m added aiven db
+[33m49b0488[m added aiven db
+[33mbcb9c11[m updated to neon
+[33m45d39ef[m updated to xata
+[33me180bcf[m updated
+[33m2463493[m updated
+[33mbafedd5[m migrated to xata
+[33m6483b30[m updated
+[33mcf6376b[m voxbay button
+[33m4eab445[m voxbay button
+[33ma921119[m voxbay button
+[33mc1faa7b[m voxbay button
+[33m9619e1e[m voxbay button
+[33mf893fa6[m reports button
+[33mc23d44c[m first commit
+[33mb0d5ff9[m added report section
+[33mf06b6c0[m added report section
+[33m208cab1[m added report section
+[33mc97931b[m added report section
+[33m01943ff[m added report section
+[33m7e0fca3[m retrieve tasks
+[33m997e889[m retrieve tasks
+[33m0eacf32[m retrieve tasks
+[33m4d8ce45[m retrieve tasks
+[33mcdaeb23[m delete leads
+[33m95f3455[m add leads
+[33m85c01ff[m add leads
+[33m28a8a86[m assign tasks
+[33mc29fac2[m assign tasks
+[33m773793f[m assign tasks
