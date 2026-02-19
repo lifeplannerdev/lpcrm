@@ -43,7 +43,7 @@ class DailyReportSerializer(serializers.ModelSerializer):
         model = DailyReport
         fields = [
             "id", "user", "user_name", "name", "heading", "report_text",
-            "file_url", "view_url",   # legacy shims kept for backwards compat
+            "file_url", "view_url",   
             "attachments",
             "report_date", "status", "review_comment",
             "reviewed_by", "reviewed_by_name",
@@ -67,15 +67,11 @@ class DailyReportSerializer(serializers.ModelSerializer):
 
     def _save_attachments(self, report, files):
         for file in files:
-            # ✅ FIX 1: Capture the original filename BEFORE handing the file
-            # object to Cloudinary. After CloudinaryField processes the upload,
-            # file.name becomes the Cloudinary public_id, not the original name.
-            original_name = file.name  # e.g. "my_report.pdf"
-
+            original_name = file.name 
             DailyReportAttachment.objects.create(
                 report=report,
-                attached_file=file,          # Cloudinary upload happens here
-                original_filename=original_name,  # saved before it's mutated
+                attached_file=file,         
+                original_filename=original_name, 
             )
 
     def create(self, validated_data):
