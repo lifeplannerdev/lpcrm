@@ -82,11 +82,11 @@ class LeadCreateSerializer(serializers.ModelSerializer):
                     "Admission Managers can assign leads to themselves, Front Office Executives, or Admission Executives."
                 )
 
-        # Other MANAGER_ROLES (CM, BDM) → executives only
+        # Other MANAGER_ROLES (CM, BDM) → self or executives only
         elif creator and creator.role in MANAGER_ROLES and creator.role != 'ADM_MANAGER':
-            if assignee.role not in EXECUTIVE_ROLES:
+            if assignee != creator and assignee.role not in EXECUTIVE_ROLES:
                 raise serializers.ValidationError(
-                    "Managers can assign leads to executives only."
+                    "Managers can assign leads to themselves or executives only."
                 )
 
         # ADMIN / OPS → managers or executives
@@ -191,11 +191,11 @@ class LeadAssignSerializer(serializers.Serializer):
                 })
             attrs['assignment_type'] = 'SUB'
 
-        # Other MANAGER_ROLES (CM, BDM) → executives only
+        # Other MANAGER_ROLES (CM, BDM) → self or executives only
         elif user.role in MANAGER_ROLES and user.role != 'ADM_MANAGER':
-            if assignee.role not in EXECUTIVE_ROLES:
+            if assignee != user and assignee.role not in EXECUTIVE_ROLES:
                 raise serializers.ValidationError({
-                    "assigned_to_id": "Managers can only assign to executives."
+                    "assigned_to_id": "Managers can only assign to themselves or executives."
                 })
             if lead.assigned_to != user:
                 raise serializers.ValidationError({
@@ -225,6 +225,7 @@ class LeadAssignSerializer(serializers.Serializer):
         attrs['lead'] = lead
         attrs['assignee'] = assignee
         return attrs
+
 
 
 class LeadListSerializer(serializers.ModelSerializer):
