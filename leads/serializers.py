@@ -298,6 +298,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         request = self.context.get('request')
 
+        # Track remarks changes
         if 'remarks' in validated_data and instance.remarks != validated_data.get('remarks'):
             RemarkHistory.objects.create(
                 lead=instance,
@@ -367,3 +368,44 @@ class RemarkHistorySerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError("Changed by must be provided.")
         return value
+
+
+class LeadUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lead
+        fields = [
+            'name',
+            'phone',
+            'email',
+            'location',
+            'remarks',
+            'priority',
+            'status',
+            'program',
+            'source',
+            'custom_source'
+        ]
+
+    def validate_priority(self, value):
+        if value not in dict(Lead.PRIORITY_CHOICES):
+            raise serializers.ValidationError("Invalid priority")
+        return value
+
+    def validate_status(self, value):
+        if not value:
+            raise serializers.ValidationError("Status cannot be empty")
+        return value
+
+    def update(self, instance, validated_data):
+        request = self.context['request']
+
+        # Track remark history
+        if 'remarks' in validated_data and instance.remarks != validated_data['remarks']:
+            RemarkHistory.objects.create(
+                lead=instance,
+                previous_remarks=instance.remarks,
+                new_remarks=validated_data['remarks'],
+                changed_by=request.user
+            )
+
+        return super().update(instance, validated_data)

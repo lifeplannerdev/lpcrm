@@ -23,6 +23,7 @@ from .serializers import (
     ProcessingUpdateSerializer,
     LeadAssignSerializer,
     LeadAssignmentSerializer,
+    LeadUpdateSerializer,
 )
 
 # Pagination 
@@ -377,20 +378,7 @@ class MyTeamLeadsView(generics.ListAPIView):
 
 # Available Users for Assignment - UPDATED: No role-based restrictions
 class AvailableUsersForAssignmentView(APIView):
-    """
-    Get list of users that can be assigned leads
-    GET /api/leads/available-users/
-    
-    Returns all active users with lead-handling roles:
-    - OPS (Operations Manager)
-    - ADM_MANAGER (Admission Manager)
-    - ADM_EXEC (Admission Executive)
-    - CM (Center Manager)
-    - BDM (Business Development Manager)
-    - FOE (FOE Cum TC)
-    
-    No role-based filtering - ADMIN and all staff can see the full list.
-    """
+
     permission_classes = [CanAccessLeads]
 
     def get(self, request):
@@ -406,7 +394,6 @@ class AvailableUsersForAssignmentView(APIView):
             'FOE'
         ]
         
-        # Return all active users with assignable roles
         users = User.objects.filter(
             role__in=ASSIGNABLE_ROLES,
             is_active=True
@@ -418,14 +405,6 @@ class AvailableUsersForAssignmentView(APIView):
 
 
 class UnassignLeadView(APIView):
-    """
-    Remove assignment from a lead
-    POST /api/leads/unassign/
-    Body: {
-        "lead_id": 1,
-        "unassign_type": "PRIMARY" or "SUB"
-    }
-    """
     permission_classes = [CanAssignLeads]
 
     def post(self, request):
@@ -496,3 +475,25 @@ class UnassignLeadView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+
+class UpdateLeadView(APIView):
+    permission_classes = [CanAccessLeads]
+
+    def patch(self, request, pk):
+        lead = get_object_or_404(Lead, id=pk)
+
+        if lead.assigned_to != request.user and lead.sub_assigned_to != request.user and request.user.role not in ADMIN_ROLES:
+            return Response({"error": "Permission denied"}, status=403)
+
+        serializer = LeadUpdateSerializer(
+            lead,
+            data=request.data,
+            partial=True,
+            context={'request': request}
+        )
+
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(serializer.data, status=200)

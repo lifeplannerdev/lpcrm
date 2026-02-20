@@ -39,14 +39,14 @@ class Lead(models.Model):
 
     # Basic lead info
     name = models.CharField(max_length=100, validators=[MinLengthValidator(3)])
-    phone = models.CharField(max_length=20, validators=[MinLengthValidator(10)], help_text="Contact phone number")
+    phone = models.CharField(max_length=20, validators=[MinLengthValidator(10)], unique=True, help_text="Contact phone number")
     email = models.EmailField(unique=True, null=True, blank=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='MEDIUM')
     status = models.TextField(default='ENQUIRY', help_text="Current status of the lead")
     program = models.TextField(blank=True, null=True, help_text="Enter the program name")
     remarks = models.TextField(blank=True, null=True, help_text="Additional notes or comments about the lead")
     location = models.CharField(max_length=100, blank=True, null=True)
-    source = models.CharField(max_length=10, choices=SOURCE_CHOICES)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES)
     custom_source = models.CharField(max_length=50, blank=True, null=True)
     
     # Processing workflow fields
@@ -62,7 +62,7 @@ class Lead(models.Model):
     document_status = models.CharField(max_length=20, choices=DOCUMENT_STATUS_CHOICES, default='PENDING')
     documents_received = models.TextField(blank=True, null=True)
 
-    # NEW: Two-level assignment tracking
+    # Two-level assignment tracking
     assigned_to = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='assigned_leads',
@@ -75,7 +75,7 @@ class Lead(models.Model):
     )
     assigned_date = models.DateTimeField(null=True, blank=True)
     
-    # NEW: Secondary assignment for junior staff
+    # Secondary assignment for junior staff
     sub_assigned_to = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True,
         related_name='sub_assigned_leads',
@@ -138,7 +138,7 @@ class Lead(models.Model):
         """Returns a queryset of processing status changes"""
         return self.processing_updates.all().order_by('-timestamp')
     
-    # NEW: Get current handler of the lead
+    # Get current handler of the lead
     @property
     def current_handler(self):
         """Returns the current person handling this lead (sub_assigned_to if exists, else assigned_to)"""
