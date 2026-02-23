@@ -193,10 +193,6 @@ class LeadProcessingTimelineView(generics.ListAPIView):
 
 # Lead Assignment View
 class LeadAssignView(APIView):
-    """
-    Assign or sub-assign a lead
-    POST /api/leads/assign/
-    """
     permission_classes = [CanAssignLeads]
 
     def post(self, request):
@@ -243,15 +239,6 @@ class LeadAssignView(APIView):
 
 # Bulk Lead Assignment View
 class BulkLeadAssignView(APIView):
-    """
-    Assign multiple leads at once
-    POST /api/leads/bulk-assign/
-    Body: {
-        "lead_ids": [1, 2, 3],
-        "assigned_to_id": 5,
-        "notes": "Bulk assignment"
-    }
-    """
     permission_classes = [CanAssignLeads]
 
     def post(self, request):
@@ -277,7 +264,6 @@ class BulkLeadAssignView(APIView):
 
         for lead_id in lead_ids:
             try:
-                # Use the same validation logic as LeadAssignSerializer
                 serializer = LeadAssignSerializer(
                     data={'lead_id': lead_id, 'assigned_to_id': assigned_to_id, 'notes': notes},
                     context={'request': request}
@@ -325,10 +311,6 @@ class BulkLeadAssignView(APIView):
 
 # Lead Assignment History View - UPDATED
 class LeadAssignmentHistoryView(generics.ListAPIView):
-    """
-    Get assignment history for a specific lead
-    GET /api/leads/{lead_id}/assignment-history/
-    """
     serializer_class = LeadAssignmentSerializer
     permission_classes = [CanAccessLeads]
 
@@ -350,13 +332,18 @@ class LeadAssignmentHistoryView(generics.ListAPIView):
 
 # My Team Leads View - UPDATED
 class MyTeamLeadsView(generics.ListAPIView):
-    """
-    Get all leads for manager's team
-    GET /api/leads/my-team/
-    
-    NOTE: This endpoint is now only useful for ADMIN roles.
-    Managers will only see their directly assigned leads in the main list.
-    """
+    serializer_class = LeadListSerializer
+    permission_classes = [CanAccessLeads]
+    pagination_class = LeadPagination
+
+    def get_queryset(self):
+        user = self.request.user
+        
+        # Only ADMIN can see team leads
+        if user.role in ADMIN_ROLES:
+            # Return all leads (same as main list for admin)
+            return Lead.objects.all().distinct()
+        
     serializer_class = LeadListSerializer
     permission_classes = [CanAccessLeads]
     pagination_class = LeadPagination

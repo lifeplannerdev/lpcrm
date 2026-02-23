@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'hr',
     'reports',
     'telephony',
+    'chats',
 ]
 
 MIDDLEWARE = [

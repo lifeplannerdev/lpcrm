@@ -30,6 +30,7 @@ urlpatterns = [
     path('api/', include('tasks.urls')),
     path('api/', include('hr.urls')),
     path('api/', include('reports.urls')),
+    path('api/',include('chats.urls')),
 
 ]
 

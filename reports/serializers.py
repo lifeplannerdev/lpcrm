@@ -89,6 +89,5 @@ class DailyReportSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
 
-        # Append new files (existing ones are kept as-is)
         self._save_attachments(instance, files)
         return instance
