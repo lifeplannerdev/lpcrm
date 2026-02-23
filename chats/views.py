@@ -95,3 +95,11 @@ class CreateGroupConversationView(APIView):
         conversation.participants.add(request.user, *users)
 
         return Response({"conversation_id": conversation.id})
+
+
+class EmployeeListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        users = User.objects.exclude(id=request.user.id)
+        return Response(UserSerializer(users, many=True).data)
