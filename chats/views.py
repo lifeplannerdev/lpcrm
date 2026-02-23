@@ -101,5 +101,5 @@ class EmployeeListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        users = User.objects.exclude(id=request.user.id)
-        return Response(UserSerializer(users, many=True).data)
+        users = User.objects.all().values('id', 'username', 'role')
+        return Response(list(users))
