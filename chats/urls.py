@@ -8,9 +8,9 @@ from .views import (
 )
 
 urlpatterns = [
-    path("conversations/", ConversationListView.as_view()),
-    path("messages/<int:conversation_id>/", MessageListView.as_view()),
-    path("send/", SendMessageView.as_view()),
-    path("create-direct/", CreateDirectConversationView.as_view()),
-    path("create-group/", CreateGroupConversationView.as_view()),
+    path("conversations/", ConversationListView.as_view(), name="conversation-list"),
+    path("messages/<int:conversation_id>/", MessageListView.as_view(), name="message-list"),
+    path("send/", SendMessageView.as_view(), name="send-message"),
+    path("create-direct/", CreateDirectConversationView.as_view(), name="create-direct"),
+    path("create-group/", CreateGroupConversationView.as_view(), name="create-group"),
 ]
