@@ -11,7 +11,7 @@ class Conversation(models.Model):
     )
 
     type = models.CharField(max_length=10, choices=CONVERSATION_TYPE)
-    name = models.CharField(max_length=255, blank=True, null=True)  # for group
+    name = models.CharField(max_length=255, blank=True, null=True) 
     participants = models.ManyToManyField(User)
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="created_conversations"
@@ -23,7 +23,7 @@ class Conversation(models.Model):
 
 
 class Message(models.Model):
-    conversation = models.ForeignKey(
+    conversation = models.ForeignKey(     
         Conversation,
         on_delete=models.CASCADE,
         related_name="messages"
