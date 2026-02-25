@@ -36,17 +36,16 @@ class SendMessageView(APIView):
     def post(self, request):
         conversation_id = request.data.get("conversation_id")
         text = request.data.get("text")
-
-        if not conversation_id or not text:
-            return Response({"error": "Missing fields"}, status=400)
+        file = request.FILES.get("file")
 
         message = Message.objects.create(
             conversation_id=conversation_id,
             sender=request.user,
-            text=text
+            text=text,
+            file=file
         )
 
-        return Response({"status": "sent", "message_id": message.id})
+        return Response(MessageSerializer(message).data)
 
 
 class CreateDirectConversationView(APIView):
