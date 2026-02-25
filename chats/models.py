@@ -23,14 +23,14 @@ class Conversation(models.Model):
 
 
 class Message(models.Model):
-    conversation = models.ForeignKey(     
+    conversation = models.ForeignKey(
         Conversation,
         on_delete=models.CASCADE,
         related_name="messages"
     )
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
-    text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.sender} → {self.conversation.id}"
+    text = models.TextField(blank=True, null=True)
+
+    file = models.FileField(upload_to="chat_files/", blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)

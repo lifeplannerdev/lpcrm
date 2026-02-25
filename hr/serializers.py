@@ -5,13 +5,11 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-    """Basic user serializer"""
     class Meta:
         model = User
         fields = ["id", "username", "email", "role", "salary", "join_date", "phone", "location"]
 
 class UserMinimalSerializer(serializers.ModelSerializer):
-    """Minimal user info for dropdowns and references"""
     name = serializers.SerializerMethodField()
     
     class Meta:
@@ -19,7 +17,6 @@ class UserMinimalSerializer(serializers.ModelSerializer):
         fields = ["id", "username", "name", "first_name", "last_name", "email"]
     
     def get_name(self, obj):
-        """Return display name"""
         if obj.first_name and obj.last_name:
             return f"{obj.first_name} {obj.last_name}"
         elif obj.first_name:
@@ -27,10 +24,6 @@ class UserMinimalSerializer(serializers.ModelSerializer):
         return obj.username
 
 class PenaltySerializer(serializers.ModelSerializer):
-    """
-    Penalty serializer with user information
-    Includes user details in read operations
-    """
     user_name = serializers.SerializerMethodField(read_only=True)
     user_email = serializers.SerializerMethodField(read_only=True)
     user_details = UserMinimalSerializer(source='user', read_only=True)
@@ -39,10 +32,10 @@ class PenaltySerializer(serializers.ModelSerializer):
         model = Penalty
         fields = [
             'id', 
-            'user',           # For write operations (POST/PUT)
-            'user_name',      # For read operations (GET) - backwards compatible
-            'user_email',     # For read operations (GET) - backwards compatible
-            'user_details',   # Full user object for read operations
+            'user',           
+            'user_name',      
+            'user_email',    
+            'user_details',  
             'act', 
             'amount', 
             'month', 
@@ -50,7 +43,6 @@ class PenaltySerializer(serializers.ModelSerializer):
         ]
     
     def get_user_name(self, obj):
-        """Get user's display name"""
         if not obj.user:
             return "Unknown"
         if obj.user.first_name and obj.user.last_name:
@@ -60,11 +52,9 @@ class PenaltySerializer(serializers.ModelSerializer):
         return obj.user.username
     
     def get_user_email(self, obj):
-        """Get user's email"""
         return obj.user.email if obj.user else ""
 
 class AttendanceDocumentSerializer(serializers.ModelSerializer):
-    """Serializer for attendance documents"""
     document_url = serializers.SerializerMethodField(read_only=True)
     
     class Meta:
@@ -80,13 +70,11 @@ class AttendanceDocumentSerializer(serializers.ModelSerializer):
         ]
     
     def get_document_url(self, obj):
-        """Get the document URL from Cloudinary"""
         if obj.document:
             return obj.document.url
         return None
 
 class StaffSerializer(serializers.ModelSerializer):
-    """Serializer for staff/employee listing"""
     role_display = serializers.CharField(source="get_role_display", read_only=True)
     full_name = serializers.SerializerMethodField()
     
@@ -110,7 +98,6 @@ class StaffSerializer(serializers.ModelSerializer):
         ]
     
     def get_full_name(self, obj):
-        """Return full name"""
         if obj.first_name and obj.last_name:
             return f"{obj.first_name} {obj.last_name}"
         elif obj.first_name:

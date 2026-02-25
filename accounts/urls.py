@@ -17,18 +17,13 @@ from .views import (
 )
 
 urlpatterns = [
-    # Auth endpoints
     path('register/', RegisterAPIView.as_view(), name='register'),
     path('login/', LoginAPIView.as_view(), name='login'),
     path('token/refresh/', RefreshTokenAPIView.as_view(), name='token_refresh'),
     path('logout/', LogoutAPIView.as_view(), name='logout'),
-    path('user/me/', CurrentUserAPIView.as_view(), name='current_user'),  # ✅ NEW
-    
-    # Dashboard
+    path('user/me/', CurrentUserAPIView.as_view(), name='current_user'),
     path('stats/', DashboardStatsAPIView.as_view(), name='dashboard_stats'),
     path('activities/', RecentActivitiesAPIView.as_view(), name='recent_activities'),
-    
-    # Staff management
     path('staff/', StaffListView.as_view(), name='staff_list'),
     path('staff/<int:pk>/', StaffDetailView.as_view(), name='staff_detail'),
     path('staff/create/', StaffCreateView.as_view(), name='staff_create'),
