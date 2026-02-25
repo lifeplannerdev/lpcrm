@@ -166,8 +166,7 @@ class AttendanceListCreateAPIView(APIView):
     def get(self, request):
         qs = Attendance.objects.select_related(
             'student', 'trainer', 'trainer__user'
-        )
-
+        ).order_by('-date')
         if hasattr(request.user, 'trainer_profile'):
             qs = qs.filter(trainer=request.user.trainer_profile)
 
@@ -209,7 +208,7 @@ class AttendanceDetailAPIView(APIView):
     def get(self, request):
         records = Attendance.objects.select_related(
             'student', 'trainer', 'trainer__user'
-        )
+        ).order_by('-date')
 
         if hasattr(request.user, 'trainer_profile'):
             records = records.filter(trainer=request.user.trainer_profile)
@@ -300,7 +299,7 @@ class AttendanceRecordsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id):
-        qs = Attendance.objects.filter(student_id=student_id)
+        qs = Attendance.objects.filter(student_id=student_id).order_by('-date')
 
         if hasattr(request.user, 'trainer_profile'):
             qs = qs.filter(trainer=request.user.trainer_profile)
@@ -315,7 +314,7 @@ class ExportStudentAttendanceAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id):
-        qs = Attendance.objects.filter(student_id=student_id)
+        qs = Attendance.objects.filter(student_id=student_id).order_by('-date')
 
         if hasattr(request.user, 'trainer_profile'):
             qs = qs.filter(trainer=request.user.trainer_profile)
