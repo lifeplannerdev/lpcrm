@@ -35,17 +35,31 @@ class SendMessageView(APIView):
 
     def post(self, request):
         conversation_id = request.data.get("conversation_id")
-        text = request.data.get("text")
+        text = request.data.get("text", "").strip()
         file = request.FILES.get("file")
 
+        if not conversation_id:
+            return Response({"error": "conversation_id is required"}, status=400)
+
+        if not text and not file:
+            return Response({"error": "Message must have text or a file"}, status=400)
+
+        try:
+            conversation = Conversation.objects.get(
+                id=conversation_id,
+                participants=request.user
+            )
+        except Conversation.DoesNotExist:
+            return Response({"error": "Conversation not found"}, status=404)
+
         message = Message.objects.create(
-            conversation_id=conversation_id,
+            conversation=conversation,
             sender=request.user,
-            text=text,
+            text=text or None,
             file=file
         )
 
-        return Response(MessageSerializer(message).data)
+        return Response(MessageSerializer(message).data, status=201)
 
 
 class CreateDirectConversationView(APIView):
