@@ -314,7 +314,7 @@ class ExportStudentAttendanceAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, student_id):
-        qs = Attendance.objects.filter(student_id=student_id).order_by('-date')
+        qs = Attendance.objects.filter(student_id=student_id).order_by('date')
 
         if hasattr(request.user, 'trainer_profile'):
             qs = qs.filter(trainer=request.user.trainer_profile)
