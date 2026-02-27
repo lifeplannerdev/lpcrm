@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from cloudinary.models import CloudinaryField  # ← add this
 
 User = settings.AUTH_USER_MODEL
 
@@ -9,9 +10,8 @@ class Conversation(models.Model):
         ("DIRECT", "Direct"),
         ("GROUP", "Group"),
     )
-
     type = models.CharField(max_length=10, choices=CONVERSATION_TYPE)
-    name = models.CharField(max_length=255, blank=True, null=True) 
+    name = models.CharField(max_length=255, blank=True, null=True)
     participants = models.ManyToManyField(User)
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="created_conversations"
@@ -24,13 +24,12 @@ class Conversation(models.Model):
 
 class Message(models.Model):
     conversation = models.ForeignKey(
-        Conversation,
-        on_delete=models.CASCADE,
-        related_name="messages"
+        Conversation, on_delete=models.CASCADE, related_name="messages"
     )
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
-
     text = models.TextField(blank=True, null=True)
 
-    file = models.FileField(upload_to="chat_files/", blank=True, null=True)
+    # ← Replace FileField with CloudinaryField
+    file = CloudinaryField('file', blank=True, null=True, resource_type='auto')
+
     created_at = models.DateTimeField(auto_now_add=True)

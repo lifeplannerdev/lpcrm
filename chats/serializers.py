@@ -13,10 +13,17 @@ class UserSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer()
+    file = serializers.SerializerMethodField()  
 
     class Meta:
         model = Message
         fields = ["id", "sender", "text", "file", "created_at"]
+
+    def get_file(self, obj):
+        if obj.file:
+            return obj.file.url
+        return None
+
 
 class ConversationSerializer(serializers.ModelSerializer):
     participants = UserSerializer(many=True)
@@ -24,7 +31,7 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Conversation
-        fields = ["id", "type", "name", "participants", "last_message"]
+        fields = ["id", "type", "name", "participants", "last_message", "created_by"]
 
     def get_last_message(self, obj):
         last = obj.messages.order_by("-created_at").first()
