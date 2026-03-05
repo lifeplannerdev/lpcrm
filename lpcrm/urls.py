@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/', include('hr.urls')),
     path('api/', include('reports.urls')),
     path('api/',include('chats.urls')),
+    path('api/',include('telephony.urls')),
 
 ]
 

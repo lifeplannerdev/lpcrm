@@ -1,6 +1,6 @@
 from django.urls import path
-from .views import VoxbayWebhookAPIView
+from .views import voxbay_webhook
 
 urlpatterns = [
-    path("voxbay/webhook/", VoxbayWebhookAPIView.as_view(), name="voxbay-webhook"),
+    path("api/voxbay/webhook/", voxbay_webhook),
 ]
