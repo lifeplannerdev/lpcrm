@@ -3,24 +3,21 @@ from .models import VoxbayCallLog
 
 
 class VoxbayCallLogSerializer(serializers.ModelSerializer):
-    duration_display = serializers.SerializerMethodField()
+    duration_display              = serializers.SerializerMethodField()
     conversation_duration_display = serializers.SerializerMethodField()
 
     class Meta:
-        model = VoxbayCallLog
+        model  = VoxbayCallLog
         fields = [
             'id',
             'call_uuid',
             'call_type',
-            # Incoming
             'called_number',
             'caller_number',
             'agent_number',
-            # Outgoing
             'extension',
             'destination',
             'caller_id',
-            # CDR
             'call_status',
             'duration',
             'duration_display',
@@ -29,14 +26,12 @@ class VoxbayCallLogSerializer(serializers.ModelSerializer):
             'recording_url',
             'call_start',
             'call_end',
-            # Extra
             'dtmf',
             'transferred_number',
-            # Meta
             'created_at',
             'updated_at',
         ]
-        read_only_fields = fields  # this is a read endpoint
+        read_only_fields = fields
 
     def get_duration_display(self, obj):
         if not obj.duration:
@@ -52,15 +47,16 @@ class VoxbayCallLogSerializer(serializers.ModelSerializer):
 
 
 class CallStatsSerializer(serializers.Serializer):
-    total             = serializers.IntegerField()
-    answered          = serializers.IntegerField()
-    missed            = serializers.IntegerField()
-    busy              = serializers.IntegerField()
-    congestion        = serializers.IntegerField()
-    incoming          = serializers.IntegerField()
-    outgoing          = serializers.IntegerField()
-    avg_duration      = serializers.FloatField()
-    success_rate      = serializers.FloatField()
+    total        = serializers.IntegerField()
+    answered     = serializers.IntegerField()
+    missed       = serializers.IntegerField()   
+    busy         = serializers.IntegerField()
+    congestion   = serializers.IntegerField()
+    chanunavail  = serializers.IntegerField()  
+    incoming     = serializers.IntegerField()
+    outgoing     = serializers.IntegerField()
+    avg_duration = serializers.FloatField()     
+    success_rate = serializers.FloatField()    
 
 
 class ClickToCallSerializer(serializers.Serializer):
@@ -69,5 +65,9 @@ class ClickToCallSerializer(serializers.Serializer):
     user_no     = serializers.CharField(max_length=50,  help_text="Extension number")
     destination = serializers.CharField(max_length=30,  help_text="Destination mobile number")
     callerid    = serializers.CharField(max_length=30,  help_text="DID number to show as caller ID")
-    source      = serializers.CharField(max_length=30,  required=False, allow_blank=True,
-                                        help_text="Source mobile (mobile-to-mobile only)")
+    source      = serializers.CharField(
+                      max_length=30,
+                      required=False,
+                      allow_blank=True,
+                      help_text="Source mobile number (mobile-to-mobile / FORMAT 2 only)",
+                  )
