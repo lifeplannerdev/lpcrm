@@ -10,20 +10,21 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 
-from .models import VoxbayCallLog
+from .models import VoxbayCallLog, VoxbayAgent
 from .serializers import (
     VoxbayCallLogSerializer,
+    VoxbayAgentSerializer,
     CallStatsSerializer,
     ClickToCallSerializer,
 )
 
 logger = logging.getLogger(__name__)
 
-VOXBAY_CLICK_TO_CALL_URL = "https://x.voxbay.com/api/click_to_call"
+VOXBAY_CLICK_TO_CALL_URL  = "https://x.voxbay.com/api/click_to_call"
 VOXBAY_RECORDING_BASE_URL = "https://x.voxbay.com:81/callcenter/"
 
 
-# Helpers
+# ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _parse_dt(date_str, time_str=None):
     if not date_str:
@@ -53,9 +54,6 @@ def _safe_int(val):
 
 
 def _resolve_recording_url(raw_url):
-    """
-    If the recording URL is a bare filename (no http), prepend the base URL.
-    """
     if not raw_url:
         return None
     raw_url = raw_url.strip()
@@ -65,7 +63,6 @@ def _resolve_recording_url(raw_url):
 
 
 def _date_filter(qs, request):
-    """Apply from/to date range filters on call_start (falls back to created_at)."""
     from django.utils.dateparse import parse_datetime, parse_date
     from_str = request.query_params.get("from")
     to_str   = request.query_params.get("to")
@@ -86,14 +83,124 @@ def _date_filter(qs, request):
     return qs
 
 
-# Webhook  (receives ALL Voxbay events for both Incoming and Outgoing calls)
+# ─── Agent directory ──────────────────────────────────────────────────────────
+
+class VoxbayAgentListView(APIView):
+    """
+    GET  /api/voxbay/agents/
+        Returns all active agents as a flat list.
+        Also supports ?format=map to return a phone_number→name dict
+        which the frontend can use for quick lookups.
+
+    POST /api/voxbay/agents/
+        Create a new agent mapping.
+        Body: { name, phone_number, extension, did_number, department }
+
+    PUT  /api/voxbay/agents/
+        Bulk-upsert agents.
+        Body: [ { name, phone_number, ... }, ... ]
+        Useful for syncing from Voxbay's user list in one shot.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        qs = VoxbayAgent.objects.filter(is_active=True)
+
+        # ?format=map  →  { "918089040107": "Shahida Beevi AM HQ", ... }
+        if request.query_params.get("format") == "map":
+            mapping = {a.phone_number: a.name for a in qs}
+            # also index by extension so both keys work
+            for a in qs:
+                if a.extension:
+                    mapping.setdefault(a.extension, a.name)
+            return Response(mapping)
+
+        return Response(VoxbayAgentSerializer(qs, many=True).data)
+
+    def post(self, request):
+        serializer = VoxbayAgentSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def put(self, request):
+        """Bulk upsert: list of agent dicts keyed by phone_number."""
+        items = request.data
+        if not isinstance(items, list):
+            return Response({"error": "Expected a list."}, status=status.HTTP_400_BAD_REQUEST)
+
+        created_count = updated_count = 0
+        errors = []
+        for item in items:
+            phone = item.get("phone_number", "").strip()
+            if not phone:
+                errors.append({"item": item, "error": "phone_number required"})
+                continue
+            agent, created = VoxbayAgent.objects.update_or_create(
+                phone_number=phone,
+                defaults={
+                    "name":       item.get("name", ""),
+                    "extension":  item.get("extension") or None,
+                    "did_number": item.get("did_number") or None,
+                    "department": item.get("department") or None,
+                    "is_active":  item.get("is_active", True),
+                },
+            )
+            if created:
+                created_count += 1
+            else:
+                updated_count += 1
+
+        return Response({
+            "created": created_count,
+            "updated": updated_count,
+            "errors":  errors,
+        })
+
+
+class VoxbayAgentDetailView(APIView):
+    """GET / PATCH / DELETE a single agent by pk."""
+    permission_classes = [AllowAny]
+
+    def _get(self, pk):
+        try:
+            return VoxbayAgent.objects.get(pk=pk)
+        except VoxbayAgent.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        agent = self._get(pk)
+        if not agent:
+            return Response({"error": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(VoxbayAgentSerializer(agent).data)
+
+    def patch(self, request, pk):
+        agent = self._get(pk)
+        if not agent:
+            return Response({"error": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        serializer = VoxbayAgentSerializer(agent, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        agent = self._get(pk)
+        if not agent:
+            return Response({"error": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+        agent.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# ─── Webhook ──────────────────────────────────────────────────────────────────
 
 class VoxbayWebhookView(APIView):
-    permission_classes    = [AllowAny]
+    permission_classes     = [AllowAny]
     authentication_classes = []
 
     def post(self, request):
-        data = request.data 
+        data = request.data
         logger.info(f"[Voxbay Webhook] payload={dict(data)}")
 
         call_type = (
@@ -105,7 +212,7 @@ class VoxbayWebhookView(APIView):
         call_uuid = (
             data.get("CallUUID")
             or data.get("callUUID")
-            or data.get("callUUlD")  
+            or data.get("callUUlD")
         )
 
         call_date  = data.get("callDate") or data.get("date")
@@ -133,20 +240,16 @@ class VoxbayWebhookView(APIView):
             defaults["call_end"] = call_end
 
         if call_type == "incoming":
-            # Fields present across one or more incoming events
             _set("called_number",      data.get("calledNumber"))
             _set("caller_number",      data.get("callerNumber"))
             _set("agent_number",       data.get("AgentNumber") or data.get("agentNumber"))
             _set("dtmf",               data.get("dtmf"))
             _set("transferred_number", data.get("transferredNumber"))
         else:
-            # Outgoing – Event 1 & Event 2
             _set("extension",     data.get("extension"))
             _set("destination",   data.get("destination"))
             _set("caller_id",     data.get("callerid"))
-            # Mirror callerid → caller_number so unified search works
             _set("caller_number", data.get("callerid"))
-
 
         if call_uuid:
             obj, created = VoxbayCallLog.objects.update_or_create(
@@ -166,30 +269,23 @@ class VoxbayWebhookView(APIView):
         return HttpResponse("success", content_type="text/plain")
 
 
-
-# Call Log List  (read-only, with filtering / search / ordering / pagination)
-
+# ─── Call Log List ────────────────────────────────────────────────────────────
 
 class CallLogListView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
         qs = VoxbayCallLog.objects.all()
-
-        # Date range
         qs = _date_filter(qs, request)
 
-        # Call type
         call_type = request.query_params.get("call_type")
         if call_type in ("incoming", "outgoing"):
             qs = qs.filter(call_type=call_type)
 
-        # Call status
         call_status = request.query_params.get("call_status")
         if call_status:
             qs = qs.filter(call_status__iexact=call_status)
 
-        # Full-text search across key number fields
         search = request.query_params.get("search", "").strip()
         if search:
             qs = qs.filter(
@@ -201,7 +297,6 @@ class CallLogListView(APIView):
                 Q(call_uuid__icontains=search)
             )
 
-        # Ordering
         ordering = request.query_params.get("ordering", "-created_at")
         allowed_orderings = {
             "created_at", "-created_at",
@@ -211,7 +306,6 @@ class CallLogListView(APIView):
         if ordering in allowed_orderings:
             qs = qs.order_by(ordering)
 
-        # Simple pagination
         try:
             page      = max(1, int(request.query_params.get("page", 1)))
             page_size = min(200, max(1, int(request.query_params.get("page_size", 20))))
@@ -231,8 +325,7 @@ class CallLogListView(APIView):
         })
 
 
-# Call Log Detail  (fetch single record by DB id or call_uuid)
-
+# ─── Call Log Detail ──────────────────────────────────────────────────────────
 
 class CallLogDetailView(APIView):
     permission_classes = [AllowAny]
@@ -252,8 +345,7 @@ class CallLogDetailView(APIView):
         return Response(VoxbayCallLogSerializer(obj).data)
 
 
-# Call Statistics
-
+# ─── Call Statistics ──────────────────────────────────────────────────────────
 
 class CallStatsView(APIView):
     permission_classes = [AllowAny]
@@ -262,14 +354,12 @@ class CallStatsView(APIView):
         qs = VoxbayCallLog.objects.all()
         qs = _date_filter(qs, request)
 
-        # Optional direction filter
         call_type = request.query_params.get("call_type")
         if call_type in ("incoming", "outgoing"):
             qs = qs.filter(call_type=call_type)
 
         total       = qs.count()
         answered    = qs.filter(call_status="ANSWERED").count()
-        # NOANSWER, CANCEL, MISSED all represent an unanswered call
         missed      = qs.filter(call_status__in=["NOANSWER", "CANCEL", "MISSED"]).count()
         busy        = qs.filter(call_status="BUSY").count()
         congestion  = qs.filter(call_status="CONGESTION").count()
@@ -300,9 +390,7 @@ class CallStatsView(APIView):
         return Response(serializer.data)
 
 
-
-# Click-to-Call  (proxies the request to Voxbay)
-
+# ─── Click-to-Call ────────────────────────────────────────────────────────────
 
 class ClickToCallView(APIView):
     permission_classes = [AllowAny]
@@ -316,7 +404,6 @@ class ClickToCallView(APIView):
             )
 
         validated = serializer.validated_data
-
         params = {
             "id_dept":     0,
             "uid":         validated["uid"],
@@ -325,7 +412,6 @@ class ClickToCallView(APIView):
             "destination": validated["destination"],
             "callerid":    validated["callerid"],
         }
-        # FORMAT 2: mobile-to-mobile requires source
         if validated.get("source"):
             params["source"] = validated["source"]
 

@@ -1,5 +1,19 @@
 from rest_framework import serializers
-from .models import VoxbayCallLog
+from .models import VoxbayCallLog, VoxbayAgent
+
+
+class VoxbayAgentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = VoxbayAgent
+        fields = [
+            'id',
+            'name',
+            'phone_number',
+            'extension',
+            'did_number',
+            'department',
+            'is_active',
+        ]
 
 
 class VoxbayCallLogSerializer(serializers.ModelSerializer):
@@ -49,14 +63,14 @@ class VoxbayCallLogSerializer(serializers.ModelSerializer):
 class CallStatsSerializer(serializers.Serializer):
     total        = serializers.IntegerField()
     answered     = serializers.IntegerField()
-    missed       = serializers.IntegerField()   
+    missed       = serializers.IntegerField()
     busy         = serializers.IntegerField()
     congestion   = serializers.IntegerField()
-    chanunavail  = serializers.IntegerField()  
+    chanunavail  = serializers.IntegerField()
     incoming     = serializers.IntegerField()
     outgoing     = serializers.IntegerField()
-    avg_duration = serializers.FloatField()     
-    success_rate = serializers.FloatField()    
+    avg_duration = serializers.FloatField()
+    success_rate = serializers.FloatField()
 
 
 class ClickToCallSerializer(serializers.Serializer):
