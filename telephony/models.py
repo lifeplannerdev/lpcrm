@@ -12,4 +12,4 @@ class VoxbayCallLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.caller_number} - {self.call_status}"
+        return f"{self.caller_number} - {self.call_status}"        
