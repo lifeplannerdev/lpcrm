@@ -1,7 +1,14 @@
 from django.urls import path
-from .views import voxbay_webhook, call_logs_list
+from .views import (
+    VoxbayWebhookView,
+    CallLogListView,
+    CallStatsView,
+    ClickToCallView,
+)
 
 urlpatterns = [
-    path("voxbay/webhook/",    voxbay_webhook), 
-    path("voxbay/call-logs/",  call_logs_list),  
+    path("voxbay/webhook/",       VoxbayWebhookView.as_view()),
+    path("voxbay/call-logs/",     CallLogListView.as_view()),
+    path("voxbay/stats/",         CallStatsView.as_view()),
+    path("voxbay/click-to-call/", ClickToCallView.as_view()),
 ]
