@@ -1,21 +1,20 @@
 from rest_framework.permissions import BasePermission
 
 # Role hierarchy for assignments
-ADMIN_ROLES = ['ADMIN', 'BUSINESS_HEAD']
+ADMIN_ROLES = ['ADMIN', 'CEO']
 OPERATIONS_ROLES = ['OPS']
 
 MANAGER_ROLES = [
     'ADM_MANAGER',
-    'CM',  # Center Manager
-    'BDM',  # Business Development Manager
+    'CM',  
+    'BDM',  
 ]
 
 EXECUTIVE_ROLES = [
     'ADM_EXEC',
-    'FOE',  # Front Office Executive - CAN handle leads and assign to self
+    'FOE',  
 ]
 
-# Roles that should NOT handle leads (but may have system access for other purposes)
 NON_LEAD_ROLES = [
     'PROCESSING',
     'MEDIA',
@@ -24,10 +23,9 @@ NON_LEAD_ROLES = [
     'ACCOUNTS'
 ]
 
-# Roles allowed to access leads API
 LEAD_ACCESS_ROLES = ADMIN_ROLES + OPERATIONS_ROLES + MANAGER_ROLES + EXECUTIVE_ROLES
 
-# Roles who can view ALL leads - ONLY ADMIN and BUSINESS_HEAD
+
 LEAD_VIEW_ALL_ROLES = ADMIN_ROLES
 
 
@@ -54,7 +52,4 @@ class CanAssignLeads(BasePermission):
         user = request.user
         if not user.is_authenticated:
             return False
-        
-        # All roles that can access leads can also view available users
-        # The actual assignment restrictions are handled in the serializer
         return user.role in LEAD_ACCESS_ROLES

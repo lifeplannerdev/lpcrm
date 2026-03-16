@@ -1,13 +1,8 @@
 from rest_framework.permissions import BasePermission
 
-
-# =====================
-# Role Groups
-# =====================
-
 TOP_MANAGEMENT = [
     "ADMIN",
-    "BUSINESS_HEAD",
+    "CEO",
 ]
 
 OPERATIONS = [

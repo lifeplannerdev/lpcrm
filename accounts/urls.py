@@ -5,7 +5,7 @@ from .views import (
     LoginAPIView,
     RefreshTokenAPIView,
     LogoutAPIView,
-    CurrentUserAPIView,  # ✅ NEW
+    CurrentUserAPIView, 
     DashboardStatsAPIView,
     RecentActivitiesAPIView,
     StaffListView,

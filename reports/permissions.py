@@ -2,7 +2,7 @@ from rest_framework.permissions import BasePermission
 
 REPORT_REVIEWERS = [
     "ADMIN",
-    "BUSINESS_HEAD",
+    "CEO",
     "OPS",
     "GENERAL_MANAGER",
     "HR",

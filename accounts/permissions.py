@@ -13,7 +13,8 @@ class IsManagement(BasePermission):
         "ADM_MANAGER",
         "CM",
         "BDM",
-        'HR'
+        'HR',
+        'CEO'
     ]
 
     def has_permission(self, request, view):
@@ -29,7 +30,7 @@ class IsSuperAdmin(BasePermission):
     """
     allowed_roles = [
         "ADMIN",
-        "BUSINESS_HEAD",
+        "CEO",
     ]
 
     def has_permission(self, request, view):

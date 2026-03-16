@@ -21,7 +21,8 @@ class User(AbstractUser):
         ('CM', 'Center Manager'),
         ('HR', 'Human Resources'),
         ('FOE', 'FOE Cum TC'),
-        ('ACCOUNTS', 'Accounts'), 
+        ('ACCOUNTS', 'Accounts'),
+        ('CEO','Chief executive')
     ]
 
     role = models.CharField(
