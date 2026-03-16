@@ -24,6 +24,7 @@ EXECUTION_ROLES = [
     "FOE",
     "TRAINER",
     "ACCOUNTS",
+    'DOCUMENTATION',
 ]
 
 
