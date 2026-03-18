@@ -16,6 +16,7 @@ from leads.permissions import (
     EXECUTIVE_ROLES
 )
 from .models import Lead, ProcessingUpdate, RemarkHistory, LeadAssignment
+from .email_utils import send_conversion_email
 from .serializers import (
     LeadListSerializer,
     LeadDetailSerializer,
@@ -143,6 +144,10 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
 
         serializer.is_valid(raise_exception=True)
+
+        # Capture status BEFORE saving to detect transition to CONVERTED
+        old_status = lead.status
+
         updated_lead = serializer.save()
 
         # Track processing_status change
@@ -153,6 +158,10 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
                 changed_by=request.user,
                 notes="Status updated via API"
             )
+
+        # Send conversion email when status transitions to CONVERTED
+        if old_status != 'CONVERTED' and updated_lead.status == 'CONVERTED':
+            send_conversion_email(updated_lead)
 
         return Response(
             {
@@ -473,6 +482,9 @@ class UpdateLeadView(APIView):
         if lead.assigned_to != request.user and lead.sub_assigned_to != request.user and request.user.role not in ADMIN_ROLES:
             return Response({"error": "Permission denied"}, status=403)
 
+        # Capture old status before any update
+        old_status = lead.status
+
         serializer = LeadUpdateSerializer(
             lead,
             data=request.data,
@@ -481,6 +493,10 @@ class UpdateLeadView(APIView):
         )
 
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        updated_lead = serializer.save()
+
+        # Send conversion email when status transitions to CONVERTED
+        if old_status != 'CONVERTED' and updated_lead.status == 'CONVERTED':
+            send_conversion_email(updated_lead)
 
         return Response(serializer.data, status=200)

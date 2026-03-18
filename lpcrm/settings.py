@@ -283,4 +283,13 @@ LOGGING = {
     },
 }
 
-VOXBAY_WEBHOOK_SECRET = ""  # Fill after Voxbay provides it
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'mail.lifeplanneruniversal.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'info@lifeplanneruniversal.com'
+EMAIL_HOST_PASSWORD = 'axrmupjkygsxgrpr'
+DEFAULT_FROM_EMAIL = 'Lifeplanner Universal <info@lifeplanneruniversal.com>'
