@@ -26,6 +26,17 @@ from .serializers import (
     LeadAssignmentSerializer,
     LeadUpdateSerializer,
 )
+import pandas as pd
+from rest_framework.parsers import MultiPartParser, FormParser
+import math
+
+def clean_value(val):
+    if val is None:
+        return None
+    if isinstance(val, float) and math.isnan(val):
+        return None
+    return val
+
 
 # Pagination 
 class LeadPagination(PageNumberPagination):
@@ -500,3 +511,120 @@ class UpdateLeadView(APIView):
             send_conversion_email(updated_lead)
 
         return Response(serializer.data, status=200)
+
+
+class BulkLeadUploadView(APIView):
+    permission_classes = [CanAccessLeads]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        file = request.FILES.get('file')
+
+        #  Check file exists
+        if not file:
+            return Response({"error": "No file uploaded"}, status=400)
+
+        #  File size limit (5MB)
+        if file.size > 5 * 1024 * 1024:
+            return Response({"error": "File too large (max 5MB)"}, status=400)
+
+        #  Read Excel
+        try:
+            df = pd.read_excel(file)
+        except Exception:
+            return Response({"error": "Invalid Excel file"}, status=400)
+
+        #  Required columns check
+        required_columns = ["name", "phone", "source", "assigned_to"]
+        missing_cols = [col for col in required_columns if col not in df.columns]
+
+        if missing_cols:
+            return Response({
+                "error": f"Missing required columns: {missing_cols}"
+            }, status=400)
+
+        #  Preload users (OPTIMIZATION)
+        user_map = {
+            user.username.lower(): user
+            for user in User.objects.filter(is_active=True)
+        }
+
+        success_count = 0
+        failed_rows = []
+
+        #  Transaction safety
+        with transaction.atomic():
+            for index, row in df.iterrows():
+                try:
+                    # Clean values
+                    name = clean_value(row.get("name"))
+                    email = clean_value(row.get("email"))
+                    source = clean_value(row.get("source"))
+                    status_val = clean_value(row.get("status"))
+                    priority = clean_value(row.get("priority"))
+                    program = clean_value(row.get("program"))
+                    location = clean_value(row.get("location"))
+                    username = clean_value(row.get("assigned_to"))
+
+                    #  Fix phone
+                    phone = clean_value(row.get("phone"))
+                    if phone:
+                        phone = str(phone).split('.')[0]
+
+                    #  Validate username
+                    if not username:
+                        failed_rows.append({
+                            "row": index + 2,
+                            "error": "assigned_to is required"
+                        })
+                        continue
+
+                    user = user_map.get(str(username).strip().lower())
+
+                    if not user:
+                        failed_rows.append({
+                            "row": index + 2,
+                            "error": f"User '{username}' not found"
+                        })
+                        continue
+
+                    # Prepare data
+                    data = {
+                        "name": name,
+                        "phone": phone,
+                        "email": email,
+                        "source": str(source).upper() if source else None,
+                        "status": str(status_val).upper() if status_val else "ENQUIRY",
+                        "priority": str(priority).upper() if priority else "MEDIUM",
+                        "program": program,
+                        "location": location,
+                        "assigned_to": user.id,  # pass ID to serializer
+                    }
+
+                    serializer = LeadCreateSerializer(
+                        data=data,
+                        context={"request": request}
+                    )
+
+                    if serializer.is_valid():
+                        serializer.save()
+                        success_count += 1
+                    else:
+                        failed_rows.append({
+                            "row": index + 2,
+                            "data": data,
+                            "errors": serializer.errors
+                        })
+
+                except Exception as e:
+                    failed_rows.append({
+                        "row": index + 2,
+                        "error": str(e)
+                    })
+
+        return Response({
+            "message": "Bulk upload completed",
+            "success_count": success_count,
+            "failed_count": len(failed_rows),
+            "failed_rows": failed_rows
+        }, status=status.HTTP_200_OK)

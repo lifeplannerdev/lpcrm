@@ -6,6 +6,13 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
+import os
+import certifi
+
+os.environ['SSL_CERT_FILE'] = certifi.where()
+os.environ['REQUESTS_CA_BUNDLE'] = certifi.where()
+
 import os
 from pathlib import Path
 from datetime import timedelta
@@ -284,12 +291,11 @@ LOGGING = {
 }
 
 
-
-
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'mail.lifeplanneruniversal.com'
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False       
 EMAIL_HOST_USER = 'info@lifeplanneruniversal.com'
 EMAIL_HOST_PASSWORD = 'axrmupjkygsxgrpr'
 DEFAULT_FROM_EMAIL = 'Lifeplanner Universal <info@lifeplanneruniversal.com>'

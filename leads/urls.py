@@ -17,6 +17,7 @@ urlpatterns = [
     path('leads/', LeadListView.as_view(), name='lead-list'),
     path('leads/create/', LeadCreateView.as_view(), name='lead-create'),
     path('leads/assign/', LeadAssignView.as_view(), name='lead-assign'),
+    path('leads/bulk-upload/', BulkLeadUploadView.as_view()),
     path('leads/bulk-assign/', BulkLeadAssignView.as_view(), name='bulk-lead-assign'),
     path('leads/unassign/', UnassignLeadView.as_view(), name='lead-unassign'),
     path('leads/my-team/', MyTeamLeadsView.as_view(), name='my-team-leads'),

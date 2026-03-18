@@ -411,3 +411,15 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
             )
 
         return super().update(instance, validated_data)
+
+
+class BulkLeadCreateSerializer(LeadCreateSerializer):
+    assigned_to = serializers.CharField(required=True)  
+
+    def validate_assigned_to(self, value):
+        try:
+            user = User.objects.get(username=value)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("User with this username does not exist.")
+
+        return super().validate_assigned_to(user.id)
