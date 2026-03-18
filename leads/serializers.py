@@ -228,6 +228,7 @@ class LeadAssignSerializer(serializers.Serializer):
 
 
 
+
 class LeadListSerializer(serializers.ModelSerializer):
     assigned_to = UserSimpleSerializer(read_only=True)
     assigned_by = UserSimpleSerializer(read_only=True)
@@ -390,12 +391,12 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
     def validate_priority(self, value):
         if value not in dict(Lead.PRIORITY_CHOICES):
             raise serializers.ValidationError("Invalid priority")
-        return value
+        return value.upper() 
 
     def validate_status(self, value):
         if not value:
             raise serializers.ValidationError("Status cannot be empty")
-        return value
+        return value.upper()
 
     def update(self, instance, validated_data):
         request = self.context['request']
