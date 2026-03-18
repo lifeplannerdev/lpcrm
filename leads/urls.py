@@ -11,6 +11,7 @@ from .views import (
     AvailableUsersForAssignmentView,
     UnassignLeadView,
     UpdateLeadView,
+    BulkLeadUploadView,
 )
 
 urlpatterns = [
