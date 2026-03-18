@@ -36,13 +36,19 @@ class Lead(models.Model):
         ('APPROVED', 'Approved'),
         ('REJECTED', 'Rejected')
     ]
-
+    STATUS_CHOICES = [
+    ('ENQUIRY', 'Enquiry'),
+    ('QUALIFIED', 'Qualified'),
+    ('NOT_INTERESTED', 'Not Interested'),
+    ('CONVERTED', 'Converted'),
+    ('CNR', 'Could Not Reach'),
+]
     # Basic lead info
     name = models.CharField(max_length=100, validators=[MinLengthValidator(3)])
     phone = models.CharField(max_length=20, validators=[MinLengthValidator(10)], unique=True, help_text="Contact phone number")
     email = models.EmailField(unique=True, null=True, blank=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='MEDIUM')
-    status = models.TextField(default='ENQUIRY', help_text="Current status of the lead")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ENQUIRY', help_text="Current status of the lead")
     program = models.TextField(blank=True, null=True, help_text="Enter the program name")
     remarks = models.TextField(blank=True, null=True, help_text="Additional notes or comments about the lead")
     location = models.CharField(max_length=100, blank=True, null=True)
