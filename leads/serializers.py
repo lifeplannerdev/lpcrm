@@ -414,12 +414,20 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
 
 
 class BulkLeadCreateSerializer(LeadCreateSerializer):
-    assigned_to = serializers.CharField(required=True)  
+    assigned_to = serializers.CharField(required=True)
 
     def validate_assigned_to(self, value):
-        try:
-            user = User.objects.get(username=value)
-        except User.DoesNotExist:
-            raise serializers.ValidationError("User with this username does not exist.")
+        user_map = self.context.get("user_map", {})
 
-        return super().validate_assigned_to(user.id)
+        user = user_map.get(value.lower())
+        if not user:
+            raise serializers.ValidationError(
+                f"User '{value}' not found."
+            )
+
+        return user 
+
+    def create(self, validated_data):
+        user = validated_data.pop("assigned_to")
+        validated_data["assigned_to"] = user
+        return super().create(validated_data)

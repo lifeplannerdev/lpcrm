@@ -534,8 +534,8 @@ class BulkLeadUploadView(APIView):
         except Exception:
             return Response({"error": "Invalid Excel file"}, status=400)
 
-        #  Required columns check
-        required_columns = ["name", "phone", "source", "assigned_to"]
+        #  Required columns (source REMOVED)
+        required_columns = ["name", "phone", "assigned_to"]
         missing_cols = [col for col in required_columns if col not in df.columns]
 
         if missing_cols:
@@ -543,7 +543,7 @@ class BulkLeadUploadView(APIView):
                 "error": f"Missing required columns: {missing_cols}"
             }, status=400)
 
-        #  Preload users (OPTIMIZATION)
+        #  Preload users (OPTIMIZED)
         user_map = {
             user.username.lower(): user
             for user in User.objects.filter(is_active=True)
@@ -566,12 +566,12 @@ class BulkLeadUploadView(APIView):
                     location = clean_value(row.get("location"))
                     username = clean_value(row.get("assigned_to"))
 
-                    #  Fix phone
+                    #  Phone fix
                     phone = clean_value(row.get("phone"))
                     if phone:
                         phone = str(phone).split('.')[0]
 
-                    #  Validate username
+                    #  Username required
                     if not username:
                         failed_rows.append({
                             "row": index + 2,
@@ -579,8 +579,8 @@ class BulkLeadUploadView(APIView):
                         })
                         continue
 
-                    user = user_map.get(str(username).strip().lower())
-
+                    #  Validate user using map (NO DB HIT)
+                    user = user_map.get(username.lower())
                     if not user:
                         failed_rows.append({
                             "row": index + 2,
@@ -588,7 +588,7 @@ class BulkLeadUploadView(APIView):
                         })
                         continue
 
-                    # Prepare data
+                    #  Prepare data (source OPTIONAL)
                     data = {
                         "name": name,
                         "phone": phone,
@@ -598,12 +598,15 @@ class BulkLeadUploadView(APIView):
                         "priority": str(priority).upper() if priority else "MEDIUM",
                         "program": program,
                         "location": location,
-                        "assigned_to": user.id,  # pass ID to serializer
+                        "assigned_to": username,  #  pass username
                     }
 
-                    serializer = LeadCreateSerializer(
+                    serializer = BulkLeadCreateSerializer(
                         data=data,
-                        context={"request": request}
+                        context={
+                            "request": request,
+                            "user_map": user_map  #  pass map
+                        }
                     )
 
                     if serializer.is_valid():
