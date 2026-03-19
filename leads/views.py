@@ -598,7 +598,7 @@ class BulkLeadUploadView(APIView):
                         "name": name,
                         "phone": phone,
                         "email": email,
-                        "source": str(source).upper() if source else None,
+                        "source": str(source).upper() if source else "",
                         "status": str(status_val).upper() if status_val else "ENQUIRY",
                         "priority": str(priority).upper() if priority else "MEDIUM",
                         "program": program,

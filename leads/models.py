@@ -52,7 +52,7 @@ class Lead(models.Model):
     program = models.TextField(blank=True, null=True, help_text="Enter the program name")
     remarks = models.TextField(blank=True, null=True, help_text="Additional notes or comments about the lead")
     location = models.CharField(max_length=100, blank=True, null=True)
-    source = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, blank=True, null=True)
     custom_source = models.CharField(max_length=50, blank=True, null=True)
     
     # Processing workflow fields

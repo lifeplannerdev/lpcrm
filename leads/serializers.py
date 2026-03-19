@@ -13,7 +13,8 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 
 class LeadCreateSerializer(serializers.ModelSerializer):
     assigned_to = serializers.IntegerField(required=False, allow_null=True, write_only=True)
-
+    source = serializers.CharField(required=False, allow_blank=True, allow_null=True) 
+    
     class Meta:
         model = Lead
         fields = [
