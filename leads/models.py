@@ -16,7 +16,8 @@ class Lead(models.Model):
         ('WEBSITE', 'Website'),
         ('WALK_IN', 'Walk-in'),
         ('AUTOMATION', 'Automation'),
-        ('OTHER', 'Other')
+        ('OTHER', 'Other'),
+        ('ADS','Ads')
     ]
         
     PROCESSING_STATUS_CHOICES = [
