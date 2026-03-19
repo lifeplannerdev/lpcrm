@@ -429,6 +429,23 @@ class BulkLeadCreateSerializer(LeadCreateSerializer):
         return user 
 
     def create(self, validated_data):
-        user = validated_data.pop("assigned_to")
-        validated_data["assigned_to"] = user
-        return super().create(validated_data)
+        assignee = validated_data.pop("assigned_to")  # this is already a User object
+        request = self.context.get('request')
+        creator = getattr(request, 'user', None)
+
+        lead = Lead.objects.create(**validated_data)
+
+        lead.assigned_to = assignee
+        lead.assigned_by = creator
+        lead.assigned_date = timezone.now()
+        lead.save()
+
+        LeadAssignment.objects.create(
+            lead=lead,
+            assigned_to=assignee,
+            assigned_by=creator,
+            assignment_type='PRIMARY',
+            notes='Assigned during bulk upload'
+        )
+
+        return lead
