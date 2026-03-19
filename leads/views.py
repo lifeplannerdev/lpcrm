@@ -521,47 +521,40 @@ class UpdateLeadView(APIView):
 class BulkLeadUploadView(APIView):
     permission_classes = [CanAccessLeads]
     parser_classes = [MultiPartParser, FormParser]
-
+ 
     def post(self, request):
         file = request.FILES.get('file')
-
-        #  Check file exists
+ 
         if not file:
             return Response({"error": "No file uploaded"}, status=400)
-
-        #  File size limit (5MB)
+ 
         if file.size > 5 * 1024 * 1024:
             return Response({"error": "File too large (max 5MB)"}, status=400)
-
-        #  Read Excel
+ 
         try:
             df = pd.read_excel(file)
         except Exception:
             return Response({"error": "Invalid Excel file"}, status=400)
-
-        #  Required columns (source REMOVED)
+ 
         required_columns = ["name", "phone", "assigned_to"]
         missing_cols = [col for col in required_columns if col not in df.columns]
-
+ 
         if missing_cols:
             return Response({
                 "error": f"Missing required columns: {missing_cols}"
             }, status=400)
-
-        #  Preload users (OPTIMIZED)
+ 
         user_map = {
             user.username.lower(): user
             for user in User.objects.filter(is_active=True)
         }
-
+ 
         success_count = 0
         failed_rows = []
-
-        #  Transaction safety
+ 
         with transaction.atomic():
             for index, row in df.iterrows():
                 try:
-                    # Clean values
                     name = clean_value(row.get("name"))
                     email = clean_value(row.get("email"))
                     source = clean_value(row.get("source"))
@@ -570,21 +563,18 @@ class BulkLeadUploadView(APIView):
                     program = clean_value(row.get("program"))
                     location = clean_value(row.get("location"))
                     username = clean_value(row.get("assigned_to"))
-
-                    #  Phone fix
+ 
                     phone = clean_value(row.get("phone"))
                     if phone:
                         phone = str(phone).split('.')[0]
-
-                    #  Username required
+ 
                     if not username:
                         failed_rows.append({
                             "row": index + 2,
                             "error": "assigned_to is required"
                         })
                         continue
-
-                    #  Validate user using map (NO DB HIT)
+ 
                     user = user_map.get(username.lower())
                     if not user:
                         failed_rows.append({
@@ -592,28 +582,29 @@ class BulkLeadUploadView(APIView):
                             "error": f"User '{username}' not found"
                         })
                         continue
-
-                    #  Prepare data (source OPTIONAL)
+ 
+                    # Build data dict — only include source if provided
                     data = {
                         "name": name,
                         "phone": phone,
                         "email": email,
-                        "source": str(source).upper() if source else "",
                         "status": str(status_val).upper() if status_val else "ENQUIRY",
                         "priority": str(priority).upper() if priority else "MEDIUM",
                         "program": program,
                         "location": location,
-                        "assigned_to": username,  #  pass username
+                        "assigned_to": username,
                     }
-
+                    if source:
+                        data["source"] = str(source).upper()
+ 
                     serializer = BulkLeadCreateSerializer(
                         data=data,
                         context={
                             "request": request,
-                            "user_map": user_map  #  pass map
+                            "user_map": user_map
                         }
                     )
-
+ 
                     if serializer.is_valid():
                         serializer.save()
                         success_count += 1
@@ -623,16 +614,17 @@ class BulkLeadUploadView(APIView):
                             "data": data,
                             "errors": serializer.errors
                         })
-
+ 
                 except Exception as e:
                     failed_rows.append({
                         "row": index + 2,
                         "error": str(e)
                     })
-
+ 
         return Response({
             "message": "Bulk upload completed",
             "success_count": success_count,
             "failed_count": len(failed_rows),
             "failed_rows": failed_rows
         }, status=status.HTTP_200_OK)
+ 
