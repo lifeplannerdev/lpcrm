@@ -1,12 +1,18 @@
+import pandas as pd
+import math
+from .models import Lead, ProcessingUpdate, RemarkHistory, LeadAssignment
+from .email_utils import send_conversion_email
 from rest_framework import generics, filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from accounts.models import User
 from django.shortcuts import get_object_or_404
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
+from rest_framework.parsers import MultiPartParser, FormParser
 from leads.permissions import (
     CanAccessLeads, 
     CanAssignLeads,
@@ -15,8 +21,7 @@ from leads.permissions import (
     MANAGER_ROLES,
     EXECUTIVE_ROLES
 )
-from .models import Lead, ProcessingUpdate, RemarkHistory, LeadAssignment
-from .email_utils import send_conversion_email
+
 from .serializers import (
     LeadListSerializer,
     LeadDetailSerializer,
@@ -25,10 +30,10 @@ from .serializers import (
     LeadAssignSerializer,
     LeadAssignmentSerializer,
     LeadUpdateSerializer,
+    BulkLeadCreateSerializer,  
 )
-import pandas as pd
-from rest_framework.parsers import MultiPartParser, FormParser
-import math
+
+
 
 def clean_value(val):
     if val is None:
