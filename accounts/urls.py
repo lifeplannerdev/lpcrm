@@ -13,6 +13,7 @@ from .views import (
     StaffCreateView,
     StaffUpdateView,
     StaffDeleteView,
+    EmployeeListAPI
 )
 
 urlpatterns = [
@@ -28,5 +29,6 @@ urlpatterns = [
     path('staff/create/', StaffCreateView.as_view(), name='staff_create'),
     path('staff/<int:pk>/update/', StaffUpdateView.as_view(), name='staff_update'),
     path('staff/<int:pk>/delete/', StaffDeleteView.as_view(), name='staff_delete'),
-    # path('staff/by-team/', StaffByTeamView.as_view(), name='staff_by_team'),
+    path('employees/', EmployeeListAPI.as_view()),
+
 ]

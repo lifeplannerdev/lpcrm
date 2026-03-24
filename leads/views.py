@@ -50,7 +50,7 @@ class LeadPagination(PageNumberPagination):
     max_page_size = 100
 
 
-# Lead List View - UPDATED: Only ADMIN sees all leads
+# Lead List View 
 class LeadListView(generics.ListAPIView):
     serializer_class = LeadListSerializer
     permission_classes = [CanAccessLeads]  
@@ -73,7 +73,7 @@ class LeadListView(generics.ListAPIView):
         if user.role in ADMIN_ROLES:
             return Lead.objects.all().distinct()
         
-        # All other roles (Managers, Executives, HR, etc.) see only their assigned leads
+        # All other roles 
         return Lead.objects.filter(
             models.Q(assigned_to=user) | 
             models.Q(sub_assigned_to=user)
@@ -628,3 +628,18 @@ class BulkLeadUploadView(APIView):
             "failed_rows": failed_rows
         }, status=status.HTTP_200_OK)
  
+
+class TodayLeadsAPI(APIView):
+    def get(self, request):
+        today = date.today()
+
+        leads = Lead.objects.filter(created_at__date=today)
+
+        data = []
+
+        for lead in leads:
+            data.append({
+                "created_by": lead.created_by.id   
+            })
+
+        return Response(data)

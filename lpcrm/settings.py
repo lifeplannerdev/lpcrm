@@ -208,8 +208,12 @@ CSRF_TRUSTED_ORIGINS = [config('FRONTEND_URL')]
 
 #  CORS settings
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [config('FRONTEND_URL')]
-
+# settings.py
+CORS_ALLOWED_ORIGINS = [
+    config('FRONTEND_URL'),       # your website
+    "http://localhost:8081",      # Expo web
+    "http://10.0.2.2:8081",       # Android emulator
+]
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',

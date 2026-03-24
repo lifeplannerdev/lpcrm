@@ -12,6 +12,7 @@ from .views import (
     UnassignLeadView,
     UpdateLeadView,
     BulkLeadUploadView,
+    TodayLeadsAPI,
 )
 
 urlpatterns = [
@@ -27,4 +28,6 @@ urlpatterns = [
     path('leads/<int:pk>/update/', UpdateLeadView.as_view(), name='lead-update'),
     path('leads/<int:lead_id>/timeline/', LeadProcessingTimelineView.as_view(), name='lead-timeline'),
     path('leads/<int:lead_id>/assignment-history/', LeadAssignmentHistoryView.as_view(), name='lead-assignment-history'),
+    path('today-leads/', TodayLeadsAPI.as_view()),
+
 ]

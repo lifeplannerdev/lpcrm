@@ -256,28 +256,27 @@ class StaffDeleteView(generics.DestroyAPIView):
         )
 
 
-# class StaffByTeamView(generics.ListAPIView):
-#     serializer_class = StaffListSerializer
-#     permission_classes = [IsManagement]
-#     pagination_class = StaffPagination
-#     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-#     search_fields = ['username', 'first_name', 'last_name', 'email', 'role', 'phone', 'location', 'team']
-#     ordering_fields = ['date_joined', 'username']
-#     ordering = ['-date_joined']
 
-#     def get_queryset(self):
-#         queryset = User.objects.filter(is_active=True)
-#         team = self.request.query_params.get('team')
-#         if team:
-#             queryset = queryset.filter(team__iexact=team)
-#         return queryset
 
-#     def list(self, request, *args, **kwargs):
-#         queryset = self.get_queryset()
-#         page = self.paginate_queryset(queryset)
-#         if page is not None:
-#             serializer = self.get_serializer(page, many=True)
-#             return self.get_paginated_response(serializer.data)
+class EmployeeListAPI(APIView):
+    def get(self, request):
+        employees = User.objects.filter(
+            role__in=[
+                "Admission Manager",
+                "Admission Executive",
+                "FOE",
+                "Central Manager"
+            ],
+            is_active=True
+        )
 
-#         serializer = self.get_serializer(queryset, many=True)
-#         return Response(serializer.data, status=status.HTTP_200_OK)
+        data = []
+
+        for emp in employees:
+            data.append({
+                "id": emp.id,
+                "name": emp.name,
+                "role": emp.role
+            })
+
+        return Response(data)
