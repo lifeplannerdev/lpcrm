@@ -14,7 +14,7 @@ from .views import (
 urlpatterns = [
     # Task Statistics
     path('tasks/stats/', TaskStatsAPIView.as_view(), name='task-stats'),
-    path('employees/', EmployeeListAPIView.as_view(), name='employee-list'),
+    path('employees/list/', EmployeeListAPIView.as_view(), name='employee-list'),
     path('tasks/', TaskListCreateAPIView.as_view(), name='task-list-create'),
     path('tasks/<int:pk>/', TaskDetailAPIView.as_view(), name='task-detail'),
     path('tasks/<int:task_id>/updates/', TaskUpdateListCreateAPIView.as_view(), name='task-updates'),
