@@ -4,12 +4,19 @@ from rest_framework.permissions import IsAuthenticated
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
 from django.conf import settings
-import threading
-
+import pusher
 
 User = get_user_model()
+
+#  Initialize Pusher
+pusher_client = pusher.Pusher(
+    app_id='2135420',
+    key='a8ecd560b1c203ba4cdf',
+    secret='9da391240e3535b95cb0',
+    cluster='ap2',
+    ssl=True
+)
 
 
 class ConversationListView(APIView):
@@ -56,7 +63,7 @@ class SendMessageView(APIView):
         except Conversation.DoesNotExist:
             return Response({"error": "Conversation not found"}, status=404)
 
-        # Create message
+        #  Create message
         message = Message.objects.create(
             conversation=conversation,
             sender=request.user,
@@ -64,31 +71,17 @@ class SendMessageView(APIView):
             file=file
         )
 
-        if conversation.type == "DIRECT":
-            receivers = conversation.participants.exclude(id=request.user.id)
-        else:
-            receivers = conversation.participants.exclude(id=request.user.id)
+        #  Serialize message
+        serialized_message = MessageSerializer(message).data
 
-        emails = [user.email for user in receivers if user.email]
+        # REALTIME PUSHER EVENT
+        pusher_client.trigger(
+            f"chat-{conversation.id}",   
+            "new-message",               
+            serialized_message
+        )
 
-        def send_email():
-            subject = f"New message from {request.user.username}"
-
-            content = message.text if message.text else "You received a file."
-
-            send_mail(
-                subject=subject,
-                message=content,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=emails,
-                fail_silently=True,
-            )
-
-        if emails:
-            threading.Thread(target=send_email).start()
-
-        return Response(MessageSerializer(message).data, status=201)
-
+        return Response(serialized_message, status=201)
 
 
 class CreateDirectConversationView(APIView):
@@ -99,7 +92,6 @@ class CreateDirectConversationView(APIView):
 
         other_user = User.objects.get(id=other_user_id)
 
-        # check existing direct chat
         existing = Conversation.objects.filter(
             type="DIRECT",
             participants=request.user

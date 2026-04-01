@@ -288,7 +288,16 @@ LOGGING = {
     },
 }
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 465
+
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
 
 EMAIL_HOST_USER = "lifeplannerinfo1@gmail.com"
-EMAIL_HOST_PASSWORD = "qnwsisxmpmkghwwd"
+EMAIL_HOST_PASSWORD = "jbfuqgcbwxnxhsmw"
+
 DEFAULT_FROM_EMAIL = "Lifeplanner Universal <lifeplannerinfo1@gmail.com>"
+
