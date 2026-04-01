@@ -208,12 +208,8 @@ CSRF_TRUSTED_ORIGINS = [config('FRONTEND_URL')]
 
 #  CORS settings
 CORS_ALLOW_CREDENTIALS = True
-# settings.py
-CORS_ALLOWED_ORIGINS = [
-    config('FRONTEND_URL'),       # your website
-    "http://localhost:8081",      # Expo web
-    "http://10.0.2.2:8081",       # Android emulator
-]
+CORS_ALLOWED_ORIGINS = [config('FRONTEND_URL')]
+
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -288,20 +284,12 @@ LOGGING = {
     },
 }
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 465
-
-EMAIL_USE_TLS = False
-EMAIL_USE_SSL = True
 
 EMAIL_HOST_USER = "lifeplannerinfo1@gmail.com"
 EMAIL_HOST_PASSWORD = "jbfuqgcbwxnxhsmw"
 
 DEFAULT_FROM_EMAIL = "Lifeplanner Universal <lifeplannerinfo1@gmail.com>"
-
-import os
 
 
 PUSHER_APP_ID = config("PUSHER_APP_ID", "2135420")
