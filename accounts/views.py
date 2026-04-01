@@ -262,21 +262,21 @@ class EmployeeListAPI(APIView):
     def get(self, request):
         employees = User.objects.filter(
             role__in=[
-                "Admission Manager",
-                "Admission Executive",
+                "ADM_MANAGER",
+                "ADM_COUNSELLOR",  
+                "ADM_EXEC",
                 "FOE",
-                "Central Manager"
+                "CM"
             ],
             is_active=True
         )
 
         data = []
-
         for emp in employees:
             data.append({
                 "id": emp.id,
-                "name": emp.name,
-                "role": emp.role
+                "name": emp.get_full_name() or emp.username,  
+                "role": emp.get_role_display()
             })
 
         return Response(data)

@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary_storage', 
     'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
@@ -251,6 +252,8 @@ cloudinary.config(
     api_secret=config('CLOUD_SECRET'),
     secure=True
 )
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 # Cron jobs
 CRONJOBS = [

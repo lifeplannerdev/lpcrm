@@ -11,6 +11,7 @@ class IsManagement(BasePermission):
         "BUSINESS_HEAD",
         "HR",
         "ADM_MANAGER",
+        "ADM_COUNSELLOR",
         "CM",
         "BDM",
         'HR',

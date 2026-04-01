@@ -12,6 +12,7 @@ class User(AbstractUser):
         ('ADMIN', 'General Manager'),
         ('OPS', 'Operations Manager'),
         ('ADM_MANAGER', 'Admission Manager'),
+        ('ADM_COUNSELLOR', 'Admission Counsellor'), 
         ('ADM_EXEC', 'Admission Executive'),
         ('PROCESSING', 'Processing Executive'),
         ('MEDIA', 'Media Team'),

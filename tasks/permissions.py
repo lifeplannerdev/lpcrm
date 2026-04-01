@@ -20,6 +20,7 @@ EXECUTION_ROLES = [
     "MEDIA",
     "ADM_EXEC",
     "ADM_MANAGER",
+    "ADM_COUNSELLOR",
     "PROCESSING",
     "FOE",
     "TRAINER",

@@ -29,7 +29,6 @@ class Message(models.Model):
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
     text = models.TextField(blank=True, null=True)
 
-    # ← Replace FileField with CloudinaryField
     file = CloudinaryField('file', blank=True, null=True, resource_type='auto')
 
     created_at = models.DateTimeField(auto_now_add=True)
