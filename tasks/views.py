@@ -1,4 +1,4 @@
-from rest_framework import status, generics
+from rest_framework import status, generics, filters
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
@@ -14,6 +14,7 @@ from .serializers import (
     TaskSerializer,
     TaskUpdateSerializer,
     EmployeeSerializer,
+    UpcomingTaskSerializer,
 )
 from django.contrib.auth import get_user_model
 from .permissions import (
@@ -29,6 +30,8 @@ User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
 
 def _task_queryset_for_user(user, base_qs=None):
     if base_qs is None:
@@ -49,18 +52,35 @@ def _task_queryset_for_user(user, base_qs=None):
 
 
 def _apply_status_ordering(qs):
-    """Order tasks: OVERDUE → PENDING → IN_PROGRESS → COMPLETED."""
+    """Order tasks: OVERDUE → PENDING → IN_PROGRESS → COMPLETED → CANCELLED."""
     return qs.annotate(
         status_priority=Case(
-            When(status='OVERDUE',     then=1),
-            When(status='PENDING',     then=2),
-            When(status='IN_PROGRESS', then=3),
-            When(status='COMPLETED',   then=4),
-            default=5,
+            When(status='OVERDUE',      then=1),
+            When(status='PENDING',      then=2),
+            When(status='IN_PROGRESS',  then=3),
+            When(status='COMPLETED',    then=4),
+            When(status='CANCELLED',    then=5),
+            default=6,
             output_field=IntegerField(),
         )
     ).order_by('status_priority', '-created_at')
 
+
+def _apply_priority_ordering(qs):
+    """Order tasks: URGENT → HIGH → MEDIUM → LOW."""
+    return qs.annotate(
+        priority_order=Case(
+            When(priority='URGENT', then=1),
+            When(priority='HIGH',   then=2),
+            When(priority='MEDIUM', then=3),
+            When(priority='LOW',    then=4),
+            default=5,
+            output_field=IntegerField(),
+        )
+    )
+
+
+# ─── Pagination ───────────────────────────────────────────────────────────────
 
 class TaskPagination(PageNumberPagination):
     page_size = 50
@@ -68,7 +88,14 @@ class TaskPagination(PageNumberPagination):
     max_page_size = 50
 
 
+class TaskUpdatePagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
+
 # ─── Task Stats ───────────────────────────────────────────────────────────────
+
 class TaskStatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -95,11 +122,12 @@ class TaskStatsAPIView(APIView):
 
 
 # ─── Employee List ────────────────────────────────────────────────────────────
+
 class EmployeeListAPIView(generics.ListAPIView):
     """
-    Returns the list of users that the requesting user is allowed to assign tasks to.
+    Returns users the requesting user is allowed to assign tasks to.
     - ADMIN / CEO  → all active users
-    - OPS / CM     → only EXECUTION_ROLES (cannot assign to ADMIN/CEO)
+    - OPS / CM     → only EXECUTION_ROLES
     """
     permission_classes = [IsTaskAssigner]
     serializer_class = EmployeeSerializer
@@ -108,29 +136,44 @@ class EmployeeListAPIView(generics.ListAPIView):
         user = self.request.user
 
         if user.role in TOP_MANAGEMENT:
-            return User.objects.filter(is_active=True)
+            return User.objects.filter(is_active=True).exclude(id=user.id)
 
-        # OPS / CM can only see assignable (execution-level) employees
+        # OPS / CM can only assign to execution-level employees
         return User.objects.filter(
             is_active=True,
             role__in=TASK_ASSIGNEES
-        )
+        ).exclude(id=user.id)
 
 
 # ─── Task List / Create ───────────────────────────────────────────────────────
+
 class TaskListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = TaskSerializer
     pagination_class = TaskPagination
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'description']
 
     def get_permissions(self):
         if self.request.method == "POST":
-            return [IsTaskAssigner()]   # ADMIN, CEO, OPS, CM only
+            return [IsTaskAssigner()]
         return [IsAuthenticated()]
 
     def get_queryset(self):
-        return _apply_status_ordering(
+        qs = _apply_status_ordering(
             _task_queryset_for_user(self.request.user)
         )
+
+        # Filter by status if provided
+        status_filter = self.request.query_params.get('status')
+        if status_filter and status_filter != 'all':
+            qs = qs.filter(status=status_filter)
+
+        # Filter by priority if provided
+        priority_filter = self.request.query_params.get('priority')
+        if priority_filter and priority_filter != 'all':
+            qs = qs.filter(priority=priority_filter)
+
+        return qs
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -148,6 +191,7 @@ class TaskListCreateAPIView(generics.ListCreateAPIView):
 
 
 # ─── Task Detail / Update / Delete ───────────────────────────────────────────
+
 class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TaskSerializer
     permission_classes = [IsAuthenticated]
@@ -198,9 +242,11 @@ class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 
 # ─── Task Updates (timeline) ─────────────────────────────────────────────────
+
 class TaskUpdateListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TaskUpdateSerializer
+    pagination_class = TaskUpdatePagination   # FIX: was unpaginated → frontend expected .results
 
     def _get_task(self):
         return get_object_or_404(Task, pk=self.kwargs["task_id"])
@@ -235,26 +281,27 @@ class TaskUpdateListCreateAPIView(generics.ListCreateAPIView):
         if task.assigned_to != self.request.user:
             raise PermissionDenied("Only the assigned employee can post updates on this task.")
 
-        new_status = serializer.validated_data.get("new_status")  # may be None (notes-only)
+        new_status = serializer.validated_data.get("new_status")
 
         serializer.save(
             task=task,
             updated_by=self.request.user,
             previous_status=task.status,
-            # if no new_status supplied, record current status so the timeline is consistent
             new_status=new_status if new_status is not None else task.status,
         )
 
-        # Only mutate the task's status when the assignee explicitly changes it
+        # Only mutate the task's status when explicitly changed
         if new_status is not None and new_status != task.status:
             task.status = new_status
             task.save(update_fields=["status", "updated_at"])
 
 
 # ─── Tasks Assigned By Me ─────────────────────────────────────────────────────
+
 class TasksAssignedByMeAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TaskSerializer
+    pagination_class = TaskPagination
 
     def get_queryset(self):
         user = self.request.user
@@ -269,6 +316,7 @@ class TasksAssignedByMeAPIView(generics.ListAPIView):
 
 
 # ─── Task Status Update (Assignee only) ──────────────────────────────────────
+
 class TaskStatusUpdateAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TaskUpdateSerializer
@@ -276,7 +324,7 @@ class TaskStatusUpdateAPIView(generics.GenericAPIView):
     def post(self, request, pk):
         task = get_object_or_404(Task, pk=pk)
 
-        # Only the employee the task is assigned to can change status
+        # Only the assigned employee can change status
         if request.user != task.assigned_to:
             return Response(
                 {"detail": "Only the assigned employee can change the task status."},
@@ -284,11 +332,24 @@ class TaskStatusUpdateAPIView(generics.GenericAPIView):
             )
 
         new_status = request.data.get("status")
-        notes = request.data.get("notes", "")
+        notes = request.data.get("notes", "").strip()
 
-        if new_status not in dict(Task.STATUS_CHOICES):
+        if not new_status or new_status not in dict(Task.STATUS_CHOICES):
             return Response(
-                {"detail": "Invalid status."},
+                {"detail": "Invalid or missing status."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if new_status == task.status:
+            return Response(
+                {"detail": "New status must differ from the current status."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Notes are required when completing or cancelling
+        if new_status in ['COMPLETED', 'CANCELLED'] and not notes:
+            return Response(
+                {"detail": "Notes are required when completing or cancelling a task."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -324,6 +385,7 @@ class TaskStatusUpdateAPIView(generics.GenericAPIView):
 
 
 # ─── Pending Tasks ────────────────────────────────────────────────────────────
+
 class PendingTasksAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -336,20 +398,13 @@ class PendingTasksAPIView(APIView):
             ).select_related('assigned_to', 'assigned_by')
         )
 
-        qs = qs.annotate(
-            priority_order=Case(
-                When(priority='HIGH',   then=1),
-                When(priority='MEDIUM', then=2),
-                When(priority='LOW',    then=3),
-                default=4,
-                output_field=IntegerField(),
-            )
-        ).order_by('priority_order', 'deadline')
+        qs = _apply_priority_ordering(qs).order_by('priority_order', 'deadline')
 
         return Response(TaskSerializer(qs, many=True).data)
 
 
 # ─── Upcoming Tasks ───────────────────────────────────────────────────────────
+
 class UpcomingTasksAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -358,16 +413,10 @@ class UpcomingTasksAPIView(APIView):
         qs = _task_queryset_for_user(
             user,
             base_qs=Task.objects.filter(deadline__gte=now())
+                                .exclude(status__in=['COMPLETED', 'CANCELLED'])
                                 .select_related('assigned_to', 'assigned_by')
         )
 
         qs = qs.order_by("deadline")[:5]
 
-        return Response([
-            {
-                "title": t.title,
-                "status": t.status,
-                "deadline": t.deadline.strftime("%d %b %Y"),
-            }
-            for t in qs
-        ])
+        return Response(UpcomingTaskSerializer(qs, many=True).data)

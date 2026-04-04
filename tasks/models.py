@@ -70,7 +70,6 @@ class Task(models.Model):
             self.completed_at = None
         super().save(*args, **kwargs)
 
-
     @property
     def is_overdue(self):
         if self.status in ['COMPLETED', 'CANCELLED']:
@@ -92,8 +91,6 @@ class Task(models.Model):
             return 0
         delta = self.deadline - timezone.now().date()
         return max(delta.days, 0)
-
-    # ---------- Class Method ----------
 
     @classmethod
     def update_overdue_tasks(cls):
