@@ -17,7 +17,9 @@ class Lead(models.Model):
         ('WALK_IN', 'Walk-in'),
         ('AUTOMATION', 'Automation'),
         ('OTHER', 'Other'),
-        ('ADS','Ads')
+        ('ADS','Ads'),
+        ('VOXBAY CALL','Voxbay'),
+        ('BULK DATA','Bulk data')
     ]
         
     PROCESSING_STATUS_CHOICES = [
