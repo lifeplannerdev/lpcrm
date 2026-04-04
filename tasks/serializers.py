@@ -73,13 +73,19 @@ class TaskUpdateSerializer(serializers.ModelSerializer):
         new_status = attrs.get('new_status')
         notes = attrs.get('notes', '')
 
-        # Ensure status actually changes
-        if new_status == task.status:
-            raise serializers.ValidationError("New status must be different from the current status.")
+        # new_status is optional — assignees may post a note without changing status
+        if new_status is not None:
+            # If a status is provided, it must actually differ from current
+            if new_status == task.status:
+                raise serializers.ValidationError("New status must be different from the current status.")
 
-        # Require notes for COMPLETED / CANCELLED
-        if new_status in ['COMPLETED', 'CANCELLED'] and not notes.strip():
-            raise serializers.ValidationError("Notes are required when completing or cancelling a task.")
+            # Require notes when completing or cancelling
+            if new_status in ['COMPLETED', 'CANCELLED'] and not notes.strip():
+                raise serializers.ValidationError("Notes are required when completing or cancelling a task.")
+        else:
+            # Notes-only update: require non-empty notes
+            if not notes.strip():
+                raise serializers.ValidationError("Please provide a note.")
 
         return attrs
 
