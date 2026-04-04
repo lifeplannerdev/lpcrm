@@ -70,7 +70,6 @@ class Task(models.Model):
             self.completed_at = None
         super().save(*args, **kwargs)
 
-    # ---------- Computed Properties ----------
 
     @property
     def is_overdue(self):

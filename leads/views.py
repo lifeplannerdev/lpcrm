@@ -404,7 +404,8 @@ class AvailableUsersForAssignmentView(APIView):
             'ADM_EXEC',
             'CM',
             'BDM',
-            'FOE'
+            'FOE',
+            'ADM_COUNSELLOR'
         ]
 
         users = User.objects.filter(
