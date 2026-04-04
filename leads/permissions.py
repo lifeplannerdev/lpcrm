@@ -1,7 +1,7 @@
 from rest_framework.permissions import BasePermission
 
 
-FULL_ACCESS_ROLES = ['ADMIN', 'CEO', 'OPS', 'CM']
+FULL_ACCESS_ROLES = ['ADMIN', 'CEO', 'OPS']
 
 
 MANAGER_ROLES = [
