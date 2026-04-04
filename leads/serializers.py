@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Lead, ProcessingUpdate, RemarkHistory, LeadAssignment
 from accounts.models import User
 from django.utils import timezone
-from .permissions import ADMIN_ROLES, OPERATIONS_ROLES, MANAGER_ROLES, EXECUTIVE_ROLES
+from .permissions import FULL_ACCESS_ROLES, MANAGER_ROLES, EXECUTIVE_ROLES
 
 
 class UserSimpleSerializer(serializers.ModelSerializer):
@@ -13,8 +13,8 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 
 class LeadCreateSerializer(serializers.ModelSerializer):
     assigned_to = serializers.IntegerField(required=False, allow_null=True, write_only=True)
-    source = serializers.CharField(required=False, allow_blank=True, allow_null=True) 
-    
+    source = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
     class Meta:
         model = Lead
         fields = [
@@ -90,13 +90,13 @@ class LeadCreateSerializer(serializers.ModelSerializer):
                     "Managers can assign leads to themselves or executives only."
                 )
 
-        # ADMIN / OPS → managers or executives
-        elif creator and (creator.role in ADMIN_ROLES or creator.role in OPERATIONS_ROLES):
+        # FULL_ACCESS_ROLES (ADMIN, CEO, OPS, CM) → managers or executives
+        elif creator and creator.role in FULL_ACCESS_ROLES:
             if assignee.role not in MANAGER_ROLES + EXECUTIVE_ROLES:
                 raise serializers.ValidationError(
                     "Admins can assign leads only to managers or executives."
                 )
-        
+
         else:
             raise serializers.ValidationError("You do not have permission to assign leads.")
 
@@ -172,15 +172,15 @@ class LeadAssignSerializer(serializers.Serializer):
         except User.DoesNotExist:
             raise serializers.ValidationError({"assigned_to_id": "User not found."})
 
-        # ADMIN / OPS
-        if user.role in ADMIN_ROLES or user.role in OPERATIONS_ROLES:
+        # FULL_ACCESS_ROLES (ADMIN, CEO, OPS, CM) → primary assign to managers or executives
+        if user.role in FULL_ACCESS_ROLES:
             if assignee.role not in MANAGER_ROLES + EXECUTIVE_ROLES:
                 raise serializers.ValidationError({
                     "assigned_to_id": "Can only assign to managers or executives."
                 })
             attrs['assignment_type'] = 'PRIMARY'
 
-        # ADM_MANAGER → can assign to FOE or ADM_EXEC
+        # ADM_MANAGER → sub-assign to FOE or ADM_EXEC only
         elif user.role == 'ADM_MANAGER':
             if assignee.role not in ['ADM_EXEC', 'FOE']:
                 raise serializers.ValidationError({
@@ -228,8 +228,6 @@ class LeadAssignSerializer(serializers.Serializer):
         return attrs
 
 
-
-
 class LeadListSerializer(serializers.ModelSerializer):
     assigned_to = UserSimpleSerializer(read_only=True)
     assigned_by = UserSimpleSerializer(read_only=True)
@@ -269,7 +267,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
     processing_executive = UserSimpleSerializer(read_only=True)
     current_handler = UserSimpleSerializer(read_only=True)
     assignment_history = LeadAssignmentSerializer(many=True, read_only=True)
-    
+
     class Meta:
         model = Lead
         fields = '__all__'
@@ -286,16 +284,16 @@ class LeadDetailSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         data = data.copy() if hasattr(data, 'copy') else dict(data)
-        
+
         if 'priority' in data and data['priority']:
             data['priority'] = data['priority'].upper()
-        
+
         if 'status' in data and data['status']:
             data['status'] = data['status'].upper()
-        
+
         if 'source' in data and data['source']:
             data['source'] = data['source'].upper()
-        
+
         return super().to_internal_value(data)
 
     def update(self, instance, validated_data):
@@ -317,10 +315,10 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-# Processing Update Serializer 
+# Processing Update Serializer
 class ProcessingUpdateSerializer(serializers.ModelSerializer):
     changed_by = UserSimpleSerializer(read_only=True)
-    
+
     class Meta:
         model = ProcessingUpdate
         fields = [
@@ -351,10 +349,10 @@ class ProcessingUpdateSerializer(serializers.ModelSerializer):
         return attrs
 
 
-# Remark History Serializer 
+# Remark History Serializer
 class RemarkHistorySerializer(serializers.ModelSerializer):
     changed_by = UserSimpleSerializer(read_only=True)
-    
+
     class Meta:
         model = RemarkHistory
         fields = [
@@ -392,7 +390,7 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
     def validate_priority(self, value):
         if value not in dict(Lead.PRIORITY_CHOICES):
             raise serializers.ValidationError("Invalid priority")
-        return value.upper() 
+        return value.upper()
 
     def validate_status(self, value):
         if not value:
@@ -426,10 +424,10 @@ class BulkLeadCreateSerializer(LeadCreateSerializer):
                 f"User '{value}' not found."
             )
 
-        return user 
+        return user
 
     def create(self, validated_data):
-        assignee = validated_data.pop("assigned_to")  # this is already a User object
+        assignee = validated_data.pop("assigned_to")  # already a User object
         request = self.context.get('request')
         creator = getattr(request, 'user', None)
 
