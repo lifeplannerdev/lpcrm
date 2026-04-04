@@ -29,25 +29,14 @@ EXECUTION_ROLES = [
 ]
 
 
-# =====================
-# Derived Permissions
-# =====================
 
 TASK_ASSIGNERS = TOP_MANAGEMENT + OPERATIONS + HR_ROLES
 TASK_ASSIGNEES = EXECUTION_ROLES
 
 
-# =====================
-# View-Level Permissions
-# =====================
+
 
 class IsTaskAssigner(BasePermission):
-    """
-    ADMIN / OPS / HR
-    Can create, update, delete tasks
-    Can assign tasks to ALL employees
-    """
-
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
@@ -56,11 +45,6 @@ class IsTaskAssigner(BasePermission):
 
 
 class IsTaskAssignee(BasePermission):
-    """
-    Employees who receive tasks
-    Can update their own task status
-    """
-
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
@@ -68,16 +52,8 @@ class IsTaskAssignee(BasePermission):
         )
 
 
-# =====================
-# Object-Level Permission
-# =====================
 
 class IsAssigneeOrTaskAssigner(BasePermission):
-    """
-    - Assigned employee → access own task
-    - ADMIN / Assigners → access ALL tasks
-    """
-
     def has_object_permission(self, request, view, obj):
         if not request.user.is_authenticated:
             return False

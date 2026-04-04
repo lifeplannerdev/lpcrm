@@ -217,20 +217,6 @@ class ViewReportFileView(APIView):
 
 
 class DownloadAttachmentView(APIView):
-    """
-    GET /reports/attachments/<pk>/download/
-
-    Fetches the file from Cloudinary on the server side and streams it to
-    the browser with:
-        Content-Disposition: attachment; filename="original_name.pdf"
-
-    This is the ONLY reliable way to force a download with the correct
-    filename for cross-origin files (Cloudinary).  The browser's
-    <a download> attribute is silently ignored for cross-origin URLs.
-
-    Access: file owner  OR  any reviewer role.
-    No extra migration needed — no model changes.
-    """
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
@@ -239,7 +225,6 @@ class DownloadAttachmentView(APIView):
             pk=pk,
         )
 
-        # ── Permission check ──────────────────────────────────────────────
         is_owner    = attachment.report.user == request.user
         is_reviewer = request.user.role in REPORT_REVIEWERS
         if not (is_owner or is_reviewer):
@@ -248,15 +233,13 @@ class DownloadAttachmentView(APIView):
         if not attachment.attached_file:
             return Response({"error": "No file found"}, status=404)
 
-        # ── Get plain Cloudinary URL (no transformations needed) ──────────
         cloudinary_url = attachment.attached_file.url
         if cloudinary_url.startswith("http://"):
             cloudinary_url = cloudinary_url.replace("http://", "https://")
 
         original_filename = attachment.original_filename or "download"
 
-        # ── Fetch from Cloudinary server-side ─────────────────────────────
-        # By doing the fetch here we completely sidestep CORS restrictions.
+
         try:
             req = urllib.request.Request(
                 cloudinary_url,
@@ -271,9 +254,6 @@ class DownloadAttachmentView(APIView):
                 {"error": f"Could not fetch file: {exc}"}, status=502
             )
 
-        # ── Build Content-Disposition with RFC 5987 encoded filename ──────
-        # ascii_name  → used as the plain fallback (spaces → underscores)
-        # encoded_name → percent-encoded UTF-8 for browsers that support it
         ascii_name   = original_filename.replace(" ", "_").encode(
             "ascii", errors="replace"
         ).decode("ascii")
@@ -285,7 +265,6 @@ class DownloadAttachmentView(APIView):
             f"filename*=UTF-8''{encoded_name}"
         )
 
-        # ── Stream the response ───────────────────────────────────────────
         response = StreamingHttpResponse(
             streaming_content=remote,
             content_type=content_type,
@@ -293,7 +272,6 @@ class DownloadAttachmentView(APIView):
         response["Content-Disposition"] = content_disposition
         response["Cache-Control"]        = "no-store"
 
-        # Forward Content-Length if Cloudinary provided it
         content_length = remote.headers.get("Content-Length")
         if content_length:
             response["Content-Length"] = content_length

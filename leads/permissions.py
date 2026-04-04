@@ -1,20 +1,22 @@
 from rest_framework.permissions import BasePermission
 
-# Role hierarchy for assignments
-ADMIN_ROLES = ['ADMIN', 'CEO']
-OPERATIONS_ROLES = ['OPS']
+
+FULL_ACCESS_ROLES = ['ADMIN', 'CEO', 'OPS', 'CM']
+
 
 MANAGER_ROLES = [
     'ADM_MANAGER',
     'ADM_COUNSELLOR',
-    'CM',  
-    'BDM',  
+    'CM',
+    'BDM',
 ]
+
 
 EXECUTIVE_ROLES = [
     'ADM_EXEC',
-    'FOE',  
+    'FOE',
 ]
+
 
 NON_LEAD_ROLES = [
     'PROCESSING',
@@ -23,18 +25,18 @@ NON_LEAD_ROLES = [
     'HR',
     'ACCOUNTS',
     'DOCUMENTATION'
-
 ]
 
-LEAD_ACCESS_ROLES = ADMIN_ROLES + OPERATIONS_ROLES + MANAGER_ROLES + EXECUTIVE_ROLES
+LEAD_ACCESS_ROLES = FULL_ACCESS_ROLES + MANAGER_ROLES + EXECUTIVE_ROLES
 
-LEAD_VIEW_ALL_ROLES = ADMIN_ROLES
+
+LEAD_VIEW_ALL_ROLES = FULL_ACCESS_ROLES
 
 
 class CanAccessLeads(BasePermission):
     def has_permission(self, request, view):
         return (
-            request.user.is_authenticated and 
+            request.user.is_authenticated and
             request.user.role in LEAD_ACCESS_ROLES
         )
 
@@ -42,6 +44,23 @@ class CanAccessLeads(BasePermission):
 class CanAssignLeads(BasePermission):
     def has_permission(self, request, view):
         user = request.user
-        if not user.is_authenticated:
-            return False
-        return user.role in LEAD_ACCESS_ROLES
+        return (
+            user.is_authenticated and
+            user.role in LEAD_ACCESS_ROLES
+        )
+
+
+class CanViewAllLeads(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and
+            request.user.role in LEAD_VIEW_ALL_ROLES
+        )
+
+
+class CanModifyAllLeads(BasePermission):
+    def has_permission(self, request, view):
+        return (
+            request.user.is_authenticated and
+            request.user.role in FULL_ACCESS_ROLES
+        )

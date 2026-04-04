@@ -1,5 +1,6 @@
 import pandas as pd
 import math
+from datetime import date
 from .models import Lead, ProcessingUpdate, RemarkHistory, LeadAssignment
 from .email_utils import send_conversion_email
 from rest_framework import generics, filters, status, viewsets
@@ -14,12 +15,13 @@ from django.db import models, transaction
 from django.utils import timezone
 from rest_framework.parsers import MultiPartParser, FormParser
 from leads.permissions import (
-    CanAccessLeads, 
+    CanAccessLeads,
     CanAssignLeads,
-    LEAD_VIEW_ALL_ROLES,
-    ADMIN_ROLES,
+    CanViewAllLeads,
+    CanModifyAllLeads,
+    FULL_ACCESS_ROLES,
     MANAGER_ROLES,
-    EXECUTIVE_ROLES
+    EXECUTIVE_ROLES,
 )
 
 from .serializers import (
@@ -30,7 +32,7 @@ from .serializers import (
     LeadAssignSerializer,
     LeadAssignmentSerializer,
     LeadUpdateSerializer,
-    BulkLeadCreateSerializer,  
+    BulkLeadCreateSerializer,
 )
 
 
@@ -43,17 +45,17 @@ def clean_value(val):
     return val
 
 
-# Pagination 
+# Pagination
 class LeadPagination(PageNumberPagination):
     page_size = 50
     page_size_query_param = 'page_size'
     max_page_size = 100
 
 
-# Lead List View 
+# Lead List View
 class LeadListView(generics.ListAPIView):
     serializer_class = LeadListSerializer
-    permission_classes = [CanAccessLeads]  
+    permission_classes = [CanAccessLeads]
     pagination_class = LeadPagination
 
     filter_backends = [
@@ -68,14 +70,14 @@ class LeadListView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        
-        # ONLY ADMIN can see all leads
-        if user.role in ADMIN_ROLES:
+
+        # FULL_ACCESS_ROLES (ADMIN, CEO, OPS, CM) can see all leads
+        if user.role in FULL_ACCESS_ROLES:
             return Lead.objects.all().distinct()
-        
-        # All other roles 
+
+        # All other roles see only their assigned leads
         return Lead.objects.filter(
-            models.Q(assigned_to=user) | 
+            models.Q(assigned_to=user) |
             models.Q(sub_assigned_to=user)
         ).distinct()
 
@@ -104,11 +106,11 @@ class LeadListView(generics.ListAPIView):
         })
 
 
-# Lead Create View 
+# Lead Create View
 class LeadCreateView(generics.CreateAPIView):
     queryset = Lead.objects.all()
     serializer_class = LeadCreateSerializer
-    permission_classes = [CanAccessLeads] 
+    permission_classes = [CanAccessLeads]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -130,21 +132,21 @@ class LeadCreateView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
-# Lead Detail View - UPDATED: Only ADMIN sees all leads
+# Lead Detail View
 class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = LeadDetailSerializer
     permission_classes = [CanAccessLeads]
 
     def get_queryset(self):
         user = self.request.user
-        
-        # ONLY ADMIN can access all leads
-        if user.role in ADMIN_ROLES:
+
+        # FULL_ACCESS_ROLES can access all leads
+        if user.role in FULL_ACCESS_ROLES:
             return Lead.objects.all()
-        
+
         # All other roles can only access their assigned leads
         return Lead.objects.filter(
-            models.Q(assigned_to=user) | 
+            models.Q(assigned_to=user) |
             models.Q(sub_assigned_to=user)
         )
 
@@ -188,6 +190,12 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
 
     def destroy(self, request, *args, **kwargs):
+        # Only FULL_ACCESS_ROLES can delete leads
+        if request.user.role not in FULL_ACCESS_ROLES:
+            return Response(
+                {"error": "You do not have permission to delete leads"},
+                status=status.HTTP_403_FORBIDDEN
+            )
         self.perform_destroy(self.get_object())
         return Response(
             {"message": "Lead deleted successfully"},
@@ -195,7 +203,7 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
 
 
-# Lead Processing Timeline View - UPDATED
+# Lead Processing Timeline View
 class LeadProcessingTimelineView(generics.ListAPIView):
     serializer_class = ProcessingUpdateSerializer
     permission_classes = [CanAccessLeads]
@@ -204,15 +212,15 @@ class LeadProcessingTimelineView(generics.ListAPIView):
         lead_id = self.kwargs.get('lead_id')
         lead = get_object_or_404(Lead, id=lead_id)
         user = self.request.user
-        
-        # ONLY ADMIN or assigned users can view timeline
-        if user.role in ADMIN_ROLES:
+
+        # FULL_ACCESS_ROLES can view any lead's timeline
+        if user.role in FULL_ACCESS_ROLES:
             return ProcessingUpdate.objects.filter(lead=lead).order_by('-timestamp')
-        
-        # Check if user is assigned to this lead
+
+        # Other roles can only view timeline if assigned to this lead
         if lead.assigned_to != user and lead.sub_assigned_to != user:
             return ProcessingUpdate.objects.none()
-        
+
         return ProcessingUpdate.objects.filter(lead=lead).order_by('-timestamp')
 
 
@@ -223,14 +231,14 @@ class LeadAssignView(APIView):
     def post(self, request):
         serializer = LeadAssignSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-        
+
         lead = serializer.validated_data['lead']
         assignee = serializer.validated_data['assignee']
         assignment_type = serializer.validated_data['assignment_type']
         notes = serializer.validated_data.get('notes', '')
-        
+
         if assignment_type == 'PRIMARY':
-            # Admin assigning to manager/executive
+            # FULL_ACCESS_ROLES assigning to manager/executive
             lead.assigned_to = assignee
             lead.assigned_by = request.user
             lead.assigned_date = timezone.now()
@@ -238,15 +246,15 @@ class LeadAssignView(APIView):
             lead.sub_assigned_to = None
             lead.sub_assigned_by = None
             lead.sub_assigned_date = None
-            
+
         elif assignment_type == 'SUB':
             # Manager sub-assigning to executive
             lead.sub_assigned_to = assignee
             lead.sub_assigned_by = request.user
             lead.sub_assigned_date = timezone.now()
-        
+
         lead.save()
-        
+
         # Create assignment history
         LeadAssignment.objects.create(
             lead=lead,
@@ -255,7 +263,7 @@ class LeadAssignView(APIView):
             assignment_type=assignment_type,
             notes=notes
         )
-        
+
         return Response({
             'message': 'Lead assigned successfully',
             'lead': LeadDetailSerializer(lead).data
@@ -293,12 +301,12 @@ class BulkLeadAssignView(APIView):
                     data={'lead_id': lead_id, 'assigned_to_id': assigned_to_id, 'notes': notes},
                     context={'request': request}
                 )
-                
+
                 if serializer.is_valid():
                     lead = serializer.validated_data['lead']
                     assignee = serializer.validated_data['assignee']
                     assignment_type = serializer.validated_data['assignment_type']
-                    
+
                     if assignment_type == 'PRIMARY':
                         lead.assigned_to = assignee
                         lead.assigned_by = user
@@ -310,9 +318,9 @@ class BulkLeadAssignView(APIView):
                         lead.sub_assigned_to = assignee
                         lead.sub_assigned_by = user
                         lead.sub_assigned_date = timezone.now()
-                    
+
                     lead.save()
-                    
+
                     LeadAssignment.objects.create(
                         lead=lead,
                         assigned_to=assignee,
@@ -334,7 +342,7 @@ class BulkLeadAssignView(APIView):
         }, status=status.HTTP_200_OK)
 
 
-# Lead Assignment History View - UPDATED
+# Lead Assignment History View
 class LeadAssignmentHistoryView(generics.ListAPIView):
     serializer_class = LeadAssignmentSerializer
     permission_classes = [CanAccessLeads]
@@ -343,19 +351,19 @@ class LeadAssignmentHistoryView(generics.ListAPIView):
         lead_id = self.kwargs.get('lead_id')
         lead = get_object_or_404(Lead, id=lead_id)
         user = self.request.user
-        
-        # ONLY ADMIN or assigned users can view history
-        if user.role in ADMIN_ROLES:
+
+        # FULL_ACCESS_ROLES can view any lead's assignment history
+        if user.role in FULL_ACCESS_ROLES:
             return LeadAssignment.objects.filter(lead=lead).order_by('-timestamp')
-        
-        # Check if user is assigned to this lead
+
+        # Other roles can only view history if assigned to this lead
         if lead.assigned_to != user and lead.sub_assigned_to != user:
             return LeadAssignment.objects.none()
-        
+
         return LeadAssignment.objects.filter(lead=lead).order_by('-timestamp')
 
 
-# My Team Leads View - UPDATED
+# My Team Leads View
 class MyTeamLeadsView(generics.ListAPIView):
     serializer_class = LeadListSerializer
     permission_classes = [CanAccessLeads]
@@ -363,39 +371,32 @@ class MyTeamLeadsView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        
-        # Only ADMIN can see team leads
-        if user.role in ADMIN_ROLES:
-            # Return all leads (same as main list for admin)
-            return Lead.objects.all().distinct()
-        
-    serializer_class = LeadListSerializer
-    permission_classes = [CanAccessLeads]
-    pagination_class = LeadPagination
 
-    def get_queryset(self):
-        user = self.request.user
-        
-        # Only ADMIN can see team leads
-        if user.role in ADMIN_ROLES:
-            # Return all leads (same as main list for admin)
+        # FULL_ACCESS_ROLES can see all leads
+        if user.role in FULL_ACCESS_ROLES:
             return Lead.objects.all().distinct()
-        
-        # For managers and others, return only their assigned leads
+
+        # Managers see leads assigned to them and their sub-assignments
+        if user.role in MANAGER_ROLES:
+            return Lead.objects.filter(
+                models.Q(assigned_to=user) |
+                models.Q(sub_assigned_to=user)
+            ).distinct()
+
+        # Executives and others see only their own assigned leads
         return Lead.objects.filter(
             models.Q(assigned_to=user) |
             models.Q(sub_assigned_to=user)
         ).distinct()
 
 
-# Available Users for Assignment - UPDATED: No role-based restrictions
+# Available Users for Assignment
 class AvailableUsersForAssignmentView(APIView):
-
-    permission_classes = [CanAccessLeads]
+    permission_classes = [CanAssignLeads]
 
     def get(self, request):
         from accounts.models import User
-        
+
         # Define roles that can be assigned leads
         ASSIGNABLE_ROLES = [
             'OPS',
@@ -405,7 +406,7 @@ class AvailableUsersForAssignmentView(APIView):
             'BDM',
             'FOE'
         ]
-        
+
         users = User.objects.filter(
             role__in=ASSIGNABLE_ROLES,
             is_active=True
@@ -445,8 +446,8 @@ class UnassignLeadView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        if user.role in ADMIN_ROLES:
-            # Admin can unassign both primary and sub
+        if user.role in FULL_ACCESS_ROLES:
+            # FULL_ACCESS_ROLES can unassign both primary and sub
             if unassign_type == 'PRIMARY':
                 lead.assigned_to = None
                 lead.assigned_by = None
@@ -461,7 +462,7 @@ class UnassignLeadView(APIView):
                 lead.sub_assigned_date = None
 
         elif user.role == 'ADM_MANAGER':
-            # Manager can only unassign sub-assignments of their own leads
+            # Managers can only unassign sub-assignments of their own leads
             if lead.assigned_to != user:
                 return Response(
                     {'error': 'You can only unassign leads assigned to you'},
@@ -495,8 +496,8 @@ class UpdateLeadView(APIView):
     def patch(self, request, pk):
         lead = get_object_or_404(Lead, id=pk)
 
-        if lead.assigned_to != request.user and lead.sub_assigned_to != request.user and request.user.role not in ADMIN_ROLES:
-            return Response({"error": "Permission denied"}, status=403)
+        if lead.assigned_to != request.user and lead.sub_assigned_to != request.user and request.user.role not in FULL_ACCESS_ROLES:
+            return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
 
         # Capture old status before any update
         old_status = lead.status
@@ -515,43 +516,43 @@ class UpdateLeadView(APIView):
         if old_status != 'CONVERTED' and updated_lead.status == 'CONVERTED':
             send_conversion_email(updated_lead)
 
-        return Response(serializer.data, status=200)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class BulkLeadUploadView(APIView):
     permission_classes = [CanAccessLeads]
     parser_classes = [MultiPartParser, FormParser]
- 
+
     def post(self, request):
         file = request.FILES.get('file')
- 
+
         if not file:
-            return Response({"error": "No file uploaded"}, status=400)
- 
+            return Response({"error": "No file uploaded"}, status=status.HTTP_400_BAD_REQUEST)
+
         if file.size > 5 * 1024 * 1024:
-            return Response({"error": "File too large (max 5MB)"}, status=400)
- 
+            return Response({"error": "File too large (max 5MB)"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             df = pd.read_excel(file)
         except Exception:
-            return Response({"error": "Invalid Excel file"}, status=400)
- 
+            return Response({"error": "Invalid Excel file"}, status=status.HTTP_400_BAD_REQUEST)
+
         required_columns = ["name", "phone", "assigned_to"]
         missing_cols = [col for col in required_columns if col not in df.columns]
- 
+
         if missing_cols:
             return Response({
                 "error": f"Missing required columns: {missing_cols}"
-            }, status=400)
- 
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         user_map = {
             user.username.lower(): user
             for user in User.objects.filter(is_active=True)
         }
- 
+
         success_count = 0
         failed_rows = []
- 
+
         with transaction.atomic():
             for index, row in df.iterrows():
                 try:
@@ -563,18 +564,18 @@ class BulkLeadUploadView(APIView):
                     program = clean_value(row.get("program"))
                     location = clean_value(row.get("location"))
                     username = clean_value(row.get("assigned_to"))
- 
+
                     phone = clean_value(row.get("phone"))
                     if phone:
                         phone = str(phone).split('.')[0]
- 
+
                     if not username:
                         failed_rows.append({
                             "row": index + 2,
                             "error": "assigned_to is required"
                         })
                         continue
- 
+
                     user = user_map.get(username.lower())
                     if not user:
                         failed_rows.append({
@@ -582,7 +583,7 @@ class BulkLeadUploadView(APIView):
                             "error": f"User '{username}' not found"
                         })
                         continue
- 
+
                     # Build data dict — only include source if provided
                     data = {
                         "name": name,
@@ -596,7 +597,7 @@ class BulkLeadUploadView(APIView):
                     }
                     if source:
                         data["source"] = str(source).upper()
- 
+
                     serializer = BulkLeadCreateSerializer(
                         data=data,
                         context={
@@ -604,7 +605,7 @@ class BulkLeadUploadView(APIView):
                             "user_map": user_map
                         }
                     )
- 
+
                     if serializer.is_valid():
                         serializer.save()
                         success_count += 1
@@ -614,22 +615,24 @@ class BulkLeadUploadView(APIView):
                             "data": data,
                             "errors": serializer.errors
                         })
- 
+
                 except Exception as e:
                     failed_rows.append({
                         "row": index + 2,
                         "error": str(e)
                     })
- 
+
         return Response({
             "message": "Bulk upload completed",
             "success_count": success_count,
             "failed_count": len(failed_rows),
             "failed_rows": failed_rows
         }, status=status.HTTP_200_OK)
- 
+
 
 class TodayLeadsAPI(APIView):
+    permission_classes = [CanAccessLeads]
+
     def get(self, request):
         today = date.today()
 
@@ -639,7 +642,7 @@ class TodayLeadsAPI(APIView):
 
         for lead in leads:
             data.append({
-                "created_by": lead.created_by.id   
+                "created_by": lead.created_by.id
             })
 
         return Response(data)
