@@ -32,3 +32,6 @@ class Message(models.Model):
     file = CloudinaryField('file', blank=True, null=True, resource_type='auto')
 
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Message {self.id} by {self.sender}"

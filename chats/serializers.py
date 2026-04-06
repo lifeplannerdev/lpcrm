@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class MessageSerializer(serializers.ModelSerializer):
     sender = UserSerializer()
-    file = serializers.SerializerMethodField()  
+    file = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
@@ -26,7 +26,7 @@ class MessageSerializer(serializers.ModelSerializer):
 
 
 class ConversationSerializer(serializers.ModelSerializer):
-    participants = UserSerializer(many=True)
+    participants = UserSerializer(many=True, read_only=True)
     last_message = serializers.SerializerMethodField()
 
     class Meta:
@@ -34,5 +34,10 @@ class ConversationSerializer(serializers.ModelSerializer):
         fields = ["id", "type", "name", "participants", "last_message", "created_by"]
 
     def get_last_message(self, obj):
-        last = obj.messages.order_by("-created_at").first()
-        return MessageSerializer(last).data if last else None
+        # Uses prefetched messages — no extra DB query
+        prefetched = obj.messages.all()
+        if not prefetched:
+            return None
+        # Get the latest from already-fetched queryset (sorted in view)
+        last = prefetched[0]
+        return MessageSerializer(last).data

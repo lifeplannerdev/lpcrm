@@ -45,6 +45,7 @@ class Lead(models.Model):
     ('NOT_INTERESTED', 'Not Interested'),
     ('CONVERTED', 'Converted'),
     ('CNR', 'Could Not Reach'),
+    ('REGISTERED', 'Registered'),
 ]
     # Basic lead info
     name = models.CharField(max_length=100, validators=[MinLengthValidator(3)])

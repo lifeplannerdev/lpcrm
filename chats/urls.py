@@ -6,6 +6,7 @@ from .views import (
     CreateDirectConversationView,
     CreateGroupConversationView,
     EmployeeListView,
+    PusherAuthView,
 )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path("send/", SendMessageView.as_view(), name="send-message"),
     path("create-direct/", CreateDirectConversationView.as_view(), name="create-direct"),
     path("create-group/", CreateGroupConversationView.as_view(), name="create-group"),
+    path("pusher/auth/", PusherAuthView.as_view()),
 ]

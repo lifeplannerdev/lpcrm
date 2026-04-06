@@ -5,8 +5,9 @@ from rest_framework.pagination import PageNumberPagination
 from django.db.models import Count, Q, Case, When, IntegerField
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.utils import timezone
-from rest_framework.exceptions import PermissionDenied
+from django.utils.timezone import now
 import logging
 
 from .models import Task, TaskUpdate
@@ -24,30 +25,28 @@ from .permissions import (
     TOP_MANAGEMENT,
     OPERATIONS,
 )
-from django.utils.timezone import now
+
+# ✅ FIX: removed duplicate local pusher definitions — import from utils (single source of truth)
+from utils import notify_task_assigned, notify_task_status_updated
 
 User = get_user_model()
-
 logger = logging.getLogger(__name__)
 
 
-# ─── Helpers ──────────────────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _task_queryset_for_user(user, base_qs=None):
     if base_qs is None:
         base_qs = Task.objects.select_related("assigned_to", "assigned_by")
 
-    # ADMIN / CEO → see everything
     if user.role in TOP_MANAGEMENT:
         return base_qs
 
-    # OPS / CM → tasks assigned TO them  +  tasks they created
     if user.role in OPERATIONS:
         return base_qs.filter(
             Q(assigned_to=user) | Q(assigned_by=user)
         ).distinct()
 
-    # All other roles → only tasks assigned to them
     return base_qs.filter(assigned_to=user)
 
 
@@ -55,11 +54,11 @@ def _apply_status_ordering(qs):
     """Order tasks: OVERDUE → PENDING → IN_PROGRESS → COMPLETED → CANCELLED."""
     return qs.annotate(
         status_priority=Case(
-            When(status='OVERDUE',      then=1),
-            When(status='PENDING',      then=2),
-            When(status='IN_PROGRESS',  then=3),
-            When(status='COMPLETED',    then=4),
-            When(status='CANCELLED',    then=5),
+            When(status='OVERDUE',     then=1),
+            When(status='PENDING',     then=2),
+            When(status='IN_PROGRESS', then=3),
+            When(status='COMPLETED',   then=4),
+            When(status='CANCELLED',   then=5),
             default=6,
             output_field=IntegerField(),
         )
@@ -80,7 +79,7 @@ def _apply_priority_ordering(qs):
     )
 
 
-# ─── Pagination ───────────────────────────────────────────────────────────────
+# ── Pagination ────────────────────────────────────────────────────────────────
 
 class TaskPagination(PageNumberPagination):
     page_size = 50
@@ -94,7 +93,7 @@ class TaskUpdatePagination(PageNumberPagination):
     max_page_size = 100
 
 
-# ─── Task Stats ───────────────────────────────────────────────────────────────
+# ── Task Stats ────────────────────────────────────────────────────────────────
 
 class TaskStatsAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -121,31 +120,23 @@ class TaskStatsAPIView(APIView):
         return Response(stats)
 
 
-# ─── Employee List ────────────────────────────────────────────────────────────
+# ── Employee List ─────────────────────────────────────────────────────────────
 
 class EmployeeListAPIView(generics.ListAPIView):
-    """
-    Returns users the requesting user is allowed to assign tasks to.
-    - ADMIN / CEO  → all active users
-    - OPS / CM     → only EXECUTION_ROLES
-    """
     permission_classes = [IsTaskAssigner]
     serializer_class = EmployeeSerializer
 
     def get_queryset(self):
         user = self.request.user
-
         if user.role in TOP_MANAGEMENT:
             return User.objects.filter(is_active=True).exclude(id=user.id)
-
-        # OPS / CM can only assign to execution-level employees
         return User.objects.filter(
             is_active=True,
             role__in=TASK_ASSIGNEES
         ).exclude(id=user.id)
 
 
-# ─── Task List / Create ───────────────────────────────────────────────────────
+# ── Task List / Create ────────────────────────────────────────────────────────
 
 class TaskListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = TaskSerializer
@@ -163,12 +154,10 @@ class TaskListCreateAPIView(generics.ListCreateAPIView):
             _task_queryset_for_user(self.request.user)
         )
 
-        # Filter by status if provided
         status_filter = self.request.query_params.get('status')
         if status_filter and status_filter != 'all':
             qs = qs.filter(status=status_filter)
 
-        # Filter by priority if provided
         priority_filter = self.request.query_params.get('priority')
         if priority_filter and priority_filter != 'all':
             qs = qs.filter(priority=priority_filter)
@@ -182,15 +171,17 @@ class TaskListCreateAPIView(generics.ListCreateAPIView):
         # OPS / CM cannot assign tasks to ADMIN or CEO
         if user.role in OPERATIONS and assigned_to:
             if assigned_to.role in TOP_MANAGEMENT:
-                from rest_framework.exceptions import ValidationError
                 raise ValidationError(
                     "OPS and CM can only assign tasks to execution-level employees."
                 )
 
-        serializer.save(assigned_by=user)
+        task = serializer.save(assigned_by=user)
+
+        # 🔔 Notify the assignee about the new task
+        notify_task_assigned(task=task, assigned_by=user)
 
 
-# ─── Task Detail / Update / Delete ───────────────────────────────────────────
+# ── Task Detail / Update / Delete ─────────────────────────────────────────────
 
 class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = TaskSerializer
@@ -201,13 +192,10 @@ class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
     def _check_edit_permission(self, task):
         user = self.request.user
-
         if user.role in TOP_MANAGEMENT:
             return
-
         if user.role in OPERATIONS and task.assigned_by == user:
             return
-
         raise PermissionDenied(
             "Only the creator of this task can edit or delete it."
         )
@@ -240,13 +228,24 @@ class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
                 notes=f"Status changed by {self.request.user.username}"
             )
 
+            # ✅ FIX: notify the assignee when manager changes the task status
+            notify_task_status_updated(
+                task=instance,
+                updated_by=self.request.user,
+                old_status=old_status,
+                new_status=new_status,
+                notes=f"Status changed by {self.request.user.username}",
+            )
 
-# ─── Task Updates (timeline) ─────────────────────────────────────────────────
+
+# ── Task Updates (timeline / notes only) ─────────────────────────────────────
+# ✅ FIX: this endpoint is now for posting notes/comments on a task only.
+#    Status changes must go through TaskStatusUpdateAPIView (POST /tasks/<id>/status/).
 
 class TaskUpdateListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = TaskUpdateSerializer
-    pagination_class = TaskUpdatePagination   # FIX: was unpaginated → frontend expected .results
+    pagination_class = TaskUpdatePagination
 
     def _get_task(self):
         return get_object_or_404(Task, pk=self.kwargs["task_id"])
@@ -255,15 +254,12 @@ class TaskUpdateListCreateAPIView(generics.ListCreateAPIView):
         task = self._get_task()
         user = self.request.user
 
-        # ADMIN / CEO → can view any task's update history
         if user.role in TOP_MANAGEMENT:
             return TaskUpdate.objects.filter(task=task).order_by("-created_at")
 
-        # OPS / CM → can view updates for tasks they assigned
         if user.role in OPERATIONS and task.assigned_by == user:
             return TaskUpdate.objects.filter(task=task).order_by("-created_at")
 
-        # Assigned employee → can view their own task's updates
         if task.assigned_to == user:
             return TaskUpdate.objects.filter(task=task).order_by("-created_at")
 
@@ -277,26 +273,21 @@ class TaskUpdateListCreateAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         task = self._get_task()
 
-        # Only the assigned employee can post progress updates / notes
         if task.assigned_to != self.request.user:
             raise PermissionDenied("Only the assigned employee can post updates on this task.")
 
-        new_status = serializer.validated_data.get("new_status")
+        old_status = task.status
 
+        # Notes-only update — status changes go through /tasks/<id>/status/
         serializer.save(
             task=task,
             updated_by=self.request.user,
-            previous_status=task.status,
-            new_status=new_status if new_status is not None else task.status,
+            previous_status=old_status,
+            new_status=old_status,  # status unchanged here
         )
 
-        # Only mutate the task's status when explicitly changed
-        if new_status is not None and new_status != task.status:
-            task.status = new_status
-            task.save(update_fields=["status", "updated_at"])
 
-
-# ─── Tasks Assigned By Me ─────────────────────────────────────────────────────
+# ── Tasks Assigned By Me ──────────────────────────────────────────────────────
 
 class TasksAssignedByMeAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
@@ -305,17 +296,16 @@ class TasksAssignedByMeAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-
         if user.role not in TASK_ASSIGNERS:
             return Task.objects.none()
-
         return _apply_status_ordering(
             Task.objects.filter(assigned_by=user)
             .select_related('assigned_to', 'assigned_by')
         )
 
 
-# ─── Task Status Update (Assignee only) ──────────────────────────────────────
+# ── Task Status Update ────────────────────────────────────────────────────────
+# Single endpoint for all status changes by the assignee.
 
 class TaskStatusUpdateAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
@@ -324,7 +314,6 @@ class TaskStatusUpdateAPIView(generics.GenericAPIView):
     def post(self, request, pk):
         task = get_object_or_404(Task, pk=pk)
 
-        # Only the assigned employee can change status
         if request.user != task.assigned_to:
             return Response(
                 {"detail": "Only the assigned employee can change the task status."},
@@ -346,18 +335,19 @@ class TaskStatusUpdateAPIView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Notes are required when completing or cancelling
         if new_status in ['COMPLETED', 'CANCELLED'] and not notes:
             return Response(
                 {"detail": "Notes are required when completing or cancelling a task."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        old_status = task.status
+
         try:
             update = TaskUpdate.objects.create(
                 task=task,
                 updated_by=request.user,
-                previous_status=task.status,
+                previous_status=old_status,
                 new_status=new_status,
                 notes=notes
             )
@@ -378,13 +368,22 @@ class TaskStatusUpdateAPIView(generics.GenericAPIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
+        # 🔔 Notify the task creator that status was updated
+        notify_task_status_updated(
+            task=task,
+            updated_by=request.user,
+            old_status=old_status,
+            new_status=new_status,
+            notes=notes,
+        )
+
         return Response({
             "detail": "Status updated successfully",
             "update_id": update.id
         })
 
 
-# ─── Pending Tasks ────────────────────────────────────────────────────────────
+# ── Pending Tasks ─────────────────────────────────────────────────────────────
 
 class PendingTasksAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -397,13 +396,11 @@ class PendingTasksAPIView(APIView):
                 status__in=['PENDING', 'IN_PROGRESS']
             ).select_related('assigned_to', 'assigned_by')
         )
-
         qs = _apply_priority_ordering(qs).order_by('priority_order', 'deadline')
-
         return Response(TaskSerializer(qs, many=True).data)
 
 
-# ─── Upcoming Tasks ───────────────────────────────────────────────────────────
+# ── Upcoming Tasks ────────────────────────────────────────────────────────────
 
 class UpcomingTasksAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -416,7 +413,5 @@ class UpcomingTasksAPIView(APIView):
                                 .exclude(status__in=['COMPLETED', 'CANCELLED'])
                                 .select_related('assigned_to', 'assigned_by')
         )
-
         qs = qs.order_by("deadline")[:5]
-
         return Response(UpcomingTaskSerializer(qs, many=True).data)

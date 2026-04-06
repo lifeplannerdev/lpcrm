@@ -5,10 +5,7 @@ from django.utils import timezone
 from .permissions import FULL_ACCESS_ROLES, MANAGER_ROLES, EXECUTIVE_ROLES
 
 
-# ---------------------------------------------------------------------------
 # Shared user serializer
-# Used everywhere the frontend expects: { id, username, email, role, first_name, last_name }
-# ---------------------------------------------------------------------------
 
 class UserSimpleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -16,9 +13,7 @@ class UserSimpleSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'role', 'first_name', 'last_name']
 
 
-# ---------------------------------------------------------------------------
 # Lead Create Serializer
-# ---------------------------------------------------------------------------
 
 class LeadCreateSerializer(serializers.ModelSerializer):
     assigned_to = serializers.IntegerField(required=False, allow_null=True, write_only=True)
@@ -135,9 +130,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         return lead
 
 
-# ---------------------------------------------------------------------------
 # Lead Assignment Serializer (history records)
-# ---------------------------------------------------------------------------
 
 class LeadAssignmentSerializer(serializers.ModelSerializer):
     assigned_to = UserSimpleSerializer(read_only=True)
@@ -152,12 +145,7 @@ class LeadAssignmentSerializer(serializers.ModelSerializer):
         read_only_fields = ['timestamp']
 
 
-# ---------------------------------------------------------------------------
 # Lead Assign Serializer (validate + route assign/sub-assign requests)
-# Used by LeadAssignView and BulkLeadAssignView
-# Consumed by EditLeadForm.jsx → POST /leads/assign/
-# payload: { lead_id, assigned_to_id, notes? }
-# ---------------------------------------------------------------------------
 
 class LeadAssignSerializer(serializers.Serializer):
     lead_id        = serializers.IntegerField()
@@ -226,25 +214,18 @@ class LeadAssignSerializer(serializers.Serializer):
         else:
             raise serializers.ValidationError("You don't have permission to assign leads.")
 
-        attrs['lead']    = lead
+        attrs['lead']     = lead
         attrs['assignee'] = assignee
         return attrs
 
 
-# ---------------------------------------------------------------------------
 # Lead List Serializer
-# Shape consumed by LeadsTable.jsx and LeadsPage.jsx:
-#   assigned_to   → { id, first_name, last_name, ... }
-#   sub_assigned_to → { id, first_name, last_name, ... }
-#   current_handler → { id, first_name, ... }   (derived from @property)
-# ---------------------------------------------------------------------------
 
 class LeadListSerializer(serializers.ModelSerializer):
     assigned_to     = UserSimpleSerializer(read_only=True)
     assigned_by     = UserSimpleSerializer(read_only=True)
     sub_assigned_to = UserSimpleSerializer(read_only=True)
     sub_assigned_by = UserSimpleSerializer(read_only=True)
-    # current_handler is a @property on the model; serializer reads it as a method field
     current_handler = serializers.SerializerMethodField()
 
     class Meta:
@@ -260,27 +241,22 @@ class LeadListSerializer(serializers.ModelSerializer):
         ]
 
     def get_current_handler(self, obj):
-        # obj.current_handler is a @property that returns sub_assigned_to or assigned_to.
-        # We call UserSimpleSerializer to get the same shape as the other user fields.
         handler = obj.current_handler
         if handler is None:
             return None
         return UserSimpleSerializer(handler).data
 
 
-# ---------------------------------------------------------------------------
 # Lead Detail Serializer
-# Used by LeadDetailView (retrieve/update) and returned inside assign/unassign responses.
-# ---------------------------------------------------------------------------
 
 class LeadDetailSerializer(serializers.ModelSerializer):
-    assigned_to        = UserSimpleSerializer(read_only=True)
-    assigned_by        = UserSimpleSerializer(read_only=True)
-    sub_assigned_to    = UserSimpleSerializer(read_only=True)
-    sub_assigned_by    = UserSimpleSerializer(read_only=True)
+    assigned_to          = UserSimpleSerializer(read_only=True)
+    assigned_by          = UserSimpleSerializer(read_only=True)
+    sub_assigned_to      = UserSimpleSerializer(read_only=True)
+    sub_assigned_by      = UserSimpleSerializer(read_only=True)
     processing_executive = UserSimpleSerializer(read_only=True)
-    current_handler    = serializers.SerializerMethodField()
-    assignment_history = LeadAssignmentSerializer(many=True, read_only=True)
+    current_handler      = serializers.SerializerMethodField()
+    assignment_history   = LeadAssignmentSerializer(many=True, read_only=True)
 
     class Meta:
         model  = Lead
@@ -323,9 +299,7 @@ class LeadDetailSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-# ---------------------------------------------------------------------------
 # Processing Update Serializer
-# ---------------------------------------------------------------------------
 
 class ProcessingUpdateSerializer(serializers.ModelSerializer):
     changed_by = UserSimpleSerializer(read_only=True)
@@ -333,31 +307,15 @@ class ProcessingUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model  = ProcessingUpdate
         fields = ['id', 'lead', 'status', 'changed_by', 'notes', 'timestamp']
-        read_only_fields = ('timestamp',)
+        read_only_fields = ('timestamp', 'changed_by')
 
     def validate_status(self, value):
         if value not in dict(Lead.PROCESSING_STATUS_CHOICES).keys():
             raise serializers.ValidationError('Invalid processing status.')
         return value
 
-    def validate(self, attrs):
-        lead       = attrs.get('lead')
-        changed_by = attrs.get('changed_by')
 
-        if not Lead.objects.filter(id=lead.id).exists():
-            raise serializers.ValidationError({'lead': 'Lead does not exist.'})
-
-        if changed_by and changed_by.role != 'PROCESSING':
-            raise serializers.ValidationError({
-                'changed_by': 'User must have PROCESSING role to update status.'
-            })
-
-        return attrs
-
-
-# ---------------------------------------------------------------------------
 # Remark History Serializer
-# ---------------------------------------------------------------------------
 
 class RemarkHistorySerializer(serializers.ModelSerializer):
     changed_by = UserSimpleSerializer(read_only=True)
@@ -376,9 +334,7 @@ class RemarkHistorySerializer(serializers.ModelSerializer):
         return value
 
 
-# ---------------------------------------------------------------------------
 # Lead Update Serializer (PATCH – used by UpdateLeadView)
-# ---------------------------------------------------------------------------
 
 class LeadUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -412,9 +368,7 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
-# ---------------------------------------------------------------------------
 # Bulk Lead Create Serializer
-# ---------------------------------------------------------------------------
 
 class BulkLeadCreateSerializer(LeadCreateSerializer):
     assigned_to = serializers.CharField(required=True)
@@ -422,12 +376,22 @@ class BulkLeadCreateSerializer(LeadCreateSerializer):
     def validate_assigned_to(self, value):
         user_map = self.context.get('user_map', {})
         user = user_map.get(value.lower())
+
         if not user:
             raise serializers.ValidationError(f"User '{value}' not found.")
+
+        if not user.is_active:
+            raise serializers.ValidationError(f"User '{value}' is inactive.")
+
+        if user.role not in MANAGER_ROLES + EXECUTIVE_ROLES:
+            raise serializers.ValidationError(
+                f"Cannot assign leads to user '{value}' with role '{user.role}'."
+            )
+
         return user
 
     def create(self, validated_data):
-        assignee = validated_data.pop('assigned_to')  # already a User object
+        assignee = validated_data.pop('assigned_to')  
         request  = self.context.get('request')
         creator  = getattr(request, 'user', None)
 
