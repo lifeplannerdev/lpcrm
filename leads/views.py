@@ -184,17 +184,25 @@ class LeadDetailView(generics.RetrieveUpdateDestroyAPIView):
         }, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
-        if request.user.role not in FULL_ACCESS_ROLES:
+        lead = self.get_object()
+        user = request.user
+
+        # Allow: Admin OR assigned user OR sub-assigned user
+        if (
+            user.role not in FULL_ACCESS_ROLES and
+            lead.assigned_to != user and
+            lead.sub_assigned_to != user
+        ):
             return Response(
-                {'error': 'You do not have permission to delete leads'},
+                {'error': 'You do not have permission to delete this lead'},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        self.perform_destroy(self.get_object())
+
+        self.perform_destroy(lead)
         return Response(
             {'message': 'Lead deleted successfully'},
             status=status.HTTP_204_NO_CONTENT,
         )
-
 
 # ── Lead Processing Timeline View
 class LeadProcessingTimelineView(generics.ListAPIView):
