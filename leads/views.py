@@ -133,6 +133,15 @@ class LeadCreateView(generics.CreateAPIView):
                 notes='Initial status on lead creation'
             )
 
+        if lead.assigned_to and lead.assigned_to != request.user:
+            notify_lead_assigned(
+                assignee=lead.assigned_to,
+                assigned_by=request.user,
+                lead=lead,
+                assignment_type='PRIMARY',
+            )
+
+
         return Response({
             'message': 'Lead created successfully',
             'lead_id': lead.id
