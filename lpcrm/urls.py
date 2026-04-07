@@ -32,7 +32,7 @@ urlpatterns = [
     path('api/', include('reports.urls')),
     path('api/',include('chats.urls')),
     path('api/',include('telephony.urls')),
-
+    path('api/', include('notifications.urls')),
 ]
 
 if settings.DEBUG:
