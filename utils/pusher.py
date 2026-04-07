@@ -25,10 +25,31 @@ def trigger_pusher(channel: str, event: str, data: dict):
     except Exception as e:
         print(f"[Pusher] Trigger error: {e}")
 
+def save_notification(user_id, type, message, by=None):
+    """Save notification to DB — import inside function to avoid circular imports"""
+    try:
+        from notifications.models import Notification
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        user = User.objects.get(id=user_id)
+        Notification.objects.create(user=user, type=type, message=message, by=by)
+    except Exception as e:
+        print(f"[Notification] Save failed: {e}")
+
 
 # ── Task helpers ──────────────────────────────────────
 
 def notify_task_assigned(task, assigned_by):
+    by_name = assigned_by.get_full_name() or assigned_by.username
+    message = f"New task assigned to you: \"{task.title}\" by {by_name}"
+
+    save_notification(
+        user_id=task.assigned_to.id,
+        type='task',
+        message=message,
+        by=by_name,
+    )
+
     trigger_pusher(
         channel=f"private-user-{task.assigned_to.id}",
         event="task.assigned",
@@ -38,15 +59,22 @@ def notify_task_assigned(task, assigned_by):
             "priority":         task.priority,
             "deadline":         str(task.deadline),
             "assigned_by_id":   assigned_by.id,
-            "assigned_by_name": assigned_by.get_full_name() or assigned_by.username,
-            "message": (
-                f"New task assigned to you: \"{task.title}\" "
-                f"by {assigned_by.get_full_name() or assigned_by.username}"
-            ),
+            "assigned_by_name": by_name,
+            "message":          message,
         }
     )
 
 def notify_task_status_updated(task, updated_by, old_status, new_status, notes):
+    by_name = updated_by.get_full_name() or updated_by.username
+    message = f"\"{task.title}\" marked as {new_status} by {by_name}"
+
+    save_notification(
+        user_id=task.assigned_by.id,
+        type='task',
+        message=message,
+        by=by_name,
+    )
+
     trigger_pusher(
         channel=f"private-user-{task.assigned_by.id}",
         event="task.status_updated",
@@ -56,12 +84,9 @@ def notify_task_status_updated(task, updated_by, old_status, new_status, notes):
             "old_status":      old_status,
             "new_status":      new_status,
             "updated_by_id":   updated_by.id,
-            "updated_by_name": updated_by.get_full_name() or updated_by.username,
+            "updated_by_name": by_name,
             "notes":           notes or "",
-            "message": (
-                f"\"{task.title}\" marked as {new_status} "
-                f"by {updated_by.get_full_name() or updated_by.username}"
-            ),
+            "message":         message,
         }
     )
 
@@ -69,6 +94,19 @@ def notify_task_status_updated(task, updated_by, old_status, new_status, notes):
 # ── Lead helpers ──────────────────────────────────────
 
 def notify_lead_assigned(assignee, assigned_by, lead, assignment_type):
+    by_name = assigned_by.get_full_name() or assigned_by.username
+    message = (
+        f"{'Lead' if assignment_type == 'PRIMARY' else 'Sub-lead'} "
+        f"assigned to you: {lead.name} by {by_name}"
+    )
+
+    save_notification(
+        user_id=assignee.id,
+        type='lead',
+        message=message,
+        by=by_name,
+    )
+
     trigger_pusher(
         channel=f"private-user-{assignee.id}",
         event="lead.assigned",
@@ -80,12 +118,8 @@ def notify_lead_assigned(assignee, assigned_by, lead, assignment_type):
             "status":           lead.status,
             "assignment_type":  assignment_type,
             "assigned_by_id":   assigned_by.id,
-            "assigned_by_name": assigned_by.get_full_name() or assigned_by.username,
-            "message": (
-                f"{'Lead' if assignment_type == 'PRIMARY' else 'Sub-lead'} "
-                f"assigned to you: {lead.name} "
-                f"by {assigned_by.get_full_name() or assigned_by.username}"
-            ),
+            "assigned_by_name": by_name,
+            "message":          message,
         }
     )
 
@@ -100,10 +134,18 @@ def notify_new_message(conversation_id, message_data):
     )
 
 def notify_new_conversation(user_id, conversation_id, conversation_type, name=None):
-    data = {
-        "conversation_id": conversation_id,
-        "type":            conversation_type,
-    }
+    message = (
+        f"Added to group: \"{name}\"" if conversation_type == 'GROUP'
+        else "New direct message conversation"
+    )
+
+    save_notification(
+        user_id=user_id,
+        type='chat',
+        message=message,
+    )
+
+    data = {"conversation_id": conversation_id, "type": conversation_type}
     if name:
         data["name"] = name
     trigger_pusher(

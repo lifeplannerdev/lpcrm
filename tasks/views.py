@@ -228,7 +228,7 @@ class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
                 notes=f"Status changed by {self.request.user.username}"
             )
 
-            # ✅ FIX: notify the assignee when manager changes the task status
+        
             notify_task_status_updated(
                 task=instance,
                 updated_by=self.request.user,
@@ -238,9 +238,7 @@ class TaskDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             )
 
 
-# ── Task Updates (timeline / notes only) ─────────────────────────────────────
-# ✅ FIX: this endpoint is now for posting notes/comments on a task only.
-#    Status changes must go through TaskStatusUpdateAPIView (POST /tasks/<id>/status/).
+# ── Task Updates ─────────────────────────────────────
 
 class TaskUpdateListCreateAPIView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]

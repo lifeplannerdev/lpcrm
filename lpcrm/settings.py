@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'reports',
     'telephony',
     'chats',
+    'notifications',
 ]
 
 MIDDLEWARE = [
