@@ -608,7 +608,8 @@ class BulkLeadUploadView(APIView):
                 priority   = clean_value(row.get('priority'))
                 program    = clean_value(row.get('program'))
                 location   = clean_value(row.get('location'))
-                username   = clean_value(row.get('assigned_to'))
+                raw_username = clean_value(row.get('assigned_to'))
+                username = str(raw_username).strip() if raw_username is not None else None
 
                 # Preserve leading zeros: treat phone as string from the start
                 phone = clean_value(row.get('phone'))
