@@ -2,6 +2,9 @@ from django.db import models
 from accounts.models import User
 from django.utils import timezone
 from django.core.validators import MinLengthValidator
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class Lead(models.Model):
     PRIORITY_CHOICES = [
@@ -222,3 +225,150 @@ class RemarkHistory(models.Model):
 
     def __str__(self):
         return f"Remarks changed for {self.lead} at {self.changed_at}"
+
+
+
+
+class FollowUp(models.Model):
+
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('contacted', 'Contacted'),
+        ('not_interested', 'Not Interested'),
+        ('rescheduled', 'Rescheduled'),
+    ]
+
+    PRIORITY_CHOICES = [
+        ('high', 'High'),
+        ('medium', 'Medium'),
+        ('low', 'Low'),
+    ]
+
+    FOLLOWUP_TYPE_CHOICES = [
+        ('call', 'Call'),
+        ('whatsapp', 'WhatsApp'),
+        ('email', 'Email'),
+        ('meeting', 'Meeting'),
+    ]
+
+    lead = models.ForeignKey(
+        'Lead',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='followups'
+    )
+
+
+    phone_number = models.CharField(max_length=20)
+    name = models.CharField(max_length=150, blank=True, null=True)
+
+
+    follow_up_date = models.DateField()
+    follow_up_time = models.TimeField(blank=True, null=True)
+
+
+    followup_type = models.CharField(
+        max_length=20,
+        choices=FOLLOWUP_TYPE_CHOICES,
+        default='call'
+    )
+    notes = models.TextField(blank=True)
+
+    priority = models.CharField(
+        max_length=10,
+        choices=PRIORITY_CHOICES,
+        default='medium'
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='followups'
+    )
+
+    converted_to_lead = models.BooleanField(default=False)
+    converted_at = models.DateTimeField(blank=True, null=True)
+
+    reminder_sent_at = models.DateTimeField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['follow_up_date', 'follow_up_time']
+        indexes = [
+            models.Index(fields=['follow_up_date']),
+            models.Index(fields=['status']),
+            models.Index(fields=['assigned_to']),
+        ]
+
+    def __str__(self):
+        display = self.name or self.phone_number
+        return f"{display} — {self.follow_up_date}"
+
+    def save(self, *args, **kwargs):
+        # Track conversion time
+        if self.converted_to_lead and not self.converted_at:
+            self.converted_at = timezone.now()
+
+        # Track status changes for history
+        if self.pk:
+            original = FollowUp.objects.get(pk=self.pk)
+            if original.status != self.status:
+                FollowUpHistory.objects.create(
+                    followup=self,
+                    old_status=original.status,
+                    new_status=self.status,
+                    changed_by=self.assigned_to
+                )
+
+        super().save(*args, **kwargs)
+
+    @property
+    def is_overdue(self):
+        return (
+            self.status == 'pending' and
+            self.follow_up_date < timezone.now().date()
+        )
+
+    @property
+    def contact_display(self):
+        if self.lead:
+            return f"{self.lead.name} ({self.lead.phone})"
+        return self.name or self.phone_number
+
+
+
+class FollowUpHistory(models.Model):
+    followup = models.ForeignKey(
+        FollowUp,
+        on_delete=models.CASCADE,
+        related_name='history'
+    )
+
+    old_status = models.CharField(max_length=20)
+    new_status = models.CharField(max_length=20)
+
+    changed_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True
+    )
+
+    notes = models.TextField(blank=True, null=True)
+
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-changed_at']
+
+    def __str__(self):
+        return f"{self.followup} | {self.old_status} → {self.new_status}"

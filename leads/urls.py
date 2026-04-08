@@ -13,6 +13,10 @@ from .views import (
     UpdateLeadView,
     BulkLeadUploadView,
     TodayLeadsAPI,
+    FollowUpListCreateAPIView,
+    FollowUpDetailAPIView,
+    TodayFollowUpsAPIView,
+    OverdueFollowUpsAPIView
 )
 
 urlpatterns = [
@@ -29,5 +33,11 @@ urlpatterns = [
     path('leads/<int:lead_id>/timeline/', LeadProcessingTimelineView.as_view(), name='lead-timeline'),
     path('leads/<int:lead_id>/assignment-history/', LeadAssignmentHistoryView.as_view(), name='lead-assignment-history'),
     path('today-leads/', TodayLeadsAPI.as_view()),
+    path('followups/', FollowUpListCreateAPIView.as_view()),
+    path('followups/<int:pk>/', FollowUpDetailAPIView.as_view()),
+    path('followups/today/', TodayFollowUpsAPIView.as_view()),
+    path('followups/overdue/', OverdueFollowUpsAPIView.as_view()),
 
 ]
+
+

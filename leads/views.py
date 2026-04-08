@@ -1,7 +1,7 @@
 import pandas as pd
 import math
 from datetime import date
-from .models import Lead, ProcessingUpdate, RemarkHistory, LeadAssignment
+from .models import Lead, ProcessingUpdate, RemarkHistory, LeadAssignment,FollowUp
 from .email_utils import send_conversion_email
 from rest_framework import generics, filters, status
 from rest_framework.pagination import PageNumberPagination
@@ -14,6 +14,7 @@ from django.db import models, transaction
 from django.db.models import Count, Q as DQ
 from django.utils import timezone
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticated
 
 from leads.permissions import (
     CanAccessLeads,
@@ -34,10 +35,13 @@ from .serializers import (
     LeadAssignmentSerializer,
     LeadUpdateSerializer,
     BulkLeadCreateSerializer,
+    FollowUpSerializer
 )
 
 from utils.pusher import pusher_client, trigger_pusher
 from utils import notify_lead_assigned
+from rest_framework import status
+from django.shortcuts import get_object_or_404
 
 
 # ── Helpers
@@ -595,81 +599,89 @@ class BulkLeadUploadView(APIView):
         failed_rows      = []
         assigned_summary = {}
 
-        with transaction.atomic():
-            for index, row in df.iterrows():
-                try:
-                    name       = clean_value(row.get('name'))
-                    email      = clean_value(row.get('email'))
-                    source     = clean_value(row.get('source'))
-                    status_val = clean_value(row.get('status'))
-                    priority   = clean_value(row.get('priority'))
-                    program    = clean_value(row.get('program'))
-                    location   = clean_value(row.get('location'))
-                    username   = clean_value(row.get('assigned_to'))
+        for index, row in df.iterrows():
+            try:
+                name       = clean_value(row.get('name'))
+                email      = clean_value(row.get('email'))
+                source     = clean_value(row.get('source'))
+                status_val = clean_value(row.get('status'))
+                priority   = clean_value(row.get('priority'))
+                program    = clean_value(row.get('program'))
+                location   = clean_value(row.get('location'))
+                username   = clean_value(row.get('assigned_to'))
 
-                    phone = clean_value(row.get('phone'))
-                    if phone:
-                        phone = str(phone).split('.')[0]
+                # Preserve leading zeros: treat phone as string from the start
+                phone = clean_value(row.get('phone'))
+                if phone is not None:
+                    # Excel stores numbers as floats; strip the decimal and keep as string
+                    phone = str(int(float(str(phone)))) if str(phone).replace('.', '', 1).isdigit() else str(phone).strip()
 
-                    if not username:
-                        failed_rows.append({'row': index + 2, 'error': 'assigned_to is required'})
+                if not username:
+                    failed_rows.append({'row': index + 2, 'error': 'assigned_to is required'})
+                    continue
+
+                assignee_user = user_map.get(str(username).lower())
+                if not assignee_user:
+                    failed_rows.append({
+                        'row':   index + 2,
+                        'error': f"User '{username}' not found",
+                    })
+                    continue
+
+                data = {
+                    'name':        name,
+                    'phone':       phone,
+                    'email':       email,
+                    'status':      str(status_val).upper() if status_val else 'ENQUIRY',
+                    'priority':    str(priority).upper()   if priority   else 'MEDIUM',
+                    'program':     program,
+                    'location':    location,
+                    'assigned_to': str(username),
+                }
+                if source:
+                    data['source'] = str(source).upper()
+
+                serializer = BulkLeadCreateSerializer(
+                    data=data,
+                    context={'request': request, 'user_map': user_map},
+                )
+
+                if serializer.is_valid():
+                    # Each row saved in its own savepoint — a failure here won't roll back prior successes
+                    try:
+                        with transaction.atomic():
+                            lead = serializer.save()
+                    except Exception as db_err:
+                        failed_rows.append({'row': index + 2, 'error': str(db_err)})
                         continue
 
-                    assignee_user = user_map.get(username.lower())
-                    if not assignee_user:
-                        failed_rows.append({
-                            'row':   index + 2,
-                            'error': f"User '{username}' not found",
-                        })
+                    success_count += 1
+
+                    # Skip notification summary if uploader assigned to themselves
+                    if assignee_user == request.user:
                         continue
 
-                    data = {
-                        'name':        name,
-                        'phone':       phone,
-                        'email':       email,
-                        'status':      str(status_val).upper() if status_val else 'ENQUIRY',
-                        'priority':    str(priority).upper()   if priority   else 'MEDIUM',
-                        'program':     program,
-                        'location':    location,
-                        'assigned_to': username,
-                    }
-                    if source:
-                        data['source'] = str(source).upper()
+                    uid = assignee_user.id
+                    if uid not in assigned_summary:
+                        assigned_summary[uid] = {
+                            'user':  assignee_user,
+                            'leads': [],
+                        }
+                    assigned_summary[uid]['leads'].append({
+                        'lead_id':   lead.id,
+                        'lead_name': lead.name,
+                        'priority':  lead.priority,
+                    })
 
-                    serializer = BulkLeadCreateSerializer(
-                        data=data,
-                        context={'request': request, 'user_map': user_map},
-                    )
+                else:
+                    failed_rows.append({
+                        'row':    index + 2,
+                        'data':   data,
+                        'errors': serializer.errors,
+                    })
 
-                    if serializer.is_valid():
-                        lead = serializer.save()
-                        success_count += 1
-
-                        #  FIX: skip notification summary if uploader assigned to themselves
-                        if assignee_user == request.user:
-                            continue
-
-                        uid = assignee_user.id
-                        if uid not in assigned_summary:
-                            assigned_summary[uid] = {
-                                'user':  assignee_user,
-                                'leads': [],
-                            }
-                        assigned_summary[uid]['leads'].append({
-                            'lead_id':   lead.id,
-                            'lead_name': lead.name,
-                            'priority':  lead.priority,
-                        })
-
-                    else:
-                        failed_rows.append({
-                            'row':    index + 2,
-                            'data':   data,
-                            'errors': serializer.errors,
-                        })
-
-                except Exception as e:
-                    failed_rows.append({'row': index + 2, 'error': str(e)})
+            except Exception as e:
+                failed_rows.append({'row': index + 2, 'error': str(e)})
 
         # 🔔 One grouped Pusher notification per assignee (self-assignments already excluded above)
         for uid, summary in assigned_summary.items():
@@ -709,3 +721,109 @@ class TodayLeadsAPI(APIView):
             created_at__date=today
         ).values('id', 'name', 'status', 'assigned_to')
         return Response(list(leads))
+
+
+
+
+
+class FollowUpListCreateAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        queryset = FollowUp.objects.filter(assigned_to=user)
+
+        # 📅 Filters
+        date = request.query_params.get('date')
+        start_date = request.query_params.get('start_date')
+        end_date = request.query_params.get('end_date')
+        status = request.query_params.get('status')
+        overdue = request.query_params.get('overdue')
+
+        if date:
+            queryset = queryset.filter(follow_up_date=date)
+
+        if start_date and end_date:
+            queryset = queryset.filter(
+                follow_up_date__range=[start_date, end_date]
+            )
+
+        if status:
+            queryset = queryset.filter(status=status)
+
+        if overdue == 'true':
+            queryset = queryset.filter(
+                follow_up_date__lt=timezone.now().date(),
+                status='pending'
+            )
+
+        queryset = queryset.order_by('follow_up_date', 'follow_up_time')
+
+        serializer = FollowUpSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = FollowUpSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(assigned_to=request.user)
+            return Response(serializer.data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+
+
+
+class FollowUpDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk, user):
+        return get_object_or_404(FollowUp, pk=pk, assigned_to=user)
+
+    def get(self, request, pk):
+        followup = self.get_object(pk, request.user)
+        serializer = FollowUpSerializer(followup)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        followup = self.get_object(pk, request.user)
+        serializer = FollowUpSerializer(followup, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+
+        return Response(serializer.errors, status=400)
+
+    def delete(self, request, pk):
+        followup = self.get_object(pk, request.user)
+        followup.delete()
+        return Response({"message": "Deleted successfully"}, status=204)
+
+
+class TodayFollowUpsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        today = timezone.now().date()
+        queryset = FollowUp.objects.filter(
+            assigned_to=request.user,
+            follow_up_date=today
+        )
+
+        serializer = FollowUpSerializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class OverdueFollowUpsAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        today = timezone.now().date()
+        queryset = FollowUp.objects.filter(
+            assigned_to=request.user,
+            follow_up_date__lt=today,
+            status='pending'
+        )
+
+        serializer = FollowUpSerializer(queryset, many=True)
+        return Response(serializer.data)

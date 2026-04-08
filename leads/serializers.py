@@ -1,12 +1,11 @@
 from rest_framework import serializers
-from .models import Lead, ProcessingUpdate, RemarkHistory, LeadAssignment
+from .models import Lead, ProcessingUpdate, RemarkHistory, LeadAssignment,FollowUp, FollowUpHistory
 from accounts.models import User
 from django.utils import timezone
 from .permissions import FULL_ACCESS_ROLES, MANAGER_ROLES, EXECUTIVE_ROLES
 
 
 # Shared user serializer
-
 class UserSimpleSerializer(serializers.ModelSerializer):
     class Meta:
         model  = User
@@ -14,7 +13,6 @@ class UserSimpleSerializer(serializers.ModelSerializer):
 
 
 # Lead Create Serializer
-
 class LeadCreateSerializer(serializers.ModelSerializer):
     assigned_to = serializers.IntegerField(required=False, allow_null=True, write_only=True)
     source      = serializers.CharField(required=False, allow_blank=True, allow_null=True)
@@ -130,8 +128,7 @@ class LeadCreateSerializer(serializers.ModelSerializer):
         return lead
 
 
-# Lead Assignment Serializer (history records)
-
+# Lead Assignment Serializer
 class LeadAssignmentSerializer(serializers.ModelSerializer):
     assigned_to = UserSimpleSerializer(read_only=True)
     assigned_by = UserSimpleSerializer(read_only=True)
@@ -146,7 +143,6 @@ class LeadAssignmentSerializer(serializers.ModelSerializer):
 
 
 # Lead Assign Serializer (validate + route assign/sub-assign requests)
-
 class LeadAssignSerializer(serializers.Serializer):
     lead_id        = serializers.IntegerField()
     assigned_to_id = serializers.IntegerField()
@@ -220,7 +216,6 @@ class LeadAssignSerializer(serializers.Serializer):
 
 
 # Lead List Serializer
-
 class LeadListSerializer(serializers.ModelSerializer):
     assigned_to     = UserSimpleSerializer(read_only=True)
     assigned_by     = UserSimpleSerializer(read_only=True)
@@ -248,7 +243,6 @@ class LeadListSerializer(serializers.ModelSerializer):
 
 
 # Lead Detail Serializer
-
 class LeadDetailSerializer(serializers.ModelSerializer):
     assigned_to          = UserSimpleSerializer(read_only=True)
     assigned_by          = UserSimpleSerializer(read_only=True)
@@ -300,7 +294,6 @@ class LeadDetailSerializer(serializers.ModelSerializer):
 
 
 # Processing Update Serializer
-
 class ProcessingUpdateSerializer(serializers.ModelSerializer):
     changed_by = UserSimpleSerializer(read_only=True)
 
@@ -316,7 +309,6 @@ class ProcessingUpdateSerializer(serializers.ModelSerializer):
 
 
 # Remark History Serializer
-
 class RemarkHistorySerializer(serializers.ModelSerializer):
     changed_by = UserSimpleSerializer(read_only=True)
 
@@ -335,7 +327,6 @@ class RemarkHistorySerializer(serializers.ModelSerializer):
 
 
 # Lead Update Serializer (PATCH – used by UpdateLeadView)
-
 class LeadUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Lead
@@ -369,7 +360,6 @@ class LeadUpdateSerializer(serializers.ModelSerializer):
 
 
 # Bulk Lead Create Serializer
-
 class BulkLeadCreateSerializer(LeadCreateSerializer):
     assigned_to = serializers.CharField(required=True)
 
@@ -383,12 +373,34 @@ class BulkLeadCreateSerializer(LeadCreateSerializer):
         if not user.is_active:
             raise serializers.ValidationError(f"User '{value}' is inactive.")
 
+        # Leads can only be assigned to managers or executives, never to admin/CEO/OPS etc.
         if user.role not in MANAGER_ROLES + EXECUTIVE_ROLES:
             raise serializers.ValidationError(
-                f"Cannot assign leads to user '{value}' with role '{user.role}'."
+                f"Cannot assign leads to '{value}' (role '{user.role}'). "
+                f"Only managers and executives can be assigned leads."
             )
 
         return user
+
+    def validate(self, attrs):
+        # Skip the status restriction from LeadCreateSerializer for bulk uploads:
+        # 'assigned_to' is already a User object here (resolved in validate_assigned_to),
+        # so we only run the field-level uppercase normalisation and source checks.
+        for field in ['source', 'status', 'priority']:
+            if attrs.get(field):
+                attrs[field] = attrs[field].upper()
+
+        if attrs.get('source') == 'OTHER' and not attrs.get('custom_source'):
+            raise serializers.ValidationError({
+                'custom_source': 'This field is required when source is OTHER.'
+            })
+
+        if attrs.get('status') in ['REGISTERED', 'COMPLETED']:
+            raise serializers.ValidationError({
+                'status': 'Cannot create a lead directly with this status.'
+            })
+
+        return attrs
 
     def create(self, validated_data):
         assignee = validated_data.pop('assigned_to')  
@@ -411,3 +423,25 @@ class BulkLeadCreateSerializer(LeadCreateSerializer):
         )
 
         return lead
+
+
+
+class FollowUpSerializer(serializers.ModelSerializer):
+    is_overdue = serializers.ReadOnlyField()
+    contact_display = serializers.ReadOnlyField()
+
+    class Meta:
+        model = FollowUp
+        fields = '__all__'
+        read_only_fields = [
+            'converted_at',
+            'reminder_sent_at',
+            'created_at',
+            'updated_at'
+        ]
+
+
+class FollowUpHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FollowUpHistory
+        fields = '__all__'
