@@ -381,6 +381,16 @@ class BulkLeadCreateSerializer(LeadCreateSerializer):
             )
 
         return user
+    
+    def validate_phone(self, value):
+        if value is None:
+            return value  # let the required-field check handle this if phone is required
+        digits_only = ''.join(filter(str.isdigit, str(value)))
+        if len(digits_only) > 10:
+            raise serializers.ValidationError(
+                f"Phone number must not exceed 10 digits (got {len(digits_only)})."
+            )
+        return value
 
     def validate(self, attrs):
         # Skip the status restriction from LeadCreateSerializer for bulk uploads:
