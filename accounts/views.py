@@ -10,15 +10,16 @@ from leads.models import Lead
 from trainers.models import Student
 from .models import User, ActivityLog
 from rest_framework.exceptions import PermissionDenied
+from django_filters.rest_framework import DjangoFilterBackend
+
 from .serializers import (
     StaffListSerializer,
     StaffDetailSerializer,
     StaffCreateSerializer,
     StaffUpdateSerializer,
     LoginSerializer,
-    RegisterSerializer
+    ActivityLogSerializer
 )
-
 
 # Pagination 
 class StaffPagination(PageNumberPagination):
@@ -44,28 +45,34 @@ class DashboardStatsAPIView(APIView):
 
 
 # Recent Activities View
-class RecentActivitiesAPIView(APIView):
+class ActivityLogListView(generics.ListAPIView):
+    serializer_class   = ActivityLogSerializer
     permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        qs = ActivityLog.objects.all().order_by("-created_at")
-
-        if request.user.role != "ADMIN":
-            qs = qs.filter(user=request.user)
-
-        activities = qs[:10]
-
-        data = [
-            {
-                "id": activity.id,
-                "activity_type": activity.get_activity_type_display(),
-                "description": activity.description,
-                "user_name": activity.user.get_full_name() or activity.user.username,
-                "created_at": activity.created_at,
-            }
-            for activity in activities
-        ]
-        return Response(data)
+    filter_backends    = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields   = ['action', 'entity_type', 'user']
+    search_fields      = ['entity_name', 'description']
+    ordering_fields    = ['created_at']
+    ordering           = ['-created_at']
+ 
+    def get_queryset(self):
+        qs = ActivityLog.objects.select_related('user').all()
+ 
+        # Role-based scoping
+        # Admins see everything; others see only their own activities
+        user = self.request.user
+        if user.role not in ('ADMIN', 'BUSINESS_HEAD', 'CEO'):
+            qs = qs.filter(user=user)
+ 
+        # Date range filters
+        date_from = self.request.query_params.get('date_from')
+        date_to   = self.request.query_params.get('date_to')
+        if date_from:
+            qs = qs.filter(created_at__date__gte=date_from)
+        if date_to:
+            qs = qs.filter(created_at__date__lte=date_to)
+ 
+        return qs
+ 
 
 
 class CurrentUserAPIView(APIView):
@@ -85,26 +92,6 @@ class CurrentUserAPIView(APIView):
         })
 
 
-# Registration View
-class RegisterAPIView(APIView):
-    permission_classes = [AllowAny]
-
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-
-        return Response({
-            "message": "Registration successful. Your account is pending admin approval.",
-            "user": {
-                "id": user.id,
-                "username": user.username,
-                "role": user.role,
-                "is_active": user.is_active
-            }
-        }, status=status.HTTP_201_CREATED)
-
-
 #Login View 
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -115,11 +102,11 @@ class LoginAPIView(APIView):
         user = serializer.validated_data["user"]
         refresh = RefreshToken.for_user(user)
         
-        # ✅ Return refresh token in response body instead of cookie
+        # Return refresh token in response body instead of cookie
         return Response({
             "message": "Login successful",
             "access": str(refresh.access_token),
-            "refresh": str(refresh),  # ✅ Add this
+            "refresh": str(refresh),
             "user": {
                 "id": user.id,
                 "username": user.username,

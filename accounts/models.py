@@ -74,24 +74,102 @@ class User(AbstractUser):
     def is_hr(self):
         return self.role == 'HR'
 
-
 class ActivityLog(models.Model):
-    ACTIVITY_TYPES = [
-        ('LEAD_CREATED', 'Lead Created'),
-        ('STUDENT_ENROLLED', 'Student Enrolled'),
-        ('TASK_COMPLETED', 'Task Completed'),
+    ACTION_CHOICES = [
+        # ── Lead ─────────────────────────────────────────────
+        ('LEAD_CREATED',            'Lead Created'),
+        ('LEAD_UPDATED',            'Lead Updated'),
+        ('LEAD_STATUS_CHANGED',     'Lead Status Changed'),
+        ('LEAD_ASSIGNED',           'Lead Assigned'),
+        ('LEAD_SUB_ASSIGNED',       'Lead Sub-Assigned'),
+        ('LEAD_UNASSIGNED',         'Lead Unassigned'),
+        ('LEAD_PROCESSING_UPDATED', 'Lead Processing Updated'),
+        ('LEAD_REMARK_UPDATED',     'Lead Remark Updated'),
+        ('LEAD_DELETED',            'Lead Deleted'),
+ 
+        # ── Follow-Up ─────────────────────────────────────────
+        ('FOLLOWUP_CREATED',        'Follow-Up Created'),
+        ('FOLLOWUP_STATUS_CHANGED', 'Follow-Up Status Changed'),
+        ('FOLLOWUP_CONVERTED',      'Follow-Up Converted to Lead'),
+        ('FOLLOWUP_DELETED',        'Follow-Up Deleted'),
+ 
+        # ── Task ──────────────────────────────────────────────
+        ('TASK_CREATED',            'Task Created'),
+        ('TASK_UPDATED',            'Task Updated'),
+        ('TASK_STATUS_CHANGED',     'Task Status Changed'),
+        ('TASK_COMPLETED',          'Task Completed'),
+        ('TASK_CANCELLED',          'Task Cancelled'),
+        ('TASK_OVERDUE',            'Task Marked Overdue'),
+        ('TASK_DELETED',            'Task Deleted'),
+ 
+        # ── Staff / User ───────────────────────────────────────
+        ('STAFF_CREATED',           'Staff Created'),
+        ('STAFF_UPDATED',           'Staff Updated'),
+        ('STAFF_ACTIVATED',         'Staff Activated'),
+        ('STAFF_DEACTIVATED',       'Staff Deactivated'),
+        ('STAFF_DELETED',           'Staff Deleted'),
+        ('USER_LOGIN',              'User Logged In'),
+        ('USER_LOGOUT',             'User Logged Out'),
+ 
+        # ── MicroWork ─────────────────────────────────────────
+        ('MICROWORK_CREATED',       'Micro Work Created'),
+        ('MICROWORK_COMPLETED',     'Micro Work Completed'),
+        ('MICROWORK_DELETED',       'Micro Work Deleted'),
+ 
+        # ── Trainer ───────────────────────────────────────────
+        ('TRAINER_CREATED',         'Trainer Profile Created'),
+        ('TRAINER_UPDATED',         'Trainer Profile Updated'),
+        ('TRAINER_STATUS_CHANGED',  'Trainer Status Changed'),
+        ('TRAINER_DELETED',         'Trainer Profile Deleted'),
+ 
+        # ── Student ───────────────────────────────────────────
+        ('STUDENT_ENROLLED',        'Student Enrolled'),
+        ('STUDENT_UPDATED',         'Student Updated'),
+        ('STUDENT_COMPLETED',       'Student Completed Course'),
+        ('STUDENT_DROPPED',         'Student Dropped'),
+        ('STUDENT_PAUSED',          'Student Paused'),
+        ('STUDENT_REACTIVATED',     'Student Reactivated'),
+        ('STUDENT_TRAINER_CHANGED', 'Student Trainer Changed'),
+        ('STUDENT_BATCH_CHANGED',   'Student Batch Changed'),
+        ('STUDENT_DELETED',         'Student Deleted'),
+ 
+        # ── Attendance (Trainer) ───────────────────────────────
+        ('ATTENDANCE_MARKED',       'Attendance Marked'),
+        ('ATTENDANCE_UPDATED',      'Attendance Updated'),
+ 
+        # ── HR / Penalty ───────────────────────────────────────
+        ('PENALTY_ISSUED',          'Penalty Issued'),
+        ('PENALTY_UPDATED',         'Penalty Updated'),
+        ('PENALTY_DELETED',         'Penalty Deleted'),
+ 
+        # ── HR / Attendance Document ───────────────────────────
+        ('ATTENDANCE_DOC_UPLOADED', 'Attendance Document Uploaded'),
+        ('ATTENDANCE_DOC_DELETED',  'Attendance Document Deleted'),
     ]
-
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True,blank=True)
-    activity_type = models.CharField(max_length=50,choices=ACTIVITY_TYPES)
-    description = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
-
+ 
+    user        = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,null=True, blank=True,related_name='activity_logs')
+    action      = models.CharField(max_length=60, choices=ACTION_CHOICES, db_index=True)
+    entity_type = models.CharField(max_length=50, db_index=True)
+    entity_id   = models.PositiveIntegerField(null=True, blank=True)
+    entity_name = models.CharField(max_length=255, blank=True)
+    description = models.TextField()
+    metadata    = models.JSONField(default=dict, blank=True)
+    created_at  = models.DateTimeField(auto_now_add=True, db_index=True)
+ 
     class Meta:
         ordering = ['-created_at']
-
+        verbose_name = 'Activity Log'
+        verbose_name_plural = 'Activity Logs'
+        indexes = [
+            models.Index(fields=['action']),
+            models.Index(fields=['entity_type']),
+            models.Index(fields=['created_at']),
+        ]
+ 
     def __str__(self):
-        return self.description
+        user_str = self.user.username if self.user else 'System'
+        return f"[{self.created_at:%Y-%m-%d %H:%M}] {user_str} — {self.get_action_display()}"
+
 
 
 

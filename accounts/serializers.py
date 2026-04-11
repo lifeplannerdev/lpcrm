@@ -1,33 +1,7 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from .models import User
+from .models import User,ActivityLog
 
-
-# Register Serializer
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=6)
-
-    class Meta:
-        model = User
-        fields = ["username", "password", "role"]
-
-    def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("Username already exists")
-        return value
-
-    def create(self, validated_data):
-        password = validated_data.pop("password")
-
-        user = User(
-            **validated_data,
-            is_active=False
-        )
-        user.set_password(password)
-        user.save()
-        return user
-    
-    
 
 # Login Serializer
 class LoginSerializer(serializers.Serializer):
@@ -76,6 +50,7 @@ class StaffListSerializer(serializers.ModelSerializer):
             'join_date'
         ]
         read_only_fields = fields
+
 
 #  Staff Detail Serializer 
 class StaffDetailSerializer(serializers.ModelSerializer):
@@ -146,3 +121,26 @@ class StaffUpdateSerializer(serializers.ModelSerializer):
             'salary',
             'join_date'
         ]
+
+
+ 
+class ActivityLogSerializer(serializers.ModelSerializer):
+    user_name    = serializers.SerializerMethodField()
+    action_label = serializers.CharField(source='get_action_display', read_only=True)
+ 
+    class Meta:
+        model  = ActivityLog
+        fields = [
+            'id',
+            'user', 'user_name',
+            'action', 'action_label',
+            'entity_type', 'entity_id', 'entity_name',
+            'description',
+            'metadata',
+            'created_at',
+        ]
+ 
+    def get_user_name(self, obj):
+        if obj.user:
+            return obj.user.get_full_name() or obj.user.username
+        return 'System'

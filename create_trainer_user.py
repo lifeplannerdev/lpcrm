@@ -31,14 +31,14 @@ def create_trainer_user():
         if created:
             trainer.set_password('trainer123')
             trainer.save()
-            print("✅ Successfully created trainer user")
+            print(" Successfully created trainer user")
             print("Username: trainer")
             print("Password: trainer123")
         else:
             # Update password if user exists
             trainer.set_password('trainer123')
             trainer.save()
-            print("✅ Trainer user already exists, password updated")
+            print("Trainer user already exists, password updated")
             print("Username: trainer")
             print("Password: trainer123")
             

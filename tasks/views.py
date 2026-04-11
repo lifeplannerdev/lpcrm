@@ -26,7 +26,7 @@ from .permissions import (
     OPERATIONS,
 )
 
-# ✅ FIX: removed duplicate local pusher definitions — import from utils (single source of truth)
+# removed duplicate local pusher definitions — import from utils (single source of truth)
 from utils import notify_task_assigned, notify_task_status_updated
 
 User = get_user_model()

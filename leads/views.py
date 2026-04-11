@@ -598,7 +598,7 @@ class BulkLeadUploadView(APIView):
         success_count    = 0
         failed_rows      = []
         assigned_summary = {}
-        seen_phones      = set()  # ✅ tracks phones already processed in this batch
+        seen_phones      = set()  #  tracks phones already processed in this batch
 
         for index, row in df.iterrows():
             try:
@@ -618,7 +618,7 @@ class BulkLeadUploadView(APIView):
                     # Excel stores numbers as floats; strip the decimal and keep as string
                     phone = str(int(float(str(phone)))) if str(phone).replace('.', '', 1).isdigit() else str(phone).strip()
 
-                # ✅ Within-batch duplicate check (before any DB or serializer work)
+                #  Within-batch duplicate check (before any DB or serializer work)
                 if phone and phone in seen_phones:
                     failed_rows.append({
                         'row':   index + 2,
@@ -626,7 +626,7 @@ class BulkLeadUploadView(APIView):
                     })
                     continue
 
-                # ✅ DB duplicate check
+                #  DB duplicate check
                 if phone and Lead.objects.filter(phone=phone).exists():
                     failed_rows.append({
                         'row':   index + 2,
