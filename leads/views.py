@@ -755,12 +755,20 @@ class FollowUpListCreateAPIView(APIView):
         user = request.user
         queryset = FollowUp.objects.filter(assigned_to=user)
 
-        # 📅 Filters
-        date = request.query_params.get('date')
-        start_date = request.query_params.get('start_date')
-        end_date = request.query_params.get('end_date')
-        status = request.query_params.get('status')
-        overdue = request.query_params.get('overdue')
+        # ── Filters ─────────────────────────────────────────────────────────────
+        lead_id      = request.query_params.get('lead')
+        date         = request.query_params.get('date')
+        start_date   = request.query_params.get('start_date')
+        end_date     = request.query_params.get('end_date')
+        status       = request.query_params.get('status')
+        overdue      = request.query_params.get('overdue')
+        followup_type = request.query_params.get('followup_type')
+        priority     = request.query_params.get('priority')
+        search       = request.query_params.get('search')
+
+        # FIX: filter by linked lead
+        if lead_id:
+            queryset = queryset.filter(lead_id=lead_id)
 
         if date:
             queryset = queryset.filter(follow_up_date=date)
@@ -779,6 +787,19 @@ class FollowUpListCreateAPIView(APIView):
                 status='pending'
             )
 
+        # FIX: added missing filters that the frontend sends
+        if followup_type:
+            queryset = queryset.filter(followup_type=followup_type)
+
+        if priority:
+            queryset = queryset.filter(priority=priority)
+
+        if search:
+            queryset = queryset.filter(
+                models.Q(name__icontains=search) |
+                models.Q(phone_number__icontains=search)
+            )
+
         queryset = queryset.order_by('follow_up_date', 'follow_up_time')
 
         serializer = FollowUpSerializer(queryset, many=True)
@@ -790,7 +811,6 @@ class FollowUpListCreateAPIView(APIView):
             serializer.save(assigned_to=request.user)
             return Response(serializer.data, status=201)
         return Response(serializer.errors, status=400)
-
 
 
 

@@ -444,10 +444,11 @@ class FollowUpSerializer(serializers.ModelSerializer):
         model = FollowUp
         fields = '__all__'
         read_only_fields = [
+            'assigned_to',
             'converted_at',
             'reminder_sent_at',
             'created_at',
-            'updated_at'
+            'updated_at',
         ]
 
 
