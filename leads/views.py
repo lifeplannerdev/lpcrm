@@ -747,7 +747,6 @@ class TodayLeadsAPI(APIView):
 
 
 
-
 class FollowUpListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
 

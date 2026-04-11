@@ -451,7 +451,6 @@ class FollowUpSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
-
 class FollowUpHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = FollowUpHistory
