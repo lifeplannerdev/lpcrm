@@ -11,6 +11,7 @@ from trainers.models import Student
 from .models import User, ActivityLog
 from rest_framework.exceptions import PermissionDenied
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Q
 
 from .serializers import (
     StaffListSerializer,
@@ -61,8 +62,11 @@ class ActivityLogListView(generics.ListAPIView):
         # Admins see everything; others see only their own activities
         user = self.request.user
         if user.role not in ('ADMIN', 'BUSINESS_HEAD', 'CEO'):
-            qs = qs.filter(user=user)
- 
+            qs = qs.filter(
+                Q(user=user) |
+                Q(user__isnull=True, entity_type='Staff', entity_id=user.pk)
+            )
+        
         # Date range filters
         date_from = self.request.query_params.get('date_from')
         date_to   = self.request.query_params.get('date_to')
